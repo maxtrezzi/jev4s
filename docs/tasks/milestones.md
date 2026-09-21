@@ -20,14 +20,16 @@ Applies to **every** milestone and to **both** modules
 
 ### M1 — Base: two modules and the model
 
-**Status:** Not started
+**Status:** Done 2026-09-21
 
 - Two-module `build.sbt`: `scala3` and `scala213`, the same `name := "jev4s"`, and `golden/`
   as a test resource of both.
 - Check that both modules publish locally (`publishLocal`) as `jev4s_3` and `jev4s_2.13`
   without a conflict. This is the one point of ADR-0009 not yet verified.
 - sbt-scoverage (`coverageMinimumStmtTotal := 100`, `coverageMinimumBranchTotal := 100`,
-  `coverageFailOnMinimum := true`) and sbt-stryker4s (`break = 100`), active in both modules.
+  `coverageFailOnMinimum := true`) and sbt-stryker4s with no undetected mutant
+  ([ADR-0016](../adr/0016-undetected-mutants-are-checked-from-the-report.md)), active in both
+  modules.
 - **Scala 3:** the native model — `Question[A]` as an `enum`, `Probability` as an
   `opaque type`, `JevError` and `Problem` as `enum`s, and the `Validator` with accumulated
   problems.
@@ -36,6 +38,48 @@ Applies to **every** milestone and to **both** modules
 - CI runs the tests, the coverage check and the docs check on every pull request.
 
 **Done when:** the definition of done holds for the model and the `Validator` in both modules.
+
+#### Built
+
+sbt 1.13.0, with sbt-scoverage 2.4.4, sbt-stryker4s 1.1.1 and munit 1.3.6 (the latest releases
+in each `maven-metadata.xml` on Maven Central, read on 2026-09-21).
+
+| Module | Scala | Tests | Statements | Branch statements | Mutants |
+|---|---|---|---|---|---|
+| `scala3` | 3.7.3 | 22 | 83, all covered | 17, all covered | 54: 52 killed, 2 compile errors |
+| `scala213` | 2.13.18 | 22 | 79, all covered | 18, all covered | 54: 54 killed |
+
+Both modules compile with `-Werror`; `scala3` also with `-Wunused:all -language:strictEquality`.
+2.13.18 is the current 2.13 patch release; no ADR pins the patch.
+
+#### Found
+
+- **Stryker4s cannot be set to `break = 100`.** It requires `low > break`, and `low` cannot
+  exceed 100. [ADR-0016](../adr/0016-undetected-mutants-are-checked-from-the-report.md) keeps
+  `break = 99` and adds `build/check-mutants.py`, which fails on any undetected mutant in the
+  JSON report. The script was checked both ways: it passes on the real reports and fails on a
+  copy with one mutant marked `Survived`.
+- **Stryker4s works per module** with `sbt "project scala3" stryker`, and reads
+  `stryker4s.conf` from the build root: a deliberately invalid value there made the run in
+  `scala3` fail on that value.
+- **Mutation testing found a real gap in the first test suite.** `p >= t` mutated to
+  `p == t` survived in `Probability`, because the tests compared only at and below the
+  threshold. The same for `<=`. Each comparison is now also tested strictly inside its range.
+- **`strictEquality` rejects two mutants before any test runs.** In `scala3`, `>=` mutated to
+  `==` between a `Probability` and a `Double` does not compile. In `scala213` the same mutants
+  compile and the tests kill them.
+- **Both modules publish without a conflict.** `sbt publishLocal` wrote `jev4s_3` and
+  `jev4s_2.13` under `io.github.maxtrezzi`. A Scala 3.7.3 project and a Scala 2.13.18 project
+  each resolved `io.github.maxtrezzi::jev4s:0.1.0-SNAPSHOT` to their own artifact and used it.
+  This closes the open point of [ADR-0009](../adr/0009-two-native-modules-no-shared-code.md).
+- **Scaladoc for Scala 3 prints `Flag -classpath set repeatedly`** during `publishLocal`, as a
+  warning that does not fail the build. It matters in M7, when the documentation jar is
+  published.
+- **Mutation testing is fast:** about 11 s of wall time per module, sbt start-up included, for
+  54 mutants each. Input for [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci).
+- **CI reproduces the local numbers.** On the pull request of M1 each module job — tests with
+  coverage, Stryker4s and the mutant check — took 1 min 35 s on `ubuntu-latest` with JDK 21,
+  and reported the same 22 tests, 100% coverage and 54 detected mutants per module.
 
 ### M2 — JSON (`Codec`)
 

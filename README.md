@@ -14,7 +14,8 @@ client.ask(ticket, (
 > **Unofficial and independent.** jev4s is not affiliated with, endorsed by, or part of
 > TypeSafe AI.
 
-**Status: design finished, no code yet.** Nothing is published. The work plan is in
+**Status: in development.** The model and its validation exist in both modules; the client does
+not yet. Nothing is published. The work plan is in
 [`docs/tasks/`](docs/tasks/README.md), and every design decision, with the options that were
 rejected, is in [`docs/adr/`](docs/adr/README.md).
 

@@ -1,6 +1,6 @@
 # ADR-0008: Full coverage and mutation testing
 
-- **Status:** Accepted
+- **Status:** Accepted — mutation threshold amended by ADR-0016
 - **Date:** 2026-09-21
 - **Supersedes:** —
 - **Amends:** —
