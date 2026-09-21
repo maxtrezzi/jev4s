@@ -1,0 +1,23 @@
+name: build
+
+on:
+  # dev receives work and main receives releases, so both are gated (ADR-0013).
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: docs consistency
+    runs-on: ubuntu-latest
+    steps:
+      # The checker resolves links against `git ls-files`, not the file system: a target that
+      # is git-ignored resolves on a contributor's machine and fails for everyone who clones.
+      - uses: actions/checkout@v4
+
+      - name: Check ADR status lines, the index, and every link
+        run: python3 build/check-docs.py

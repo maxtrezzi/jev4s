@@ -1,0 +1,126 @@
+# AGENTS.md
+
+Guidance for a coding agent working in this repository
+([ADR-0014](docs/adr/0014-agent-guidance-lives-in-agents-md.md)). `CLAUDE.md` points here and
+holds nothing of its own. Read this file in full before doing anything.
+
+## Project state
+
+**Nothing is built yet, and nothing is published.** The repository was created on 2026-09-21
+with its guidance, fifteen ADRs and the work items. **M1 is next.** The repository is
+**private** for now.
+
+**This file is tracked.** Keep it current **in the same commit as the work it describes**, and
+treat a stale instruction here as a defect: the next session will follow it.
+
+Three documents matter, with different jobs:
+
+- **[`docs/tasks/`](docs/tasks/README.md)** — what to do next and whether it is done:
+  milestones M1–M8 and the decisions waiting on the owner (D1…). **Start here.**
+- **[`docs/adr/`](docs/adr/README.md)** — why the work is shaped this way. Read the index for
+  what governs what.
+- **The discussion log** — kept by the owner outside this repository. Ask the owner for intent
+  that the ADRs do not cover.
+
+Where they differ: the ADR wins on a *decision*, `docs/tasks/` wins on *status*.
+
+## What Jev4s is
+
+A Scala client for **Jev**, TypeSafe AI's "System One" model, which returns typed decisions
+with probabilities instead of text. It is **unofficial**: not affiliated with TypeSafe AI.
+Never use `com.typesafe` in a package or coordinate
+([ADR-0007](docs/adr/0007-name-coordinates-and-package.md)).
+
+It is a study and portfolio project ([ADR-0001](docs/adr/0001-a-study-and-portfolio-project.md)),
+and it is meant to be a **showcase for Scala**: idiomatic and ergonomic, where compactness,
+clarity and type safety stand out. Judge every API choice against that bar.
+
+## Decision workflow — follow this every session
+
+- **Discussion log** — outside this repository. Every substantive design discussion is logged
+  there by the owner. Never create a folder for it here, and never name, link or describe where
+  it is kept in any tracked file, commit message or pull request.
+- **`docs/adr/NNNN-title.md`** — whenever a discussion *settles* something that constrains
+  future code, write an ADR ([ADR-0011](docs/adr/0011-record-decisions-as-adrs.md)): copy
+  `docs/adr/0000-template.md`, take the next number, follow
+  Context → Forces → Decision → Consequences, and add a row to the index. Content moves from
+  the log by **rewriting**, never by copying.
+- **`docs/tasks/`** — update the status of whatever you worked on, in the entry and in the
+  status board, in the same commit as the work
+  ([ADR-0012](docs/adr/0012-track-work-items-in-docs-tasks.md)). Record what was *found*. Never
+  renumber an item.
+
+Accepted ADRs are immutable in their substance: to change a decision, write a new ADR and mark
+the old one `Superseded by ADR-NNNN` (or `Accepted — <aspect> amended by ADR-NNNN`). A later
+finding is never appended to an ADR; it goes to `docs/tasks/`.
+
+**`docs/tasks/open-decisions.md` needs the owner.** Ask; do not decide alone.
+
+## Branches — follow this every session
+
+([ADR-0013](docs/adr/0013-one-branch-per-task-work-lands-on-dev.md))
+
+- **`dev` is the default branch. `main` carries releases only.** Never commit to either
+  directly, never branch from `main`, never merge `main` into `dev`, never rebase `dev` onto it.
+- **Branch from `dev` before starting**, one branch per work item, named after it:
+  `milestone/m1-base`, `task/<slug>`, `decision/d1-<slug>`, `docs/<slug>`. The branch carries
+  the work, its status in `docs/tasks/`, and any ADR it produces. Every pull request targets
+  `dev`.
+- **Nothing enforces this while the repository is private**: GitHub's free plan offers no
+  branch protection on private repositories. Keep the rule anyway.
+- **Pushing, merging and rebasing are asked for every time**, including merging a pull
+  request. Finish the work, commit it, say what you would push or merge, and wait for a yes.
+- **An ADR number is only safe once it is on `dev`.** After changing one, search the whole tree,
+  source included, for the old `ADR-NNNN`.
+- **No `Claude-Session:` trailer and no session link** in a commit message, a pull request, an
+  issue or a comment. `Co-Authored-By:` stays.
+- A commit message says what the code now does and why it is shaped that way, never how the
+  work went.
+
+## Build and test
+
+sbt, two modules with no shared code
+([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)). **There is no build yet: M1
+creates it and updates this section.**
+
+```bash
+python3 build/check-docs.py     # ADR index, status lines, links (also a CI check)
+```
+
+## Load-bearing constraints
+
+Read the ADR before changing anything below; where a summary here and an ADR disagree, the ADR
+wins and the summary is the bug.
+
+- **Two native modules, no shared code (ADR-0009).** `scala3/` uses the whole of Scala 3
+  (`enum`, `opaque type`, `given`, `extension`, named tuples, `derives`); `scala213/` is
+  idiomatic 2.13. Do not introduce a shared source directory or a cross-build to "remove
+  duplication": that is the decision ADR-0009 reversed. What the modules share is `golden/`,
+  and the golden tests are what keeps them in step.
+- **Scala 3 first.** The Scala 3 module settles the design in each milestone; the 2.13 module
+  follows it and does not invent design of its own.
+- **100% coverage and zero unexplained mutants in both modules (ADR-0008).** No coverage
+  exclusions: what cannot be tested deterministically does not go into a published module.
+  An equivalent mutant is excluded with `@SuppressWarnings` **and** recorded in
+  [`docs/testing/equivalent-mutants.md`](docs/testing/equivalent-mutants.md).
+- **Errors are values (ADR-0002).** The API returns `Either[JevError, A]` and is synchronous.
+- **One runtime dependency, ujson (ADR-0005).** HTTP is `java.net.http`.
+- **Reply metadata goes to `onReply`, never next to the answers (ADR-0010).**
+- **No default model.** `jev-latest` moves; the caller names the model.
+- **The API key never appears in a log or a `toString`.** It is read from
+  `TYPESAFE_API_KEY`, and never written into a tracked file.
+
+## Working practices
+
+- **Verify against the source, never from memory.** The Jev API was launched on 2026-09-15 and
+  changes quickly: read the documentation or a real response, and keep all JSON handling in
+  `Codec`. The same goes for library versions and tool behaviour — run the command.
+- **Measure before you write a number**, and prefer the measurement to an adjective.
+- **When your change touches a file, read that file end to end.** The sentences describing the
+  thing you changed are the ones a diff hides.
+- **User-facing prose is for a non-native reader at about B2 English
+  ([ADR-0015](docs/adr/0015-user-facing-prose-for-a-non-native-reader.md)).** That covers the
+  README, Scaladoc, `CONTRIBUTING.md` and the CHANGELOG. `docs/adr/`, `docs/tasks/` and this
+  file are exempt.
+- **Tests against the real API cost money.** They live in separate sbt projects, run only when
+  `TYPESAFE_API_KEY` is set, and never run in a loop without a limit.

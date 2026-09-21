@@ -1,0 +1,39 @@
+# Credentials — the API key is read from TYPESAFE_API_KEY and never written to a file.
+.env
+.env.*
+**/secrets.*
+
+# Key material for signing releases — never commit.
+*.asc
+*.gpg
+*.pgp
+*.rev
+*.key
+*.pem
+*.p12
+*.jks
+secring.*
+
+# Personal Claude Code settings. The shared .claude/settings.json is committable.
+.claude/settings.local.json
+
+# sbt / Scala
+target/
+project/target/
+project/project/
+.bsp/
+.bloop/
+.metals/
+metals.sbt
+.scala-build/
+
+# Python bytecode from build/check-docs.py
+__pycache__/
+*.py[cod]
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store

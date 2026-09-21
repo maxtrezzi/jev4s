@@ -1,0 +1,124 @@
+# Milestones
+
+Two native modules with no shared code
+([ADR-0009](../adr/0009-two-native-modules-no-shared-code.md)): `scala3/` → `jev4s_3` and
+`scala213/` → `jev4s_2.13`. In each milestone the Scala 3 module goes first. M1 to M4 need no
+API key.
+
+## Definition of done
+
+Applies to **every** milestone and to **both** modules
+([ADR-0008](../adr/0008-full-coverage-and-mutation-testing.md)):
+
+- `sbt test` green, with **zero warnings**, in `scala3` and in `scala213`.
+- **100%** statement and branch coverage (scoverage) in both modules.
+- Mutation testing (Stryker4s) in both modules: every surviving mutant is **killed**, or is
+  **recorded** as equivalent in [`../testing/equivalent-mutants.md`](../testing/equivalent-mutants.md).
+- The entry here records what was found.
+
+---
+
+### M1 — Base: two modules and the model
+
+**Status:** Not started
+
+- Two-module `build.sbt`: `scala3` and `scala213`, the same `name := "jev4s"`, and `golden/`
+  as a test resource of both.
+- Check that both modules publish locally (`publishLocal`) as `jev4s_3` and `jev4s_2.13`
+  without a conflict. This is the one point of ADR-0009 not yet verified.
+- sbt-scoverage (`coverageMinimumStmtTotal := 100`, `coverageMinimumBranchTotal := 100`,
+  `coverageFailOnMinimum := true`) and sbt-stryker4s (`break = 100`), active in both modules.
+- **Scala 3:** the native model — `Question[A]` as an `enum`, `Probability` as an
+  `opaque type`, `JevError` and `Problem` as `enum`s, and the `Validator` with accumulated
+  problems.
+- **2.13:** the same model in 2.13 style.
+- munit tests on the **boundaries**: 1, 2, 10 and 11 levels; 0, 1, 255 and 256 options; `NaN`.
+- CI runs the tests, the coverage check and the docs check on every pull request.
+
+**Done when:** the definition of done holds for the model and the `Validator` in both modules.
+
+### M2 — JSON (`Codec`)
+
+**Status:** Not started
+
+- Make one real call and save the responses in `golden/`: golden tests on invented JSON prove
+  little.
+- **Scala 3**, then **2.13:** `Codec.encode` (state and questions → request JSON) and
+  `Codec.decode` (response JSON → answers, in question order).
+- Choice: JSON key → the value `A`, through `ChoiceOption`.
+- Golden tests on `golden/`, the same files in both modules.
+
+**Done when:** the golden tests pass in both modules, and a JSON with a missing answer gives
+`Left(Decoding(...))`.
+
+### M3 — Scala 3 API
+
+**Status:** Not started
+
+- `Transport` and a `FakeTransport` for tests.
+- **Static API** with named tuples: answer types computed with `Tuple.Map`, any number of
+  questions, no `Option` and no visible cast.
+- **Dynamic API**: `Map[String, Question[?]]` → `Map[String, Answer]` for questions built at
+  runtime.
+- `derives JevChoice`, with snake_case keys and `compiletime.error` for cases with
+  parameters.
+- `onReply` ([ADR-0010](../adr/0010-reply-metadata-through-onreply.md)) and state as
+  `ujson.Value`.
+- The expected compile errors are tests (`compileErrors` in munit).
+
+**Done when:** tests cover both APIs and `derives`, and the typical mistakes — a missing name,
+a wrong type, a value that is not a question, a state type with no `ToState` — are compile
+errors with a readable message.
+
+### M4 — Scala 2.13 API
+
+**Status:** Not started
+
+- `Transport` and a `FakeTransport`.
+- `JevClient.ask(state, keys: _*)` and `Answers`, whose `get` checks the question.
+- Choice options written by hand (`JevChoice.fromOptions`).
+- The M3 decisions on state and `onReply`, in 2.13 idiom.
+
+**Done when:** tests cover "a key with the same name but a different question gives `None`".
+
+### M5 — Real HTTP
+
+**Status:** Not started
+
+- **Scala 3**, then **2.13:** `JdkTransport` on `java.net.http`, tested against a local HTTP
+  server (`com.sun.net.httpserver.HttpServer`, in the JDK). No network in module tests.
+- `RetryPolicy` with a **pure** `delayFor(attempt, random, retryAfter)`, and an injectable
+  `Sleeper`. Check the defaults in the official SDKs first.
+- `JevConfig.fromEnv` with a required model; `toString` hides the key.
+- Live tests in **separate sbt projects**, active only when `TYPESAFE_API_KEY` is set, and
+  **outside** coverage and mutation testing.
+
+**Done when:** an example per module calls the real API and handles 401, 422 and 429.
+
+### M6 — Quality and documentation
+
+**Status:** Not started
+
+- scalafmt, configured per dialect.
+- CI: tests of both modules on JDK 17 and 21; coverage and mutation jobs per module, with the
+  HTML reports as artifacts.
+- README with a section for Scala 3 and one for 2.13; `examples/`.
+
+**Done when:** CI is green and a new person makes a first call reading only the README, with
+Scala 3 or 2.13.
+
+### M7 — Publishing
+
+**Status:** Not started
+
+- Maven Central (for example with sbt-ci-release): `jev4s_3` and `jev4s_2.13`.
+- CHANGELOG; `0.x` versions while the Jev API is in early access.
+
+**Done when:** `libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"` works in a
+new project, Scala 3 or 2.13.
+
+### M8 — Optional
+
+**Status:** Not started
+
+- An Apache Spark example (2.13 module).
