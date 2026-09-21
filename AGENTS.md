@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 is in progress, and nothing is published.** Both modules build and hold the model — the
+**M1 is done, M2 is next, and nothing is published.** Both modules build and hold the model — the
 questions, the answers, `Probability`, `JevError`, `Problem` — and the `Validator`, with full
 coverage and every mutant detected. There is no client, no JSON and no HTTP yet: those are M2
 to M5. The repository is **private** for now.

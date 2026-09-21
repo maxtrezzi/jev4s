@@ -21,7 +21,7 @@ only gets work done closes by being marked `Done`, with what it found.
 
 | Item | Title | Status |
 |---|---|---|
-| [M1](milestones.md#m1--base-two-modules-and-the-model) | Base: two modules and the model | In progress |
+| [M1](milestones.md#m1--base-two-modules-and-the-model) | Base: two modules and the model | Done |
 | [M2](milestones.md#m2--json-codec) | JSON (`Codec`) | Not started |
 | [M3](milestones.md#m3--scala-3-api) | Scala 3 API | Not started |
 | [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Not started |

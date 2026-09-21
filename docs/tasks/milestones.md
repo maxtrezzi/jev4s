@@ -20,7 +20,7 @@ Applies to **every** milestone and to **both** modules
 
 ### M1 — Base: two modules and the model
 
-**Status:** In progress — done locally 2026-09-21; waiting for CI on the pull request
+**Status:** Done 2026-09-21
 
 - Two-module `build.sbt`: `scala3` and `scala213`, the same `name := "jev4s"`, and `golden/`
   as a test resource of both.
@@ -77,6 +77,9 @@ Both modules compile with `-Werror`; `scala3` also with `-Wunused:all -language:
   published.
 - **Mutation testing is fast:** about 11 s of wall time per module, sbt start-up included, for
   54 mutants each. Input for [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci).
+- **CI reproduces the local numbers.** On the pull request of M1 each module job — tests with
+  coverage, Stryker4s and the mutant check — took 1 min 35 s on `ubuntu-latest` with JDK 21,
+  and reported the same 22 tests, 100% coverage and 54 detected mutants per module.
 
 ### M2 — JSON (`Codec`)
 
