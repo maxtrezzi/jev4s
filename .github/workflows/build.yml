@@ -11,6 +11,46 @@ permissions:
   contents: read
 
 jobs:
+  module:
+    # One job per module: the modules share no code (ADR-0009), and each must meet the
+    # definition of done on its own (ADR-0008).
+    name: ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [scala3, scala213]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: sbt
+
+      - uses: sbt/setup-sbt@v1
+
+      # Tests with coverage instrumentation; the build fails below 100% statements or branches.
+      - name: Test and coverage
+        run: sbt -batch "project ${{ matrix.module }}" clean coverage test coverageReport
+
+      # Stryker compiles its own instrumented copy, so the coverage build must not be reused.
+      - name: Mutation testing
+        run: sbt -batch "project ${{ matrix.module }}" clean stryker
+
+      # Stryker's break threshold cannot exceed 99; this fails on any undetected mutant.
+      - name: No undetected mutant
+        run: python3 build/check-mutants.py ${{ matrix.module }}
+
+      - name: Keep the mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-${{ matrix.module }}
+          path: ${{ matrix.module }}/target/stryker4s-report/
+          if-no-files-found: ignore
+
   docs:
     name: docs consistency
     runs-on: ubuntu-latest

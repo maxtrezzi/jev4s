@@ -6,9 +6,10 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**Nothing is built yet, and nothing is published.** The repository was created on 2026-09-21
-with its guidance, fifteen ADRs and the work items. **M1 is next.** The repository is
-**private** for now.
+**M1 is in progress, and nothing is published.** Both modules build and hold the model — the
+questions, the answers, `Probability`, `JevError`, `Problem` — and the `Validator`, with full
+coverage and every mutant detected. There is no client, no JSON and no HTTP yet: those are M2
+to M5. The repository is **private** for now.
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
 treat a stale instruction here as a defect: the next session will follow it.
@@ -79,13 +80,31 @@ finding is never appended to an ADR; it goes to `docs/tasks/`.
 
 ## Build and test
 
-sbt, two modules with no shared code
-([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)). **There is no build yet: M1
-creates it and updates this section.**
+sbt 1.13, two modules with no shared code
+([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)): `scala3` (Scala 3.7.3) and
+`scala213` (Scala 2.13.18). Both compile with `-Werror`, so a warning is a failed build.
 
 ```bash
-python3 build/check-docs.py     # ADR index, status lines, links (also a CI check)
+sbt test                                              # both modules
+sbt scala3/test                                       # one module
+sbt "scala3/testOnly *ValidatorSuite"                 # one suite
+sbt clean coverage test coverageReport                # coverage; fails below 100%
+sbt "project scala3" clean stryker                    # mutation testing, one module
+python3 build/check-mutants.py scala3                 # fails on any undetected mutant
+python3 build/check-docs.py                           # ADR index, status lines, links
 ```
+
+**Mutation testing is two steps, and the second is the check (ADR-0016).** Stryker4s cannot be
+set to fail on a single survivor; `build/check-mutants.py` reads its JSON report and does.
+Stryker4s runs per module (`project scala3`, `project scala213`) and reads `stryker4s.conf` from
+the root.
+
+**Run `sbt clean` after a coverage run** before anything else that compiles: coverage
+instruments the classes, and a `publishLocal` from an instrumented build ships the
+instrumentation.
+
+CI (`.github/workflows/build.yml`) runs, per module, the tests with coverage, Stryker4s and the
+mutant check, and runs the docs check once.
 
 ## Load-bearing constraints
 
@@ -102,7 +121,8 @@ wins and the summary is the bug.
 - **100% coverage and zero unexplained mutants in both modules (ADR-0008).** No coverage
   exclusions: what cannot be tested deterministically does not go into a published module.
   An equivalent mutant is excluded with `@SuppressWarnings` **and** recorded in
-  [`docs/testing/equivalent-mutants.md`](docs/testing/equivalent-mutants.md).
+  [`docs/testing/equivalent-mutants.md`](docs/testing/equivalent-mutants.md). Zero undetected mutants is
+  checked by `build/check-mutants.py`, not by Stryker's threshold (ADR-0016).
 - **Errors are values (ADR-0002).** The API returns `Either[JevError, A]` and is synchronous.
 - **One runtime dependency, ujson (ADR-0005).** HTTP is `java.net.http`.
 - **Reply metadata goes to `onReply`, never next to the answers (ADR-0010).**

@@ -21,7 +21,7 @@ only gets work done closes by being marked `Done`, with what it found.
 
 | Item | Title | Status |
 |---|---|---|
-| [M1](milestones.md#m1--base-two-modules-and-the-model) | Base: two modules and the model | Not started |
+| [M1](milestones.md#m1--base-two-modules-and-the-model) | Base: two modules and the model | In progress |
 | [M2](milestones.md#m2--json-codec) | JSON (`Codec`) | Not started |
 | [M3](milestones.md#m3--scala-3-api) | Scala 3 API | Not started |
 | [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Not started |
@@ -31,7 +31,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [M8](milestones.md#m8--optional) | Optional | Not started |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Needs decision |
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Needs decision |
-| [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Blocked on M1 |
+| [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Needs decision |
 
 ## Conventions
 

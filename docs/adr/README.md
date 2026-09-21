@@ -61,7 +61,7 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0005](0005-minimal-dependencies-ujson-and-the-jdk.md) | Minimal dependencies: ujson and the JDK | Accepted |
 | [0006](0006-scala-3-7-rather-than-3-3-lts.md) | Scala 3.7 rather than 3.3 LTS | Accepted |
 | [0007](0007-name-coordinates-and-package.md) | Name, coordinates and package | Accepted |
-| [0008](0008-full-coverage-and-mutation-testing.md) | Full coverage and mutation testing | Accepted |
+| [0008](0008-full-coverage-and-mutation-testing.md) | Full coverage and mutation testing | Accepted — mutation threshold amended by ADR-0016 |
 | [0009](0009-two-native-modules-no-shared-code.md) | Two native modules, Scala 3 and Scala 2.13, with no shared code | Accepted |
 | [0010](0010-reply-metadata-through-onreply.md) | Reply metadata through `onReply` | Accepted |
 | [0011](0011-record-decisions-as-adrs.md) | Record decisions as ADRs, discussions outside the repository | Accepted |
@@ -69,3 +69,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0013](0013-one-branch-per-task-work-lands-on-dev.md) | One branch per task; work lands on `dev`, `main` carries releases | Accepted |
 | [0014](0014-agent-guidance-lives-in-agents-md.md) | Agent guidance lives in `AGENTS.md` | Accepted |
 | [0015](0015-user-facing-prose-for-a-non-native-reader.md) | User-facing prose is written for a non-native reader | Accepted |
+| [0016](0016-undetected-mutants-are-checked-from-the-report.md) | Undetected mutants are checked from the report, not by Stryker's threshold | Accepted |
