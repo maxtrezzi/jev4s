@@ -1,6 +1,6 @@
 # ADR-0007: Name, coordinates and package
 
-- **Status:** Accepted
+- **Status:** Accepted — publishing under the name amended by ADR-0033
 - **Date:** 2026-09-21
 - **Supersedes:** —
 - **Amends:** —

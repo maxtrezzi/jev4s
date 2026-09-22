@@ -33,7 +33,8 @@ tuples are standard since 3.7, so 3.9 has them. M1 still compiles with 3.7.3, as
 
 ### D2 — The name "Jev" in the library name
 
-**Status:** Needs decision
+**Status:** Done 2026-09-22 —
+[ADR-0033](../adr/0033-publish-as-jev4s-and-rename-on-request.md)
 
 "Jev" is a TypeSafe AI product name ([ADR-0007](../adr/0007-name-coordinates-and-package.md)).
 Should the owner ask TypeSafe AI before publishing under `jev4s`, or publish and rename if they
@@ -42,6 +43,22 @@ ask?
 **2026-09-22:** the owner keeps D2 open until M7. It matters only when the coordinates are
 published, and a name on Maven Central cannot be taken back. Before M7: read TypeSafe AI's terms
 of use and any trademark or brand guidelines for a rule on names used by third-party libraries.
+
+#### Found
+
+- **TypeSafe AI publishes no brand or trademark guidelines for third-party projects.** The Legal
+  page lists the Data Processing Agreement, the Master Customer Agreement and the Privacy Policy
+  only. The Master Customer Agreement, 16.4 "Publicity", grants neither party the right to use
+  the name, brand or logo of the other; it does not forbid naming them.
+- **The community already publishes under the marks**: `scala-jev-sdk` is on Maven Central, and
+  `zio-typesafe-ai` carries the company name.
+- **The owner wrote to TypeSafe AI on 2026-09-22**, to `privacy@typesafe.ai`, the only address
+  the documentation publishes, asking them to forward it to the right team and asking whether the name is allowed inside a
+  third-party client's name and whether guidelines exist, and stating that the library publishes
+  as `jev4s` and changes its name at their request. The answer, of either kind, is recorded here
+  when it arrives.
+- The decision is [ADR-0033](../adr/0033-publish-as-jev4s-and-rename-on-request.md): publish as
+  `jev4s` without waiting, and rename on request. M7 is unblocked.
 
 ### D3 — When mutation testing runs in CI
 
