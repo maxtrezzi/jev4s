@@ -60,7 +60,7 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0004](0004-two-apis-typed-keys-and-named-tuples.md) | Two APIs: typed keys and named tuples | Superseded by ADR-0009 |
 | [0005](0005-minimal-dependencies-ujson-and-the-jdk.md) | Minimal dependencies: ujson and the JDK | Accepted |
 | [0006](0006-scala-3-7-rather-than-3-3-lts.md) | Scala 3.7 rather than 3.3 LTS | Superseded by ADR-0017 |
-| [0007](0007-name-coordinates-and-package.md) | Name, coordinates and package | Accepted |
+| [0007](0007-name-coordinates-and-package.md) | Name, coordinates and package | Accepted — publishing under the name amended by ADR-0033 |
 | [0008](0008-full-coverage-and-mutation-testing.md) | Full coverage and mutation testing | Accepted — mutation threshold amended by ADR-0016; CI schedule amended by ADR-0018; mutation exclusions widened by ADR-0020 |
 | [0009](0009-two-native-modules-no-shared-code.md) | Two native modules, Scala 3 and Scala 2.13, with no shared code | Accepted |
 | [0010](0010-reply-metadata-through-onreply.md) | Reply metadata through `onReply` | Superseded by ADR-0025 |
@@ -86,3 +86,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0030](0030-a-call-retries-for-at-most-maxelapsed.md) | A call retries for at most `maxElapsed` | Accepted |
 | [0031](0031-instructions-and-criteria-are-ujson-values.md) | Instructions and criteria are `ujson.Value`s | Accepted |
 | [0032](0032-documentation-quotes-compiled-examples.md) | The README and the guides quote compiled examples | Accepted |
+| [0033](0033-publish-as-jev4s-and-rename-on-request.md) | Publish as jev4s, after asking TypeSafe AI and without waiting for an answer | Accepted |

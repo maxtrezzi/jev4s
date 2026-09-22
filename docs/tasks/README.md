@@ -37,7 +37,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T5](tasks.md#t5--a-time-limit-on-the-retries-of-a-call) | A time limit on the retries of a call | Done |
 | [T6](tasks.md#t6--user-guides) | User guides | Done |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
-| [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Needs decision |
+| [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
 | [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |
 
 ## Conventions
