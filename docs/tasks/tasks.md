@@ -101,7 +101,7 @@ and a recorded golden case covers them.
 
 ### T3 — Newer major versions of the GitHub actions
 
-**Status:** In progress — waits for a CI run, which needs a push
+**Status:** Done 2026-09-22
 
 On 2026-09-22 the latest releases were `actions/checkout` v7.0.1, `actions/setup-java` v6.0.1,
 `actions/upload-artifact` v7.0.1 and `sbt/setup-sbt` v1.5.9. The workflow uses the v4 versions
@@ -119,8 +119,10 @@ that ran green in M1. Read each changelog for breaking changes before moving.
   under `pull_request_target` and `workflow_run`, which this workflow does not use.
   upload-artifact v7 adds `archive`, whose default, `true`, keeps the zipped upload. setup-java
   v6 still takes `distribution`, `java-version` and `cache: sbt`.
-- `actionlint` reports nothing on the workflow. It checks the syntax and the inputs, not a run:
-  the "Done when" still needs a green run on GitHub.
+- `actionlint` reports nothing on the workflow. It checks the syntax and the inputs, not a run,
+  so it could not close the item on its own.
+- **The new majors run green on GitHub's hosted runners.** Pull request #2 ran the whole
+  workflow: all 10 jobs passed, with no change to the steps and no warning from the actions.
 
 ### T4 — Fixes from the review of the integrated branch
 
