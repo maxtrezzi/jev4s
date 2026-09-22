@@ -16,6 +16,8 @@ private[jev4s] object Validator {
     nameProblem ++ (question match {
       case Score(_, levels) if levels.size < 2 || levels.size > 10 =>
         List(Problem.ScoreLevels(name, levels.size))
+      case Score(_, levels) =>
+        repeated(levels).map(level => Problem.DuplicateLevel(name, level.strOpt.getOrElse(level.render())))
       case Choice(_, options) =>
         val keys = options.map(_.key)
         if (keys.isEmpty || keys.size > 255) List(Problem.ChoiceOptions(name, keys.size))
@@ -25,5 +27,5 @@ private[jev4s] object Validator {
   }
 
   /** Each value that occurs more than once, once, in order of its second occurrence. */
-  private def repeated(values: List[String]): List[String] = values.diff(values.distinct).distinct
+  private def repeated[A](values: List[A]): List[A] = values.diff(values.distinct).distinct
 }

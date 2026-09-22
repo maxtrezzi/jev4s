@@ -1,6 +1,6 @@
 # ADR-0006: Scala 3.7 rather than 3.3 LTS
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-0017
 - **Date:** 2026-09-21
 - **Supersedes:** —
 - **Amends:** —

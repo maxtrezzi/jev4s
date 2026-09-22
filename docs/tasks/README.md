@@ -16,22 +16,29 @@ only gets work done closes by being marked `Done`, with what it found.
 
 - [`milestones.md`](milestones.md) — M1–M8. What ships, in what order.
 - [`open-decisions.md`](open-decisions.md) — items waiting on the owner, not on work.
+- [`tasks.md`](tasks.md) — work items between milestones (T1…).
 
 ## Status board
 
 | Item | Title | Status |
 |---|---|---|
 | [M1](milestones.md#m1--base-two-modules-and-the-model) | Base: two modules and the model | Done |
-| [M2](milestones.md#m2--json-codec) | JSON (`Codec`) | Not started |
-| [M3](milestones.md#m3--scala-3-api) | Scala 3 API | Not started |
-| [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Not started |
-| [M5](milestones.md#m5--real-http) | Real HTTP | Not started |
-| [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | Not started |
+| [M2](milestones.md#m2--json-codec) | JSON (`Codec`) | Done |
+| [M3](milestones.md#m3--scala-3-api) | Scala 3 API | Done |
+| [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Done |
+| [M5](milestones.md#m5--real-http) | Real HTTP | Done |
+| [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | In progress |
 | [M7](milestones.md#m7--publishing) | Publishing | Not started |
 | [M8](milestones.md#m8--optional) | Optional | Not started |
-| [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Needs decision |
+| [T1](tasks.md#t1--scala-3-model-polish-before-m2) | Scala 3 model polish before M2 | Done |
+| [T2](tasks.md#t2--structured-instructions-and-criteria) | Structured instructions and criteria | Done |
+| [T3](tasks.md#t3--newer-major-versions-of-the-github-actions) | Newer major versions of the GitHub actions | In progress |
+| [T4](tasks.md#t4--fixes-from-the-review-of-the-integrated-branch) | Fixes from the review of the integrated branch | Done |
+| [T5](tasks.md#t5--a-time-limit-on-the-retries-of-a-call) | A time limit on the retries of a call | Done |
+| [T6](tasks.md#t6--user-guides) | User guides | Done |
+| [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Needs decision |
-| [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Needs decision |
+| [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |
 
 ## Conventions
 

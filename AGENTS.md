@@ -6,10 +6,17 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 is done, M2 is next, and nothing is published.** Both modules build and hold the model — the
-questions, the answers, `Probability`, `JevError`, `Problem` — and the `Validator`, with full
-coverage and every mutant detected. There is no client, no JSON and no HTTP yet: those are M2
-to M5. The repository is **private** for now.
+**M1 to M5, T1, T2, T4, T5 and T6 are done; M6 and T3 wait only for a green CI run; nothing is
+published.** Both modules build and hold the model — the questions, the answers, `Probability`,
+`Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
+in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
+levels are text or JSON (`ujson.Value`, ADR-0031). Each module also has its client, `JevClient`:
+named tuples in Scala 3, typed keys in 2.13, over `JdkTransport` with the official SDKs' retries
+and a 30 s budget per call (ADR-0030), or over any `Transport`, and reports replies and retries as
+`JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
+outside the root build, and the live tests and the examples run against the real API. The README opens with one
+example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
+version, all quoting the examples in `live/` (ADR-0032). The repository is **private** for now.
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
 treat a stale instruction here as a defect: the next session will follow it.
@@ -81,8 +88,9 @@ finding is never appended to an ADR; it goes to `docs/tasks/`.
 ## Build and test
 
 sbt 1.13, two modules with no shared code
-([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)): `scala3` (Scala 3.7.3) and
-`scala213` (Scala 2.13.18). Both compile with `-Werror`, so a warning is a failed build.
+([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)): `scala3` (Scala 3.9.0,
+[ADR-0017](docs/adr/0017-scala-3-9-lts.md)) and `scala213` (Scala 2.13.18). Both compile with
+`-Werror`, so a warning is a failed build.
 
 ```bash
 sbt test                                              # both modules
@@ -91,8 +99,19 @@ sbt "scala3/testOnly *ValidatorSuite"                 # one suite
 sbt clean coverage test coverageReport                # coverage; fails below 100%
 sbt "project scala3" clean stryker                    # mutation testing, one module
 python3 build/check-mutants.py scala3                 # fails on any undetected mutant
-python3 build/check-docs.py                           # ADR index, status lines, links
+python3 build/check-docs.py                           # ADR index, status lines, links, quoted examples
+python3 build/check-docs.py --write-snippets          # copy each quoted example into its document
+sbt scalafmtAll scalafmtSbt                           # format; CI runs scalafmtCheckAll
+python3 build/capture-golden.py                       # golden/ plan only; --run makes paid calls
+sbt scala3Live/test scala213Live/test                 # real API, paid; skipped without the key
+sbt scala3Live/run                                    # the example, one paid call
+sbt "scala3Live/runMain guide.firstQuestion"          # one example of a guide, one paid call
 ```
+
+**The code in the README and in `docs/guide/` is quoted from `live/` (ADR-0032).** Edit the
+example, between its `// snippet: <name>` and `// end: <name>` lines, then run
+`--write-snippets`; never edit a quoted code block by hand. The docs check fails on a block that
+differs from its example.
 
 **Mutation testing is two steps, and the second is the check (ADR-0016).** Stryker4s cannot be
 set to fail on a single survivor; `build/check-mutants.py` reads its JSON report and does.
@@ -103,8 +122,11 @@ the root.
 instruments the classes, and a `publishLocal` from an instrumented build ships the
 instrumentation.
 
-CI (`.github/workflows/build.yml`) runs, per module, the tests with coverage, Stryker4s and the
-mutant check, and runs the docs check once.
+CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each module on JDK 17
+and 21 with Scaladoc and the live project compiled, runs coverage and Stryker4s with the mutant
+check per module, and runs the docs check. Mutation testing runs on
+every pull request ([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md));
+never point it at a project that calls the real API.
 
 ## Load-bearing constraints
 
@@ -123,12 +145,19 @@ wins and the summary is the bug.
   An equivalent mutant is excluded with `@SuppressWarnings` **and** recorded in
   [`docs/testing/equivalent-mutants.md`](docs/testing/equivalent-mutants.md). Zero undetected mutants is
   checked by `build/check-mutants.py`, not by Stryker's threshold (ADR-0016).
+- **Stryker4s cannot mutate `inline` code or a value initialised once (ADR-0020, ADR-0024).** A
+  mutation type that occurs there is listed in `@SuppressWarnings` on that definition; for
+  `inline` code the whole run fails otherwise, and `check-mutants.py` fails on a static mutant
+  left `Ignored`. Each excluded mutant is applied by hand and recorded in
+  `equivalent-mutants.md`; redo it when the definition or its tests change.
 - **Errors are values (ADR-0002).** The API returns `Either[JevError, A]` and is synchronous.
 - **One runtime dependency, ujson (ADR-0005).** HTTP is `java.net.http`.
-- **Reply metadata goes to `onReply`, never next to the answers (ADR-0010).**
+- **Reply metadata and retries go to `onEvent` as `JevEvent`s, never next to the answers, and the
+  library never logs (ADR-0025).**
 - **No default model.** `jev-latest` moves; the caller names the model.
-- **The API key never appears in a log or a `toString`.** It is read from
-  `TYPESAFE_API_KEY`, and never written into a tracked file.
+- **The API key never appears in a log or a `toString`.** It is an `ApiKey`, never a case class
+  field of type `String` (ADR-0027). It is read from `TYPESAFE_API_KEY`, and never written into
+  a tracked file.
 
 ## Working practices
 
@@ -140,7 +169,7 @@ wins and the summary is the bug.
   thing you changed are the ones a diff hides.
 - **User-facing prose is for a non-native reader at about B2 English
   ([ADR-0015](docs/adr/0015-user-facing-prose-for-a-non-native-reader.md)).** That covers the
-  README, Scaladoc, `CONTRIBUTING.md` and the CHANGELOG. `docs/adr/`, `docs/tasks/` and this
+  README, `docs/guide/`, Scaladoc, `CONTRIBUTING.md` and the CHANGELOG. `docs/adr/`, `docs/tasks/` and this
   file are exempt.
 - **Tests against the real API cost money.** They live in separate sbt projects, run only when
   `TYPESAFE_API_KEY` is set, and never run in a loop without a limit.

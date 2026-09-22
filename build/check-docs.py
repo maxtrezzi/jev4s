@@ -13,8 +13,13 @@ Each check guards against a mistake that is easy to make and hard to see:
      shape ("amended by ADR-NNNN"), so a reader scanning for amendments misses it.
   5. An amendment or a replacement points one way only. If A's status says it was amended by B,
      B's `Amends` header has to name A, and the reverse.
+  6. A code block quoted from an example no longer matches the example. The README and the
+     guides quote the examples in `live/`, which CI compiles: a block that follows the line
+     `<!-- snippet: live/scala3/src/main/scala/guide/Client.scala#first -->` must be the lines
+     between `// snippet: first` and `// end: first` in that file, without their common indent.
 
-Run: python3 build/check-docs.py     (exit 0 clean, 1 with findings)
+Run: python3 build/check-docs.py                    (exit 0 clean, 1 with findings)
+     python3 build/check-docs.py --write-snippets   (first copy every quoted example into its block)
 """
 import os
 import re
@@ -183,13 +188,82 @@ def check_links(problems, tracked):
     return len(docs)
 
 
+SNIPPET_REF = re.compile(r"^<!-- snippet: (\S+)#(\S+) -->$")
+
+
+def snippet(path, name):
+    """The lines between `// snippet: name` and `// end: name`, without other markers and without
+    their common indent; None when the file or the region does not exist."""
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().split("\n")
+    marks = [i for i, line in enumerate(lines) if line.strip() in (f"// snippet: {name}", f"// end: {name}")]
+    if len(marks) != 2:
+        return None
+    body = [
+        line
+        for line in lines[marks[0] + 1 : marks[1]]
+        if not re.match(r"^\s*// (snippet|end): \S+$", line)
+    ]
+    indent = min((len(line) - len(line.lstrip()) for line in body if line.strip()), default=0)
+    return [line[indent:] for line in body]
+
+
+def check_snippets(problems, tracked, write):
+    """Each quoted block against its example; with `write`, the block is replaced instead."""
+    count = 0
+    for path in sorted(f for f in tracked if f.endswith(".md")):
+        with open(path, encoding="utf-8") as fh:
+            lines = fh.read().split("\n")
+        changed = False
+        i = 0
+        while i < len(lines):
+            m = SNIPPET_REF.match(lines[i].strip())
+            i += 1
+            if not m:
+                continue
+            count += 1
+            source, name = m.groups()
+            if source not in tracked:
+                problems.append(f"{path}: quotes {source}, which is not tracked")
+                continue
+            expected = snippet(source, name)
+            if expected is None:
+                problems.append(f"{path}: no snippet '{name}' in {source}")
+                continue
+            if i >= len(lines) or not lines[i].startswith("```"):
+                problems.append(f"{path}: the line after the snippet reference to {source}#{name} is not a code fence")
+                continue
+            end = next((j for j in range(i + 1, len(lines)) if lines[j].startswith("```")), None)
+            if end is None:
+                problems.append(f"{path}: the code block of {source}#{name} is not closed")
+                break
+            if lines[i + 1 : end] != expected:
+                if write:
+                    lines[i + 1 : end] = expected
+                    end = i + 1 + len(expected)
+                    changed = True
+                else:
+                    problems.append(
+                        f"{path}: the block quoting {source}#{name} differs from the example\n"
+                        f"      (run python3 build/check-docs.py --write-snippets)"
+                    )
+            i = end + 1
+        if changed:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write("\n".join(lines))
+    return count
+
+
 def main():
     problems = []
     tracked = tracked_files()
+    snippet_count = check_snippets(problems, tracked, "--write-snippets" in sys.argv[1:])
     adr_count = check_adrs(problems)
     doc_count = check_links(problems, tracked)
 
-    print(f"checked {adr_count} ADRs and {doc_count} tracked markdown files")
+    print(f"checked {adr_count} ADRs, {doc_count} tracked markdown files and {snippet_count} quoted examples")
     if problems:
         print(f"\n{len(problems)} problem(s):\n")
         for p in problems:

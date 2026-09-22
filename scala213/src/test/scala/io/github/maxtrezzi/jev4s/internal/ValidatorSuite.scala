@@ -30,6 +30,19 @@ class ValidatorSuite extends munit.FunSuite {
     assertEquals(Validator.validate(List("s" -> levels(11))), List(Problem.ScoreLevels("s", 11)))
   }
 
+  test("a Score may not repeat a level") {
+    val score = Score("How?", List("Low", "High", "Low", "High", "Low"))
+    assertEquals(
+      Validator.validate(List("s" -> score)),
+      List(Problem.DuplicateLevel("s", "Low"), Problem.DuplicateLevel("s", "High"))
+    )
+    val json = ujson.Obj("summary" -> "Low")
+    assertEquals(
+      Validator.validate(List("s" -> Score("How?", List(json, "High", json)))),
+      List(Problem.DuplicateLevel("s", """{"summary":"Low"}"""))
+    )
+  }
+
   test("a Choice needs 1 to 255 options") {
     assertEquals(Validator.validate(List("c" -> options(0))), List(Problem.ChoiceOptions("c", 0)))
     assertEquals(Validator.validate(List("c" -> options(1))), Nil)

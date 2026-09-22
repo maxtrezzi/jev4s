@@ -8,7 +8,8 @@ writing an ADR ([ADR-0011](../adr/0011-record-decisions-as-adrs.md)). An entry m
 
 ### D1 — Scala 3 target version
 
-**Status:** Needs decision
+**Status:** Done 2026-09-22 — [ADR-0017](../adr/0017-scala-3-9-lts.md): Scala 3.9.0 LTS,
+superseding ADR-0006
 
 [ADR-0006](../adr/0006-scala-3-7-rather-than-3-3-lts.md) compiles the Scala 3 module with 3.7.3,
 for named tuples, and excludes users on 3.3 LTS. Now that the Scala 3 module is the showcase
@@ -20,6 +21,16 @@ current Scala 3 release and LTS lines at the source, then keep 3.7.3 or supersed
 3.9.x LTS release**, released on 2026-09-03, next to 3.3.8 as the current 3.3.x LTS. Named
 tuples are standard since 3.7, so 3.9 has them. M1 still compiles with 3.7.3, as ADR-0006 says.
 
+**Found 2026-09-22, on 3.9.0:**
+
+- The page now says "Scala LTS currently 3.9.0 — advised to be used for publishing libraries".
+  3.9.0 is on Maven Central; the newest release there is 3.10.0-RC2.
+- The switch needed no source change. `scala3` compiles with `-Werror`, and gives the same
+  22 tests, 100% statement and branch coverage, and 54 mutants (52 killed, 2 compile errors
+  from `strictEquality`, as in M1). The Stryker4s run took about 11 s, as in M1.
+- The Scaladoc warning from M1 is still there, with a new text:
+  `Option -classpath was updated`. It does not fail `scala3/doc`. It still matters in M7.
+
 ### D2 — The name "Jev" in the library name
 
 **Status:** Needs decision
@@ -28,9 +39,14 @@ tuples are standard since 3.7, so 3.9 has them. M1 still compiles with 3.7.3, as
 Should the owner ask TypeSafe AI before publishing under `jev4s`, or publish and rename if they
 ask?
 
+**2026-09-22:** the owner keeps D2 open until M7. It matters only when the coordinates are
+published, and a name on Maven Central cannot be taken back. Before M7: read TypeSafe AI's terms
+of use and any trademark or brand guidelines for a rule on names used by third-party libraries.
+
 ### D3 — When mutation testing runs in CI
 
-**Status:** Needs decision
+**Status:** Done 2026-09-22 — [ADR-0018](../adr/0018-mutation-testing-runs-on-every-pull-request.md):
+on every pull request, reopened if a module job passes 5 minutes
 
 [ADR-0008](../adr/0008-full-coverage-and-mutation-testing.md) runs Stryker4s on every pull
 request while that is affordable, otherwise nightly. M1 gives the first measurement of how long

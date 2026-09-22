@@ -6,13 +6,17 @@ class QuestionSuite extends munit.FunSuite {
   object Tier {
     case object Free extends Tier
     case object Pro  extends Tier
-    implicit val choices: JevChoice[Tier] = JevChoice(ChoiceOption(Free, "free"), ChoiceOption(Pro, "pro", Some("Paying")))
+    implicit val choices: JevChoice[Tier] =
+      JevChoice(ChoiceOption(Free, "free"), ChoiceOption(Pro, "pro", Some("Paying")))
   }
 
   test("Choice.of takes its options from the implicit JevChoice") {
     val question = Choice.of[Tier]("Which plan?")
-    assertEquals(question.instructions, "Which plan?")
-    assertEquals(question.options, List(ChoiceOption(Tier.Free, "free", None), ChoiceOption(Tier.Pro, "pro", Some("Paying"))))
+    assertEquals(question.instructions, ujson.Str("Which plan?"))
+    assertEquals(
+      question.options,
+      List(ChoiceOption(Tier.Free, "free", None), ChoiceOption(Tier.Pro, "pro", Some("Paying")))
+    )
   }
 
   test("JevChoice.keys uses each key as its own value") {

@@ -16,6 +16,8 @@ the discussion starts from the reasons already written there.
   versions only ([ADR-0013](docs/adr/0013-one-branch-per-task-work-lands-on-dev.md)).
 - One branch per change.
 - The build stays green, and CI must pass before a merge.
+- **Format your code** with `sbt scalafmtAll scalafmtSbt` before you commit. CI fails on code
+  that is not formatted.
 - **Both modules get the change.** jev4s has a Scala 3 module and a Scala 2.13 module, with no
   shared code ([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)). The Scala 3
   module goes first; the 2.13 module follows in its own style.
@@ -23,6 +25,9 @@ the discussion starts from the reasons already written there.
   ([ADR-0008](docs/adr/0008-full-coverage-and-mutation-testing.md)). If a mutant survives
   and no test can kill it, explain why in
   [`docs/testing/equivalent-mutants.md`](docs/testing/equivalent-mutants.md).
+- Stryker4s cannot mutate `inline` code. If you change an `inline` method, apply its mutants by
+  hand and update the table in the same file
+  ([ADR-0020](docs/adr/0020-code-stryker4s-cannot-mutate-is-mutated-by-hand.md)).
 - A test that cannot fail is worse than no test. If a test guards against a specific fault,
   break the code and check that the test catches it.
 - If your change settles a design question, it needs an ADR. Copy
