@@ -16,7 +16,11 @@ class AnswerSuite extends munit.FunSuite {
   test("every answer type is an Answer") {
     val answers: List[Answer] = List(
       NoulAnswer(Probability.unsafe(0.9)),
-      ScoreAnswer(1.3, Probability.unsafe(0.7)),
+      ScoreAnswer(
+        1.3,
+        Probability.unsafe(0.7),
+        Map[ujson.Value, Probability](ujson.Str("Calm") -> Probability.unsafe(0.7))
+      ),
       ChoiceAnswer(1, Probability.unsafe(0.6), Map(1 -> Probability.unsafe(0.6)))
     )
     val kinds = answers.map {

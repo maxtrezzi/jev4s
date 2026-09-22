@@ -11,9 +11,11 @@ final case class NoulAnswer(probability: Probability) extends Answer {
 }
 
 /** The answer to a [[Score]]: a weighted position on the scale, which may fall between two
-  * levels (for example 1.3), and how confident Jev is.
+  * levels (for example 1.3), how confident Jev is, and the probability of every level, keyed by
+  * the level as the question gives it: `probabilities.get("Calm")`.
   */
-final case class ScoreAnswer(score: Double, confidence: Probability) extends Answer
+final case class ScoreAnswer(score: Double, confidence: Probability, probabilities: Map[ujson.Value, Probability])
+    extends Answer
 
 /** The answer to a [[Choice]]: the chosen value, how confident Jev is, and the probability of
   * every option.

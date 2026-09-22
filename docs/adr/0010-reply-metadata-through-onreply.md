@@ -1,6 +1,6 @@
 # ADR-0010: Reply metadata through `onReply`
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-0025
 - **Date:** 2026-09-21
 - **Supersedes:** —
 - **Amends:** —

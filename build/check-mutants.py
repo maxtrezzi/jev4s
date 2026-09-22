@@ -7,6 +7,10 @@ one survivor. This script reads the JSON report instead and fails on any `Surviv
 `NoCoverage` mutant. An equivalent mutant is excluded in the source with `@SuppressWarnings`,
 so it never reaches the report, and is recorded in docs/testing/equivalent-mutants.md.
 
+It also fails on an `Ignored` mutant that no `@SuppressWarnings` excluded. Stryker4s ignores a
+"static" mutant, in a value initialised once, on its own and says nothing; ADR-0020 wants every
+mutant Stryker4s cannot test to be excluded on purpose and applied by hand.
+
 Run after `sbt "project <module>" stryker`:
 
     python3 build/check-mutants.py scala3
@@ -21,6 +25,7 @@ import os
 import sys
 
 UNDETECTED = {"Survived", "NoCoverage"}
+EXCLUDED_ON_PURPOSE = "Mutation was excluded by user configuration"
 
 
 def latest_report(module):
@@ -40,7 +45,8 @@ def main(module):
     for name, source in sorted(report["files"].items()):
         for mutant in source["mutants"]:
             counts[mutant["status"]] += 1
-            if mutant["status"] in UNDETECTED:
+            unexcluded = mutant["status"] == "Ignored" and not mutant.get("statusReason", "").startswith(EXCLUDED_ON_PURPOSE)
+            if mutant["status"] in UNDETECTED or unexcluded:
                 line = mutant["location"]["start"]["line"]
                 undetected.append(
                     f"{name}:{line} [{mutant['status']}] {mutant['mutatorName']}: {mutant.get('replacement', '?')}"
@@ -53,6 +59,7 @@ def main(module):
         for u in undetected:
             print(f"  - {u}")
         print("\nKill each one with a test, or exclude it as equivalent (ADR-0008).")
+        print("An Ignored one cannot be tested by Stryker4s: exclude it with @SuppressWarnings and apply it by hand (ADR-0020).")
         return 1
     print("every mutant was detected")
     return 0

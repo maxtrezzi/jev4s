@@ -1,0 +1,11 @@
+{
+  "case": "structured",
+  "why": "JSON in every place that takes it: instructions, Noul criteria, Choice options, Score levels (one left as text)",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "requested_model": "jev-1.13.0",
+  "recorded_at": "2026-09-22T13:59:28+00:00",
+  "endpoint": "POST /v1/systemone"
+}

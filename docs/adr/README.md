@@ -59,14 +59,30 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0003](0003-cross-build-scala-2-13-and-3-from-m1.md) | Cross-build Scala 2.13 and Scala 3, from M1 | Superseded by ADR-0009 |
 | [0004](0004-two-apis-typed-keys-and-named-tuples.md) | Two APIs: typed keys and named tuples | Superseded by ADR-0009 |
 | [0005](0005-minimal-dependencies-ujson-and-the-jdk.md) | Minimal dependencies: ujson and the JDK | Accepted |
-| [0006](0006-scala-3-7-rather-than-3-3-lts.md) | Scala 3.7 rather than 3.3 LTS | Accepted |
+| [0006](0006-scala-3-7-rather-than-3-3-lts.md) | Scala 3.7 rather than 3.3 LTS | Superseded by ADR-0017 |
 | [0007](0007-name-coordinates-and-package.md) | Name, coordinates and package | Accepted |
-| [0008](0008-full-coverage-and-mutation-testing.md) | Full coverage and mutation testing | Accepted — mutation threshold amended by ADR-0016 |
+| [0008](0008-full-coverage-and-mutation-testing.md) | Full coverage and mutation testing | Accepted — mutation threshold amended by ADR-0016; CI schedule amended by ADR-0018; mutation exclusions widened by ADR-0020 |
 | [0009](0009-two-native-modules-no-shared-code.md) | Two native modules, Scala 3 and Scala 2.13, with no shared code | Accepted |
-| [0010](0010-reply-metadata-through-onreply.md) | Reply metadata through `onReply` | Accepted |
+| [0010](0010-reply-metadata-through-onreply.md) | Reply metadata through `onReply` | Superseded by ADR-0025 |
 | [0011](0011-record-decisions-as-adrs.md) | Record decisions as ADRs, discussions outside the repository | Accepted |
 | [0012](0012-track-work-items-in-docs-tasks.md) | Track work items in `docs/tasks/` | Accepted |
 | [0013](0013-one-branch-per-task-work-lands-on-dev.md) | One branch per task; work lands on `dev`, `main` carries releases | Accepted |
 | [0014](0014-agent-guidance-lives-in-agents-md.md) | Agent guidance lives in `AGENTS.md` | Accepted |
 | [0015](0015-user-facing-prose-for-a-non-native-reader.md) | User-facing prose is written for a non-native reader | Accepted |
 | [0016](0016-undetected-mutants-are-checked-from-the-report.md) | Undetected mutants are checked from the report, not by Stryker's threshold | Accepted |
+| [0017](0017-scala-3-9-lts.md) | Compile the Scala 3 module with Scala 3.9 LTS | Accepted |
+| [0018](0018-mutation-testing-runs-on-every-pull-request.md) | Mutation testing runs in CI on every pull request | Accepted |
+| [0019](0019-probability-literals-and-questions-compared-by-value.md) | Probability literals checked by the compiler, and questions compared by value | Accepted |
+| [0020](0020-code-stryker4s-cannot-mutate-is-mutated-by-hand.md) | Code Stryker4s cannot mutate is excluded, and its mutants are applied by hand | Accepted — static mutants widened by ADR-0024 |
+| [0021](0021-what-the-codec-keeps-from-a-jev-reply.md) | What the codec keeps from a Jev reply | Accepted — instructions and criteria amended by ADR-0031 |
+| [0022](0022-the-scala-3-client-api.md) | The Scala 3 client API, with compile-time checks and no inline code | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025 |
+| [0023](0023-the-scala-2-13-client-api.md) | The Scala 2.13 client API: typed keys over the Scala 3 client's pieces | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; question match amended by ADR-0028 |
+| [0024](0024-http-retries-and-configuration.md) | HTTP over java.net.http, the official SDKs' retries, and configuration from the environment | Accepted — 400 mapping amended by ADR-0026; API key and base URL amended by ADR-0027; server error message amended by ADR-0029; retry budget amended by ADR-0030 |
+| [0025](0025-client-events-through-onevent.md) | Client events through `onEvent`, replacing `onReply` | Accepted |
+| [0026](0026-http-400-is-a-rejected-request.md) | HTTP 400 is a rejected request, and other statuses carry a readable message | Accepted — raw body length amended by ADR-0029 |
+| [0027](0027-the-api-key-is-a-type-and-travels-over-tls.md) | The API key is a type of its own, and travels only over TLS | Accepted |
+| [0028](0028-a-key-matches-a-question-of-the-same-classes.md) | In 2.13, a key reads an answer only for a question of the same classes | Accepted |
+| [0029](0029-every-http-error-carries-a-short-message.md) | Every HTTP error carries a short, readable message | Accepted |
+| [0030](0030-a-call-retries-for-at-most-maxelapsed.md) | A call retries for at most `maxElapsed` | Accepted |
+| [0031](0031-instructions-and-criteria-are-ujson-values.md) | Instructions and criteria are `ujson.Value`s | Accepted |
+| [0032](0032-documentation-quotes-compiled-examples.md) | The README and the guides quote compiled examples | Accepted |

@@ -1,0 +1,11 @@
+{
+  "case": "error-400",
+  "why": "a valid request for a model that does not exist",
+  "status": 400,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "requested_model": "jev-1.13.0",
+  "recorded_at": "2026-09-22T12:29:48+00:00",
+  "endpoint": "POST /v1/systemone"
+}

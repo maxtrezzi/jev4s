@@ -1,0 +1,78 @@
+{
+  "state": {
+    "sender": {
+      "display_name": "Beaver Dam Builders Ltd.",
+      "email": "donotreply@payroll.example"
+    },
+    "message": "Your Q3 bonus is ready. Reply with your login password so we can release the funds."
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+    "requests_credentials": {
+      "type": "noul",
+      "instructions": {
+        "question": "Does the `message` ask the recipient to disclose a sensitive credential?",
+        "focus": "A request to send the credential itself, not to change or reset it."
+      },
+      "criteria": {
+        "true": {
+          "what": "Asks for a password, PIN or one-time code",
+          "examples": [
+            "Reply with your password"
+          ]
+        },
+        "false": {
+          "what": "No credential is requested",
+          "examples": [
+            "Reset your password from the settings page"
+          ]
+        }
+      }
+    },
+    "department": {
+      "type": "choice",
+      "instructions": {
+        "question": "Which team should handle this message?",
+        "compare": [
+          "sender.display_name",
+          "sender.email"
+        ]
+      },
+      "criteria": {
+        "security": {
+          "what": "Phishing, fraud or account takeover",
+          "examples": [
+            "Someone asked for my password"
+          ]
+        },
+        "payroll": {
+          "what": "Salary, bonus or tax questions",
+          "not_for": "Security threats"
+        },
+        "other": null
+      }
+    },
+    "risk": {
+      "type": "score",
+      "instructions": {
+        "question": "How dangerous is this message to the recipient?"
+      },
+      "criteria": [
+        "Harmless",
+        {
+          "summary": "Suspicious",
+          "signals": [
+            "Unusual sender",
+            "Urgent tone"
+          ]
+        },
+        {
+          "summary": "Dangerous",
+          "signals": [
+            "Asks for credentials or money"
+          ]
+        }
+      ]
+    }
+  }
+}

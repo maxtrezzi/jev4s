@@ -1,0 +1,11 @@
+{
+  "case": "mixed",
+  "why": "all three types in one request, structured state, names not in alphabetical order",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "requested_model": "jev-1.13.0",
+  "recorded_at": "2026-09-22T09:19:22+00:00",
+  "endpoint": "POST /v1/systemone"
+}

@@ -11,43 +11,97 @@ permissions:
   contents: read
 
 jobs:
-  module:
-    # One job per module: the modules share no code (ADR-0009), and each must meet the
-    # definition of done on its own (ADR-0008).
-    name: ${{ matrix.module }}
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      # One config, two dialects (.scalafmt.conf). The live projects are not aggregated by the
+      # root, so they are checked by name.
+      - name: Check formatting
+        run: sbt -batch scalafmtCheckAll scalafmtSbtCheck scala3Live/scalafmtCheckAll scala213Live/scalafmtCheckAll
+
+  test:
+    # The modules share no code (ADR-0009): each is tested on its own, on both supported JDKs.
+    name: test ${{ matrix.module }} on JDK ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [scala3, scala213]
+        java: ['17', '21']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      # The live project is compiled, never run: its tests call the paid API and CI has no key.
+      # Scaladoc is built too: a comment it cannot read fails publishLocal, and no test sees it.
+      - name: Test, build the Scaladoc, and compile the example and live tests
+        run: sbt -batch "project ${{ matrix.module }}" test doc "${{ matrix.module }}Live/Test/compile"
+
+  coverage:
+    # ADR-0008: below 100% statement or branch coverage the build fails.
+    name: coverage ${{ matrix.module }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         module: [scala3, scala213]
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
           cache: sbt
-
       - uses: sbt/setup-sbt@v1
-
-      # Tests with coverage instrumentation; the build fails below 100% statements or branches.
-      - name: Test and coverage
+      - name: Test with coverage
         run: sbt -batch "project ${{ matrix.module }}" clean coverage test coverageReport
+      - name: Keep the coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-${{ matrix.module }}
+          path: ${{ matrix.module }}/target/scala-*/scoverage-report/
+          if-no-files-found: ignore
 
-      # Stryker compiles its own instrumented copy, so the coverage build must not be reused.
+  mutation:
+    # On every pull request (ADR-0018).
+    name: mutation ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [scala3, scala213]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Mutation testing
         run: sbt -batch "project ${{ matrix.module }}" clean stryker
-
-      # Stryker's break threshold cannot exceed 99; this fails on any undetected mutant.
+      # Stryker's break threshold cannot exceed 99; this fails on any undetected mutant, and on a
+      # mutant Stryker4s ignored without a @SuppressWarnings (ADR-0016, ADR-0024).
       - name: No undetected mutant
         run: python3 build/check-mutants.py ${{ matrix.module }}
-
       - name: Keep the mutation report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: stryker-${{ matrix.module }}
+          name: mutation-${{ matrix.module }}
           path: ${{ matrix.module }}/target/stryker4s-report/
           if-no-files-found: ignore
 
@@ -57,7 +111,7 @@ jobs:
     steps:
       # The checker resolves links against `git ls-files`, not the file system: a target that
       # is git-ignored resolves on a contributor's machine and fails for everyone who clones.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check ADR status lines, the index, and every link
         run: python3 build/check-docs.py

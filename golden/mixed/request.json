@@ -1,0 +1,31 @@
+{
+  "state": {
+    "channel": "email",
+    "customer_tier": "pro",
+    "message": "Help! My payouts have been failing for 3 days and I have a launch tomorrow."
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+    "urgent": {
+      "type": "noul",
+      "instructions": "Does `message` convey urgency?"
+    },
+    "department": {
+      "type": "choice",
+      "instructions": "Which team should handle `message`?",
+      "criteria": {
+        "billing": "Payments, invoicing, refunds",
+        "technical": null
+      }
+    },
+    "frustration": {
+      "type": "score",
+      "instructions": "How frustrated is the customer?",
+      "criteria": [
+        "Calm",
+        "Frustrated",
+        "Very angry"
+      ]
+    }
+  }
+}
