@@ -287,7 +287,7 @@ with the `Replied` event logged through `System.Logger`: 324 input tokens per ca
 
 ### M6 — Quality and documentation
 
-**Status:** In progress — everything is done locally; "CI is green" waits for the first push
+**Status:** Done 2026-09-22
 
 - scalafmt, configured per dialect.
 - CI: tests of both modules on JDK 17 and 21; coverage and mutation jobs per module, with the
@@ -333,6 +333,11 @@ Scala 3 or 2.13.
 - **The README's Scala version is checked, not only stated**: after `publishLocal` of the merged
   tree, a new project on Scala 3.9.0 compiles, and on 3.7.3 it fails with *"TASTy file … could
   not be read"*. The README now lists the Scala version with the JDK.
+- **CI is green on the first run, and matches the local results.** All 10 jobs of pull request
+  #2 passed: the format check, the tests of each module on JDK 17 and 21 with the Scaladoc and
+  the live projects compiled, coverage and mutation testing per module with the mutant check,
+  and the docs check. Each job took between 6 s and 1 min 45 s. JDK 17, which this machine does
+  not have, gives the same 111 and 100 tests as JDK 21 and 25.
 - **Newer major versions of the GitHub actions exist** (checkout v7, setup-java v6,
   upload-artifact v7). The workflow keeps the v4 versions proven green in M1; moving is
   [T3](tasks.md#t3--newer-major-versions-of-the-github-actions).

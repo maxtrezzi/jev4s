@@ -27,12 +27,12 @@ only gets work done closes by being marked `Done`, with what it found.
 | [M3](milestones.md#m3--scala-3-api) | Scala 3 API | Done |
 | [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Done |
 | [M5](milestones.md#m5--real-http) | Real HTTP | Done |
-| [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | In progress |
+| [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | Done |
 | [M7](milestones.md#m7--publishing) | Publishing | Not started |
 | [M8](milestones.md#m8--optional) | Optional | Not started |
 | [T1](tasks.md#t1--scala-3-model-polish-before-m2) | Scala 3 model polish before M2 | Done |
 | [T2](tasks.md#t2--structured-instructions-and-criteria) | Structured instructions and criteria | Done |
-| [T3](tasks.md#t3--newer-major-versions-of-the-github-actions) | Newer major versions of the GitHub actions | In progress |
+| [T3](tasks.md#t3--newer-major-versions-of-the-github-actions) | Newer major versions of the GitHub actions | Done |
 | [T4](tasks.md#t4--fixes-from-the-review-of-the-integrated-branch) | Fixes from the review of the integrated branch | Done |
 | [T5](tasks.md#t5--a-time-limit-on-the-retries-of-a-call) | A time limit on the retries of a call | Done |
 | [T6](tasks.md#t6--user-guides) | User guides | Done |

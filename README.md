@@ -192,11 +192,36 @@ coordinates, so sbt picks the right one: `jev4s_3` or `jev4s_2.13`.
 work plan is in [`docs/tasks/`](docs/tasks/README.md), and every design decision, with the
 options that were rejected, is in [`docs/adr/`](docs/adr/README.md).
 
-## Thanks
+## Other Scala clients
 
-These community clients came first and shaped the design:
-[scala-jev-sdk](https://github.com/ticofab/scala-jev-sdk) and
-[zio-typesafe-ai](https://github.com/jamesward/zio-typesafe-ai).
+Two community clients came first and shaped the design of jev4s. Both are good, and for some
+projects they are the better choice.
+
+**[scala-jev-sdk](https://github.com/ticofab/scala-jev-sdk)**, by ticofab. Scala 3.3 LTS,
+released on Maven Central, with sttp and upickle as its dependencies. It does not choose an
+effect system for you: you give it an sttp backend, and it speaks `Future`, blocking `Identity`,
+cats-effect, ZIO, Monix or Pekko. A question is a value, and you read its answer with that same
+value. **Choose it** when you want a released version today, when you are on Scala 3.3 to 3.8,
+or when your project already has an effect system.
+
+**[zio-typesafe-ai](https://github.com/jamesward/zio-typesafe-ai)**, by jamesward. Scala 3 on
+ZIO and ZIO HTTP. It asks with a named tuple and answers with a named tuple of the same shape,
+it keeps every probability inside [0, 1] in the type, and its criteria refuse fewer than 2 or
+more than 10 levels and more than 255 options when you build them. It also has a loop, in which
+Jev picks the next action of a state machine of yours. **Choose it** when your program is
+written in ZIO.
+
+**What jev4s does differently.** A module for Scala 2.13 as well as for Scala 3, each in the
+style of its own version. One dependency, ujson, over the JDK's own HTTP client. Direct style:
+no effect system, and every error is a value. The options of a `Choice` derived from an `enum`,
+so the answer is a value of your own type. Problems in a request reported all at once, before
+it is sent. A limit on the time a call spends retrying, and every event handed to your logger.
+
+Neither the named tuples nor the typed keys are our idea: these two clients had them first.
+jev4s is a study and portfolio project
+([ADR-0001](docs/adr/0001-a-study-and-portfolio-project.md)), and what it adds is in the
+execution — two native modules, full coverage with every mutant detected, and documentation
+whose examples are compiled by CI.
 
 ## License
 

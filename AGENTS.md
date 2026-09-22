@@ -6,8 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M5, T1, T2, T4, T5 and T6 are done; M6 and T3 wait only for a green CI run; nothing is
-published.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6 and T1 to T6 are done; M7 needs D2 first; nothing is published.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). Each module also has its client, `JevClient`:
@@ -16,7 +15,8 @@ and a 30 s budget per call (ADR-0030), or over any `Transport`, and reports repl
 `JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
-version, all quoting the examples in `live/` (ADR-0032). The repository is **private** for now.
+version, all quoting the examples in `live/` (ADR-0032). Everything through T6 is on `dev`, where
+CI runs it on JDK 17 and 21. The repository is **private** for now.
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
 treat a stale instruction here as a defect: the next session will follow it.
