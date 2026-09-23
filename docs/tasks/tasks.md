@@ -343,7 +343,7 @@ done holds.
 
 ### T12 — Scaladoc fixes
 
-**Status:** Not started
+**Status:** Done
 
 **Branch:** `docs/scaladoc-fixes`
 
@@ -356,6 +356,25 @@ done holds.
    runs in `fromEnv` only; a config built by hand is not checked.
 
 **Done when:** the three points are in both modules and `sbt doc` passes.
+
+#### Found
+
+- **Point 2 breaks the lookup, not the keys, and only from five levels.** The Codec uses the
+  Score's own level values as the keys of `probabilities`, so a key is the same object as its
+  level and still equals it after a change. What breaks is the hash: with a `ujson.Obj` level
+  changed after the reply, ujson 4.4.3 on Scala 3.9.0 gives
+
+  | Levels | Map | `probabilities(level)` | `keySet` holds the level |
+  |---|---|---|---|
+  | 3 | `Map3` | found | yes |
+  | 5 | `HashMap` | `None` from `get`, `NoSuchElementException` from `apply` | yes |
+
+  `Map1` to `Map4` compare keys with `equals` and never hash them. The Scaladoc of `Question`
+  therefore says that looking up a level *can* fail, not that the keys stop matching. It names
+  `ujson.Obj` and `ujson.Arr` as the values that can change; `String` and `ujson.Str` cannot.
+- **`docs/guide/concepts.md` said the same as point 3 without the exception**: "The base URL must
+  use `https`" read as true of every config. It now says that `fromEnv` checks it and a config
+  built by hand is not checked.
 
 ### T13 — A guide section on gateways
 

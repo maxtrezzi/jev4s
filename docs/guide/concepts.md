@@ -445,4 +445,5 @@ Send them to your logger or your metrics.
 `TYPESAFE_BASE_URL` when it is set: the same variables as the official SDKs. The key is kept in
 an `ApiKey`, which always prints as `<hidden>`, so it does not appear in a log by mistake. The
 base URL must use `https`. Plain `http` works only for `localhost`, because the key would
-travel unencrypted.
+travel unencrypted. `fromEnv` checks this; a `JevConfig` that you build yourself is not checked,
+so give it an `https` base URL.

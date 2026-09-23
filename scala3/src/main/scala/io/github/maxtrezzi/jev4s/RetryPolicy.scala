@@ -51,5 +51,7 @@ trait Sleeper:
   def sleep(duration: FiniteDuration): Unit
 
 object Sleeper:
-  /** Blocks the calling thread, which is cheap on a virtual thread. */
+  /** Blocks the calling thread for the whole wait. On JDK 21 or later, a virtual thread makes this
+    * cheap. On JDK 17 there are no virtual threads: the thread waits and does no other work.
+    */
   val thread: Sleeper = duration => Thread.sleep(duration.toMillis)

@@ -8,6 +8,10 @@ import scala.annotation.implicitNotFound
   * Choice's options are text or JSON: pass a `String`, or a `ujson.Value` such as
   * `ujson.Obj("question" -> "Is it urgent?", "focus" -> "The customer's own words")`. JSON with
   * labelled parts helps Jev when a question has several parts, or needs supporting data.
+  *
+  * A `ujson.Obj` or a `ujson.Arr` can be changed after it is built. Do not change one after you
+  * give it to a question: the question changes too, and looking up a level in a Score's
+  * `probabilities` can fail. A `String` and a `ujson.Str` cannot change.
   */
 sealed trait Question[A <: Answer] {
   def instructions: ujson.Value
