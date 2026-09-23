@@ -15,8 +15,8 @@ and a 30 s budget per call (ADR-0030), or over any `Transport`, and reports repl
 `JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
-version, all quoting the examples in `live/` (ADR-0032). Everything through T6 is on `dev`, where
-CI runs it on JDK 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
+version, all quoting the examples in `live/` (ADR-0032). Everything done is on `dev`, where CI
+runs it on JDK 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
 The repository is **private** for now.
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
@@ -25,7 +25,8 @@ treat a stale instruction here as a defect: the next session will follow it.
 Three documents matter, with different jobs:
 
 - **[`docs/tasks/`](docs/tasks/README.md)** — what to do next and whether it is done:
-  milestones M1–M8 and the decisions waiting on the owner (D1…). **Start here.**
+  milestones M1–M8, the tasks between them (T1…) and the decisions waiting on the owner (D1…).
+  **Start here.**
 - **[`docs/adr/`](docs/adr/README.md)** — why the work is shaped this way. Read the index for
   what governs what.
 - **The discussion log** — kept by the owner outside this repository. Ask the owner for intent
