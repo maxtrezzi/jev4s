@@ -4,7 +4,12 @@ import java.net.URI
 import scala.concurrent.duration.*
 import scala.util.Try
 
-/** What a client needs to reach Jev. The API key is an [[ApiKey]], so nothing prints it. */
+/** What a client needs to reach Jev. The API key is an [[ApiKey]], so nothing prints it.
+  *
+  * Only [[JevConfig.fromEnv]] checks that the base URL is `https`. A config that you build
+  * yourself, with `JevConfig(...)` or `copy`, is not checked: give it an `https` base URL, or the
+  * API key travels unencrypted.
+  */
 final case class JevConfig(
     apiKey: ApiKey,
     model: String,

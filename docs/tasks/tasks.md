@@ -343,7 +343,7 @@ done holds.
 
 ### T12 — Scaladoc fixes
 
-**Status:** Not started
+**Status:** In progress — written, not yet built: `sbt doc` and the tests still to run
 
 **Branch:** `docs/scaladoc-fixes`
 
@@ -356,6 +356,18 @@ done holds.
    runs in `fromEnv` only; a config built by hand is not checked.
 
 **Done when:** the three points are in both modules and `sbt doc` passes.
+
+#### Found
+
+- **Point 2 is not yet checked in Scala.** The Codec uses the Score's own level values as the keys
+  of `probabilities`, so a `ujson.Obj` changed after the question is built changes a key of a
+  hash map. The Scaladoc says the keys no longer match their levels; check it with a
+  `Map[ujson.Value, _]` in `sbt scala3/console` before closing T12. The Scaladoc of `Question`
+  names `ujson.Obj` and `ujson.Arr` as the values that can change; `String` and `ujson.Str`
+  cannot.
+- **`docs/guide/concepts.md` said the same as point 3 without the exception**: "The base URL must
+  use `https`" read as true of every config. It now says that `fromEnv` checks it and a config
+  built by hand is not checked.
 
 ### T13 — A guide section on gateways
 

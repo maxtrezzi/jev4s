@@ -11,6 +11,10 @@ import scala.deriving.Mirror
   * `ujson.Obj("question" -> "Is it urgent?", "focus" -> "The customer's own words")`. JSON with
   * labelled parts helps Jev when a question has several parts, or needs supporting data.
   *
+  * A `ujson.Obj` or a `ujson.Arr` can be changed after it is built. Do not change one after you
+  * give it to a question: the question changes too, and the keys of a Score's `probabilities`
+  * no longer match its levels. A `String` and a `ujson.Str` cannot change.
+  *
   * Two questions are equal when every part of them is equal, the options of a Choice included.
   */
 enum Question[A <: Answer]:
