@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6 and T1 to T6 are done; M7 is next and nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6 and T1 to T6 are done; T7 to T15 are planned, with ADR-0034 to ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). Each module also has its client, `JevClient`:

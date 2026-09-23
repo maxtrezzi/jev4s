@@ -87,3 +87,9 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0031](0031-instructions-and-criteria-are-ujson-values.md) | Instructions and criteria are `ujson.Value`s | Accepted |
 | [0032](0032-documentation-quotes-compiled-examples.md) | The README and the guides quote compiled examples | Accepted |
 | [0033](0033-publish-as-jev4s-and-rename-on-request.md) | Publish as jev4s, after asking TypeSafe AI and without waiting for an answer | Accepted |
+| [0034](0034-a-score-typed-by-the-callers-enum.md) | A Score typed by the caller's enum | Proposed |
+| [0035](0035-a-reply-without-input-tokens-still-answers.md) | A reply without input tokens still answers | Proposed |
+| [0036](0036-the-2-13-module-compiles-with-spark-4s-scala.md) | The 2.13 module compiles with the Scala of the oldest Spark 4 | Proposed |
+| [0037](0037-the-2-13-client-answers-with-a-typed-tuple.md) | The 2.13 client answers with a typed tuple | Proposed |
+| [0038](0038-the-caller-may-pass-its-own-http-client.md) | The caller may pass its own HTTP client | Proposed |
+| [0039](0039-the-library-does-not-limit-the-request-rate.md) | The library does not limit the request rate | Proposed |
