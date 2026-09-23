@@ -261,3 +261,143 @@ the API has run once against it.
   the README and in most chapters, and a different toy case in each chapter. The owner's review
   found it; the examples were rewritten around one domain, and the concepts guide's section on
   the state now shows paths into the state, one state for many questions, and what to leave out.
+
+---
+
+The items below were planned on 2026-09-23, after a review of the code at the end of T6. Each
+ADR they cite is `Proposed`: the branch that implements the item makes it `Accepted`, sets its
+`Amends` header, and records the amendment in the ADR it amends. The same review re-ran the
+whole gate on `deb86ae`, on JDK 21: 111 and 100 tests, 100% statement and branch coverage, 186
+and 178 mutants all detected, the docs check clean — the numbers T5 and T6 recorded.
+
+### T7 — A Score typed by the caller's enum
+
+**Status:** Not started — [ADR-0034](../adr/0034-a-score-typed-by-the-callers-enum.md) (Proposed)
+
+**Branch:** `task/typed-score`
+
+A `Score[Mood]("…")` whose levels come from an enum that `derives JevScale`, answering a
+`ScoreAnswer[Mood]` with `mostLikely` and `probabilities(Mood.Angry)`. The text form,
+`Score("…", "Calm", "Angry")`, keeps compiling as a `Score[ujson.Value]`. Scala 3 first, then
+2.13 with a `JevScale` written by hand.
+
+To settle while implementing: `mostLikely` when two levels share the highest probability
+(proposed: the first in the order of the scale).
+
+**Done when:** both forms work in both modules; one case and eleven cases are compile errors in
+Scala 3, and `Score("How?")` gives the message of ADR-0034; the golden tests pass with `golden/`
+unchanged; the README, the guides and `live/` use the new types; the definition of done holds.
+
+### T8 — A reply without input tokens still answers
+
+**Status:** Not started — [ADR-0035](../adr/0035-a-reply-without-input-tokens-still-answers.md) (Proposed)
+
+**Branch:** `task/tolerant-codec`
+
+`Reply(model, inputTokens: Option[Long])`; a reply without `usage` or `input_tokens` decodes its
+answers. `model` stays required. Follows T7, which also changes the codec.
+
+**Done when:** a reply without `usage` gives `Right` and a `Replied` with no token count, in both
+modules, tested with JSON written by hand; the definition of done holds.
+
+### T9 — The 2.13 module on Scala 2.13.16
+
+**Status:** Not started — [ADR-0036](../adr/0036-the-2-13-module-compiles-with-spark-4s-scala.md) (Proposed)
+
+**Branch:** `task/scala-2-13-16`
+
+Compile `scala213` and `scala213Live` with Scala 2.13.16, the Scala of Spark 4.0. Check first
+that the scoverage plugin, Stryker4s and munit exist for 2.13.16. Update the README,
+`docs/guide/scala213.md` and `AGENTS.md`.
+
+**Done when:** the definition of done holds on 2.13.16, and a new project on Scala 2.13.16 runs
+an example against a `publishLocal` build.
+
+### T10 — Typed tuples from the 2.13 client
+
+**Status:** Blocked by T9 — [ADR-0037](../adr/0037-the-2-13-client-answers-with-a-typed-tuple.md) (Proposed)
+
+**Branch:** `task/fixed-arity-ask`
+
+`ask(state, k1, …, kN): Either[JevError, (A1, …, AN)]`, and a dynamic `askAll(state, keys*)`.
+Blocked by T9, so that a change of Scala patch and a change of API are not tested together.
+
+To settle while implementing: N (proposed: 10), overloads by hand or generated, and what
+`askAll` returns.
+
+**Done when:** the 2.13 README reads its answers with no `Option`; every overload has a test; the
+definition of done holds.
+
+### T11 — The caller's own HTTP client
+
+**Status:** Not started — [ADR-0038](../adr/0038-the-caller-may-pass-its-own-http-client.md) (Proposed)
+
+**Branch:** `task/caller-http-client`
+
+An optional `HttpClient` parameter on `JdkTransport` and on the client's constructor, never in
+`JevConfig`.
+
+**Done when:** a client built with an outside `HttpClient` uses it, tested against the local
+server; the Scaladoc states the connect timeout and who closes the client; the definition of
+done holds.
+
+### T12 — Scaladoc fixes
+
+**Status:** Not started
+
+**Branch:** `docs/scaladoc-fixes`
+
+1. `Sleeper.thread` says a sleep is cheap on a virtual thread; JDK 17, which the library
+   supports, has none.
+2. `Question`: its `ujson.Value`s are mutable. Changing one after the question is built changes
+   the question, and the keys of a text Score's `probabilities`. An enum case cannot copy its
+   arguments, so the Scaladoc is the fix.
+3. `JevConfig`: the `https` check of [ADR-0027](../adr/0027-the-api-key-is-a-type-and-travels-over-tls.md)
+   runs in `fromEnv` only; a config built by hand is not checked.
+
+**Done when:** the three points are in both modules and `sbt doc` passes.
+
+### T13 — A guide section on gateways
+
+**Status:** Blocked by T7 to T12
+
+**Branch:** `docs/gateways`
+
+A section in `docs/guide/concepts.md` on reaching Jev through a gateway. On 2026-09-23, with a
+local server in place of the gateway, the client called `POST /typesafe/v1/systemone` for a base
+URL ending in `/typesafe`, as the official SDKs do, and accepted a reply whose `model` was
+`typesafe-ai/jev`. What the section says, each with its source read again when writing:
+
+- OpenRouter works with `fromEnv`: `TYPESAFE_BASE_URL=https://openrouter.ai/api` and the
+  OpenRouter key in `TYPESAFE_API_KEY`.
+- Vercel AI Gateway uses `https://ai-gateway.vercel.sh/typesafe` and a key in
+  `AI_GATEWAY_API_KEY`, which neither `fromEnv` nor the official SDKs read: the config is built
+  by hand, with `https`.
+
+**Done when:** the section's examples are quoted from `live/` and the docs check passes.
+
+### T14 — A guide chapter on many requests
+
+**Status:** Blocked by T7 to T12 — [ADR-0039](../adr/0039-the-library-does-not-limit-the-request-rate.md) (Proposed)
+
+**Branch:** `docs/parallel-requests`
+
+A chapter in each tutorial: a small fixed thread pool, a pacer whose rate is a parameter, and
+what to do with the `RateLimited` errors that remain. More threads do not give more answers
+above the account's limit; ADR-0039 has the measurement. No fixed rate is given as if it were
+stable.
+
+**Done when:** the chapters are in both tutorials; their examples compile on JDK 17 and 21; a
+test runs the pacer against a local server without the API key.
+
+### T15 — Every header of a real reply
+
+**Status:** Needs decision — one paid call, which the owner approves
+
+**Branch:** `task/capture-all-headers`
+
+`build/capture-golden.py` keeps only `content-type` and `retry-after`. Keep every response
+header and the response time, then make one real call: about 300 input tokens, about
+$0.00001. Record any rate-limit header and the measured latency here, for T14.
+
+**Done when:** the headers and the latency are recorded with the date and the model.
