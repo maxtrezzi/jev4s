@@ -10,8 +10,8 @@ import scala.annotation.implicitNotFound
   * labelled parts helps Jev when a question has several parts, or needs supporting data.
   *
   * A `ujson.Obj` or a `ujson.Arr` can be changed after it is built. Do not change one after you
-  * give it to a question: the question changes too, and the keys of a Score's `probabilities`
-  * no longer match its levels. A `String` and a `ujson.Str` cannot change.
+  * give it to a question: the question changes too, and looking up a level in a Score's
+  * `probabilities` can fail. A `String` and a `ujson.Str` cannot change.
   */
 sealed trait Question[A <: Answer] {
   def instructions: ujson.Value
