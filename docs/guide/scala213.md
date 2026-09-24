@@ -661,6 +661,10 @@ def fromVault(secret: String): JevConfig = JevConfig(new ApiKey(secret), model =
 time, call `ask` from several threads, for example with `Future`s. One client serves all the
 threads.
 
+`JevClient.create(config)` builds its own `java.net.http.HttpClient`. To use one of yours, for
+example with a proxy or your own executor, pass `httpClient = Some(yours)`. It keeps its own
+connect timeout, `timeout` still limits each request, and jev4s never closes it: you do.
+
 ## 11. Logs and metrics
 
 jev4s never writes logs. It gives each event to a function that you pass as `onEvent`:

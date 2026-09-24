@@ -433,7 +433,7 @@ definition of done holds.
 
 ### T11 — The caller's own HTTP client
 
-**Status:** Not started — [ADR-0038](../adr/0038-the-caller-may-pass-its-own-http-client.md) (Proposed)
+**Status:** Done 2026-09-24 — [ADR-0038](../adr/0038-the-caller-may-pass-its-own-http-client.md)
 
 **Branch:** `task/caller-http-client`
 
@@ -443,6 +443,22 @@ An optional `HttpClient` parameter on `JdkTransport` and on the client's constru
 **Done when:** a client built with an outside `HttpClient` uses it, tested against the local
 server; the Scaladoc states the connect timeout and who closes the client; the definition of
 done holds.
+
+#### Found
+
+- **The owner accepted ADR-0038 on 2026-09-24**, with `httpClient: Option[HttpClient] = None`,
+  both modules in one task, and a test through a client that counts its requests. Its Context now
+  says what the parameter adds: control of the client. Sharing one was already possible, with one
+  `JdkTransport` passed to many clients through `JevClient.withTransport`.
+- **`HttpClient` is an abstract class, so a test can wrap a real one.** `CountingHttpClient`, in
+  the tests of each module, delegates every method and counts `send`. Through it, a 503 and a
+  200 count 2 requests: the retries go through the caller's client too.
+- **The request timeout still applies to a caller's client**: `JevConfig.timeout` is set on each
+  `HttpRequest`, so a server that never answers gives "no response within 200 milliseconds" with
+  a client that has no connect timeout at all.
+- Measured: `scala3` 127 tests, `scala213` 111; 100% statement and branch coverage in both;
+  Stryker4s detects every mutant, 172 of 186 in `scala3` (12 ignored, 2 compile errors) and 170
+  of 171 in `scala213` (1 ignored), as before: the new code adds no mutant.
 
 ### T12 — Scaladoc fixes
 

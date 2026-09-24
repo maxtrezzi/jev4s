@@ -1,6 +1,6 @@
 # ADR-0024: HTTP over java.net.http, the official SDKs' retries, and configuration from the environment
 
-- **Status:** Accepted — 400 mapping amended by ADR-0026; API key and base URL amended by ADR-0027; server error message amended by ADR-0029; retry budget amended by ADR-0030
+- **Status:** Accepted — 400 mapping amended by ADR-0026; API key and base URL amended by ADR-0027; server error message amended by ADR-0029; retry budget amended by ADR-0030; the caller's HTTP client amended by ADR-0038
 - **Date:** 2026-09-22
 - **Supersedes:** —
 - **Amends:** [ADR-0020](0020-code-stryker4s-cannot-mutate-is-mutated-by-hand.md), [ADR-0022](0022-the-scala-3-client-api.md), [ADR-0023](0023-the-scala-2-13-client-api.md)

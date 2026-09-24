@@ -84,4 +84,15 @@ class JevConfigSuite extends munit.FunSuite {
       assert(client.ask("text", Noul("Urgent?").as("is_urgent")).isRight)
     } finally server.close()
   }
+
+  test("a client built from a config sends with the HttpClient passed to it") {
+    val server = new LocalServer(LocalServer.Reply(200, Golden.file("noul/response.json")))
+    try {
+      val own    = new CountingHttpClient()
+      val client =
+        JevClient.create(JevConfig(new ApiKey("k"), "jev-1.13.0", server.baseUrl), httpClient = Some(own))
+      assert(client.ask("text", Noul("Urgent?").as("is_urgent")).isRight)
+      assertEquals(own.sent.get, 1)
+    } finally server.close()
+  }
 }
