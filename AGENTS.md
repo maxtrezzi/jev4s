@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, T1 to T9 and T12 are done; T10, T11 and T13 to T15 are planned, with ADR-0037 to ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, T1 to T10 and T12 are done; T11 and T13 to T15 are planned, with ADR-0038 and ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -14,7 +14,8 @@ levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can als
 `mostLikely` level (ADR-0034). A reply without its input tokens still answers, with
 `Reply.inputTokens` as `None` (ADR-0035). The 2.13 module compiles with Scala 2.13.16, the Scala
 of Spark 4.0 (ADR-0036). Each module also has its client, `JevClient`:
-named tuples in Scala 3, typed keys in 2.13, over `JdkTransport` with the official SDKs' retries
+named tuples in Scala 3; in 2.13, typed keys answered as a tuple, 1 to 10 per call (ADR-0037);
+`askMap` in both for questions built at runtime; over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), or over any `Transport`, and reports replies and retries as
 `JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one

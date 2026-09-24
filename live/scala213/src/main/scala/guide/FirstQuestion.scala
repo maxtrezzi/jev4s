@@ -8,10 +8,7 @@ object FirstQuestion {
 
   def main(args: Array[String]): Unit =
     client.ask("Help! My payouts have been failing for 3 days.", urgent) match {
-      case Right(answers) =>
-        answers.get(urgent).foreach { u =>
-          println(s"Urgent: ${u.isYes}, with a probability of ${u.probability.value}")
-        }
+      case Right(u)    => println(s"Urgent: ${u.isYes}, with a probability of ${u.probability.value}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
 }

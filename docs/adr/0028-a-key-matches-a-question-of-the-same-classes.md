@@ -1,6 +1,6 @@
 # ADR-0028: In 2.13, a key reads an answer only for a question of the same classes
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-0037
 - **Date:** 2026-09-22
 - **Supersedes:** —
 - **Amends:** [ADR-0023](0023-the-scala-2-13-client-api.md)

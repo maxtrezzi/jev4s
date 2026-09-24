@@ -24,64 +24,92 @@ class JevClientSuite extends munit.FunSuite {
   private def client(transport: Transport, onEvent: JevEvent => Unit = _ => ()) =
     JevClient.withTransport("jev-1.13.0", transport, onEvent)
 
-  private def answers(result: Either[JevError, Answers]): Answers = result.fold(e => fail(e.toString), identity)
+  private def answer[A](result: Either[JevError, A]): A = result.fold(e => fail(e.toString), identity)
 
-  test("ask sends the recorded request, and each key reads its answer, typed") {
+  test("ask sends the recorded request, and returns the answer of each key, typed, in the order of the keys") {
     val transport = FakeTransport.golden("mixed")
-    val a         = answers(client(transport).ask(state, urgent, department, frustration))
+    val (u, d, f) = answer(client(transport).ask(state, urgent, department, frustration))
     assertEquals(transport.sent.map(ujson.read(_)), List(Golden.read("mixed/request.json")))
-    val dept: Option[Dept] = a.get(department).map(_.choice)
-    assertEquals(dept, Some(Dept.Billing))
-    assertEquals(a.get(urgent).map(_.probability.value), Some(recorded("urgent")("noul").num))
-    assertEquals(a.get(frustration).map(_.score), Some(recorded("frustration")("score").num))
+    val dept: Dept               = d.choice
+    val score: Double            = f.score
+    val probability: Probability = u.probability
+    assertEquals(dept, Dept.Billing)
+    assertEquals(probability.value, recorded("urgent")("noul").num)
+    assertEquals(score, recorded("frustration")("score").num)
   }
 
-  test("a key with the same name but a different question gives None") {
-    val a     = answers(client(FakeTransport.golden("mixed")).ask(state, urgent, department, frustration))
-    val other = Noul("Is the customer polite?").as("urgent")
-    assertEquals(a.get(other), None)
+  // Ten Nouls, q1 to q10, and a reply that gives q<i> the probability i / 100.
+  private val nouls      = (1 to 10).toList.map(i => Noul(s"Question $i?").as(s"q$i"))
+  private val tenAnswers = ujson.Obj(
+    "model"   -> "jev-1.13.0",
+    "answers" -> ujson.Obj.from(nouls.zipWithIndex.map { case (k, i) =>
+      k.name -> ujson.Obj("type" -> "noul", "noul" -> (i + 1) / 100.0)
+    })
+  )
+  private def ten = client(new FakeTransport(Right(tenAnswers.render())))
+
+  test("ask with 1 to 10 keys returns the answer of each key at its position") {
+    val Vector(k1, k2, k3, k4, k5, k6, k7, k8, k9, k10) = nouls.toVector: @unchecked
+    def p(a: NoulAnswer): Double                        = a.probability.value
+    def ps(answers: Product): List[Double] = answers.productIterator.collect { case a: NoulAnswer => p(a) }.toList
+    def expected(n: Int): List[Double]     = (1 to n).toList.map(_ / 100.0)
+
+    assertEquals(answer(ten.ask(state, k1).map(p)), 0.01)
+    assertEquals(ps(answer(ten.ask(state, k1, k2))), expected(2))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3))), expected(3))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3, k4))), expected(4))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3, k4, k5))), expected(5))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3, k4, k5, k6))), expected(6))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3, k4, k5, k6, k7))), expected(7))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3, k4, k5, k6, k7, k8))), expected(8))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3, k4, k5, k6, k7, k8, k9))), expected(9))
+    assertEquals(ps(answer(ten.ask(state, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10))), expected(10))
   }
 
-  test("a key whose name was not asked gives None") {
-    val a = answers(client(FakeTransport.golden("mixed")).ask(state, urgent, department, frustration))
-    assertEquals(a.get(Noul("Does `message` convey urgency?").as("elsewhere")), None)
+  test("the keys go into the request in their order") {
+    val transport = new FakeTransport(Right(tenAnswers.render()))
+    client(transport).ask(state, nouls(2), nouls(0), nouls(1))
+    assertEquals(transport.sent.map(ujson.read(_)("questions").obj.keys.toList), List(List("q3", "q1", "q2")))
   }
 
-  test("an equal key built again reads the same answer") {
-    val a = answers(client(FakeTransport.golden("mixed")).ask(state, urgent, department, frustration))
-    assertEquals(a.get(Noul("Does `message` convey urgency?").as("urgent")), a.get(urgent))
+  test("askMap asks questions known only at runtime, and returns the answers under their names") {
+    val transport = FakeTransport.golden("mixed")
+    val questions = Map[String, Question[_]](
+      "urgent"      -> urgent.question,
+      "department"  -> department.question,
+      "frustration" -> frustration.question
+    )
+    val answers = answer(client(transport).askMap(state, questions))
+    assertEquals(transport.sent.map(ujson.read(_)("questions")), List(Golden.read("mixed/request.json")("questions")))
+    assertEquals(answers.keySet, questions.keySet)
+    answers("urgent") match {
+      case a: NoulAnswer => assertEquals(a.probability.value, recorded("urgent")("noul").num)
+      case other         => fail(s"not a NoulAnswer: $other")
+    }
+    answers("department") match {
+      case a: ChoiceAnswer[_] => assertEquals[Any, Any](a.choice, Dept.Billing)
+      case other              => fail(s"not a ChoiceAnswer: $other")
+    }
   }
 
-  // A Choice under the name of golden/mixed's, over values of any type.
-  private def choiceOver[C](billing: C, technical: C) =
-    Choice("Which team?", List(ChoiceOption(billing, "billing"), ChoiceOption(technical, "technical"))).as("department")
-
-  test("a Choice over values of another type gives None, although Scala's == says it is equal") {
-    def ask[C](key: Key[ChoiceAnswer[C]]) =
-      answers(client(FakeTransport.golden("mixed")).ask(state, urgent, key, frustration))
-
-    val numbers = ask(choiceOver(1, 2))
-    assert(choiceOver(1, 2) == choiceOver(1L, 2L))
-    assertEquals(numbers.get(choiceOver(1, 2)).map(_.choice), Some(1))
-    assertEquals(numbers.get(choiceOver(1L, 2L)), None)
-
-    val options = ask(choiceOver(Option(1), Option(2)))
-    assert(choiceOver(Option(1), Option(2)) == choiceOver(Option(1L), Option(2L)))
-    assertEquals(options.get(choiceOver(Option(1), Option(2))).map(_.choice), Some(Some(1)))
-    assertEquals(options.get(choiceOver(Option(1L), Option(2L))), None)
-
-    // A part of the same class next to one of another class: Vector("a", 1) and Vector("a", 1L).
-    def mixed(n: Any): Vector[Any] = Vector("a", n)
-    val vectors                    = ask(choiceOver(mixed(1), mixed(2)))
-    assert(choiceOver(mixed(1), mixed(2)) == choiceOver(mixed(1L), mixed(2L)))
-    assertEquals(vectors.get(choiceOver(mixed(1), mixed(2))).map(_.choice), Some(mixed(1)))
-    assertEquals(vectors.get(choiceOver(mixed(1L), mixed(2L))), None)
+  test("askMap checks the request, and does not send an invalid one") {
+    val transport = FakeTransport.golden("mixed")
+    val result    = client(transport).askMap(ticket, Map.empty[String, Question[_]])
+    assertEquals(result.left.toOption, Some(JevError.InvalidRequest(List(Problem.NoQuestions))))
+    assertEquals(transport.sent, Nil)
   }
 
-  test("a Choice over null values reads its answer") {
-    val key = choiceOver[String](null, "t")
-    val a   = answers(client(FakeTransport.golden("mixed")).ask(state, urgent, key, frustration))
-    assertEquals(a.get(choiceOver[String](null, "t")).map(_.choice), Some(null))
+  test("askMap returns the error of the transport") {
+    val result = client(new FakeTransport(Left(JevError.Unauthorized))).askMap(ticket, Map("u" -> Noul("U?")))
+    assertEquals(result.left.toOption, Some(JevError.Unauthorized))
+  }
+
+  test("more than 10 keys do not compile: they need askMap") {
+    val errors = compileErrors(
+      "ten.ask(state, nouls(0), nouls(1), nouls(2), nouls(3), nouls(4), nouls(5), " +
+        "nouls(6), nouls(7), nouls(8), nouls(9), nouls(0))"
+    )
+    assert(errors.contains("overloaded method ask"), errors)
   }
 
   test("one Replied event, with the model that answered and the input tokens") {
@@ -99,7 +127,7 @@ class JevClientSuite extends munit.FunSuite {
     json.obj.remove("usage")
     var events = List.empty[JevEvent]
     val result = client(new FakeTransport(Right(json.render())), e => events = events :+ e).ask(state, urgent)
-    assertEquals(answers(result).get(urgent).map(_.probability.value), Some(recorded("urgent")("noul").num))
+    assertEquals(result.map(_.probability.value), Right(recorded("urgent")("noul").num))
     assertEquals(events, List[JevEvent](JevEvent.Replied(Reply(json("model").str, None))))
   }
 

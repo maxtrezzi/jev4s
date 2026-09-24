@@ -34,11 +34,9 @@ object Structure {
   // snippet: structure-ask
   def main(args: Array[String]): Unit =
     client.ask(Tickets.cannotLogIn, knownIncident, impact) match {
-      case Right(answers) =>
-        for (k <- answers.get(knownIncident); i <- answers.get(impact)) {
-          println(s"Part of ${incident("id").str}: ${k.isYes}")
-          println(s"Impact: ${i.score} of 2, out of service: ${i.probabilities.get(outOfService)}")
-        }
+      case Right((k, i)) =>
+        println(s"Part of ${incident("id").str}: ${k.isYes}")
+        println(s"Impact: ${i.score} of 2, out of service: ${i.probabilities.get(outOfService)}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
   // end: structure-ask

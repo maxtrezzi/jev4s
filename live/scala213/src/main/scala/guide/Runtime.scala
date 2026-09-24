@@ -16,12 +16,17 @@ object Runtime {
   val items = List("hiking boots", "running shoes", "team subscription")
 
   def main(args: Array[String]): Unit = {
-    val keys = checks.toList.sorted.map { case (name, text) => Noul(text).as(name) }
-    val item = Choice("Which item is `message` about?", items.map(i => ChoiceOption(i, i))).as("item")
-    client.ask(Tickets.doubleCharge, (item :: keys): _*) match {
+    val questions: Map[String, Question[_]] = checks.map { case (name, text) => name -> Noul(text) } +
+      ("item" -> Choice.of[String]("Which item is `message` about?")(JevChoice.keys(items: _*)))
+    client.askMap(Tickets.doubleCharge, questions) match {
       case Right(answers) =>
-        keys.foreach(key => println(s"${key.name}: ${answers.get(key).map(_.isYes)}"))
-        println(s"item: ${answers.get(item).map(_.choice)}")
+        answers.toList.sortBy(_._1).foreach { case (name, answer) =>
+          answer match {
+            case a: NoulAnswer      => println(s"$name: ${a.isYes}")
+            case a: ScoreAnswer[_]  => println(s"$name: ${a.score}")
+            case a: ChoiceAnswer[_] => println(s"$name: ${a.choice}")
+          }
+        }
       case Left(error) => println(s"Jev did not answer: $error")
     }
   }

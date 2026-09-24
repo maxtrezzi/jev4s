@@ -396,7 +396,7 @@ an example against a `publishLocal` build.
 
 ### T10 — Typed tuples from the 2.13 client
 
-**Status:** Not started — [ADR-0037](../adr/0037-the-2-13-client-answers-with-a-typed-tuple.md) (Proposed)
+**Status:** Done 2026-09-24 — [ADR-0037](../adr/0037-the-2-13-client-answers-with-a-typed-tuple.md)
 
 **Branch:** `task/fixed-arity-ask`
 
@@ -408,6 +408,28 @@ To settle while implementing: N (proposed: 10), overloads by hand or generated, 
 
 **Done when:** the 2.13 README reads its answers with no `Option`; every overload has a test; the
 definition of done holds.
+
+#### Found
+
+- **The owner accepted ADR-0037 on 2026-09-24**, with N = 10 and the overloads written by hand,
+  and changed the dynamic form: `askMap(state, Map[String, Question[_]])` returning
+  `Map[String, Answer]`, the name and type of Scala 3, not `askAll`.
+- **One key returns the answer, not a `Tuple1`.** `ask(state, urgent)` is an
+  `Either[JevError, NoulAnswer]`; `(A1)` in the ADR's notation is `A1` in Scala.
+- **ADR-0028 is superseded, not amended.** Its whole decision was the comparison in
+  `Answers.get`, which is gone with `Answers`. ADR-0023 is amended: its `Answers.get` and its
+  "no `askMap`".
+- **The overloads resolve by arity alone** on 2.13.16 with `-Werror -Xlint`, rechecked in a
+  project outside the repository. 11 keys do not compile, as an overloaded `ask` with no
+  alternative that fits; a test checks it.
+- **A test reads every position of every overload**: ten Nouls answered with the probabilities
+  0.01 to 0.10, so a swapped position shows as a wrong number. Stryker4s makes no mutant of an
+  index.
+- **The guide's printed outputs lost their `Some(...)`**: chapters 3, 4 and 8 printed `Option`s,
+  and now print the values. The values are those of the runs of 2026-09-22; the examples were not
+  run again against the real API.
+- Measured: `scala213` 108 tests, 100% statement and branch coverage; Stryker4s detects 170 of
+  171 mutants (1 ignored), where it counted 178 with `Answers`.
 
 ### T11 — The caller's own HTTP client
 

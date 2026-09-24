@@ -39,8 +39,7 @@ object Example {
         val dept   = Choice.of[Dept]("Which team should handle this?").as("dept")
         val urgent = Noul("Does this convey urgency?").as("urgent")
         client.ask(ticket, dept, urgent) match {
-          case Right(a) =>
-            println(s"route to ${a.get(dept).map(_.choice)}, urgent: ${a.get(urgent).map(_.isYes)}")
+          case Right((d, u))                     => println(s"route to ${d.choice}, urgent: ${u.isYes}")
           case Left(JevError.Unauthorized)       => println("401: the API key is wrong: check TYPESAFE_API_KEY")
           case Left(JevError.Rejected(message))  => println(s"422: Jev refused the request: $message")
           case Left(JevError.RateLimited(after)) =>
