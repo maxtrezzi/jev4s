@@ -18,8 +18,17 @@ class QuestionSuite extends munit.FunSuite:
     assertEquals(JevChoice.keys("a", "b").options, List(ChoiceOption("a", "a"), ChoiceOption("b", "b")))
 
   test("a Score keeps its levels in order"):
-    val Question.Score(instructions, levels*) = Score("How angry?", "Calm", "Angry"): @unchecked
-    assertEquals((instructions, levels.toList), (ujson.Str("How angry?"), List[ujson.Value]("Calm", "Angry")))
+    assertEquals(
+      Score("How angry?", "Calm", "Angry"),
+      Question.Score[ujson.Value]("How angry?", List(ScaleLevel("Calm", "Calm"), ScaleLevel("Angry", "Angry"))),
+    )
+
+  test("a typed Score takes its levels from the given JevScale"):
+    given JevScale[Tier] = JevScale(ScaleLevel(Tier.Free, "No payment"), ScaleLevel(Tier.Pro, "Paying"))
+    assertEquals(
+      Score[Tier]("Which plan?"),
+      Question.Score("Which plan?", List(ScaleLevel(Tier.Free, "No payment"), ScaleLevel(Tier.Pro, "Paying"))),
+    )
 
   test("two Choices are equal only when their options are equal"):
     val free = Choice[Tier]("Which plan?")(using JevChoice(ChoiceOption(Tier.Free, "free")))

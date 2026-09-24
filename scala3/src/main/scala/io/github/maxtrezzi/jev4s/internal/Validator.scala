@@ -13,10 +13,10 @@ private[jev4s] object Validator:
   private def check(name: String, question: Question[?]): List[Problem] =
     val nameProblem = if name.trim.isEmpty then List(Problem.EmptyName) else Nil
     nameProblem ++ (question match
-      case Question.Score(_, levels*) if levels.size < 2 || levels.size > 10 =>
+      case Question.Score(_, levels) if levels.size < 2 || levels.size > 10 =>
         List(Problem.ScoreLevels(name, levels.size))
-      case Question.Score(_, levels*) =>
-        repeated(levels.toList).map(level => Problem.DuplicateLevel(name, level.strOpt.getOrElse(level.render())))
+      case Question.Score(_, levels) =>
+        repeated(levels.map(_.text)).map(text => Problem.DuplicateLevel(name, text.strOpt.getOrElse(text.render())))
       case Question.Choice(_, options) =>
         val keys = options.map(_.key)
         if keys.isEmpty || keys.size > 255 then List(Problem.ChoiceOptions(name, keys.size))

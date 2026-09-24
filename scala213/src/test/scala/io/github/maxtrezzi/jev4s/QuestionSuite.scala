@@ -23,6 +23,27 @@ class QuestionSuite extends munit.FunSuite {
     assertEquals(JevChoice.keys("a", "b").options, List(ChoiceOption("a", "a"), ChoiceOption("b", "b")))
   }
 
+  test("a Score keeps its levels in order") {
+    val score = Score("How angry?", List("Calm", "Angry"))
+    assertEquals(score.instructions, ujson.Str("How angry?"))
+    assertEquals(score.levels, List[ScaleLevel[ujson.Value]](ScaleLevel("Calm", "Calm"), ScaleLevel("Angry", "Angry")))
+  }
+
+  test("Score.of takes its levels from the implicit JevScale") {
+    implicit val scale: JevScale[Tier] = JevScale(ScaleLevel(Tier.Free, "No payment"), ScaleLevel(Tier.Pro, "Paying"))
+    val score                          = Score.of[Tier]("Which plan?")
+    assertEquals(score.instructions, ujson.Str("Which plan?"))
+    assertEquals(score.levels, List(ScaleLevel[Tier](Tier.Free, "No payment"), ScaleLevel[Tier](Tier.Pro, "Paying")))
+  }
+
+  test("a Score over an unknown type says what is missing") {
+    assert(
+      compileErrors("""Score.of[java.time.DayOfWeek]("Which day?")""").contains(
+        "no levels for Score.of[java.time.DayOfWeek]: define an implicit JevScale[java.time.DayOfWeek]"
+      )
+    )
+  }
+
   test("a Noul has no criteria unless given") {
     assertEquals(Noul("Urgent?"), Noul("Urgent?", None, None))
   }

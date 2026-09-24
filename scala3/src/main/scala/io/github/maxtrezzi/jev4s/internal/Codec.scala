@@ -62,8 +62,8 @@ private[jev4s] object Codec:
       val base     = ujson.Obj("type" -> "noul", "instructions" -> instructions)
       if criteria.nonEmpty then base("criteria") = ujson.Obj.from(criteria)
       base
-    case Question.Score(instructions, levels*) =>
-      ujson.Obj("type" -> "score", "instructions" -> instructions, "criteria" -> ujson.Arr.from(levels))
+    case Question.Score(instructions, levels) =>
+      ujson.Obj("type" -> "score", "instructions" -> instructions, "criteria" -> ujson.Arr.from(levels.map(_.text)))
     case Question.Choice(instructions, options) =>
       val criteria = options.map(o => o.key -> o.description.getOrElse(ujson.Null))
       ujson.Obj("type" -> "choice", "instructions" -> instructions, "criteria" -> ujson.Obj.from(criteria))
@@ -78,13 +78,19 @@ private[jev4s] object Codec:
           _ <- json.hasType("noul", name)
           p <- json.field("noul").flatMap(_.probability(name))
         yield NoulAnswer(p)
-      case Question.Score(_, levels*) =>
+      case Question.Score(_, levels) =>
+        val values = levels.map(_.value)
         for
           _             <- json.hasType("score", name)
           score         <- json.field("score").flatMap(_.number(name))
           confidence    <- json.field("confidence").flatMap(_.probability(name))
-          probabilities <- json.probabilities(name)(index => index.toIntOption.flatMap(levels.lift))
-        yield ScoreAnswer(score, confidence, probabilities)
+          probabilities <- json.probabilities(name)(index => index.toIntOption.flatMap(values.lift))
+          // maxByOption keeps the first of equal maxima: a tie goes to the lower level.
+          mostLikely <- values
+            .filter(probabilities.contains)
+            .maxByOption(probabilities)
+            .toRight(s"'$name': no probabilities")
+        yield ScoreAnswer(score, mostLikely, confidence, probabilities)
       case Question.Choice(_, options) =>
         val byKey = options.map(o => o.key -> o.value).toMap
         for

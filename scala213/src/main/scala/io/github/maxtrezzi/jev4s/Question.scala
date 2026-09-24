@@ -30,8 +30,50 @@ final case class Noul(
     whenFalse: Option[ujson.Value] = None
 ) extends Question[NoulAnswer]
 
-/** A position on an ordered scale of 2 to 10 levels. */
-final case class Score(instructions: ujson.Value, levels: List[ujson.Value]) extends Question[ScoreAnswer]
+/** A position on an ordered scale of 2 to 10 levels, from low to high. The answer keys each level
+  * by a value of type `L`: the level itself for a Score built from text, or a value of your own
+  * type for a Score built with [[Score.of]].
+  */
+final case class Score[L] private (instructions: ujson.Value, levels: List[ScaleLevel[L]])
+    extends Question[ScoreAnswer[L]]
+
+object Score {
+
+  // Private, so that it replaces the public `apply` of the case class: with two public `apply`s,
+  // `Score("How?", List("Calm", "Angry"))` would not compile.
+  private def apply[L](instructions: ujson.Value, levels: List[ScaleLevel[L]]): Score[L] =
+    new Score(instructions, levels)
+
+  /** A Score whose levels are text or JSON, from low to high: `Score("How?", List("Calm",
+    * "Angry"))`. The answer keys each probability by the level as you give it here. Ignore the
+    * `DummyImplicit`: the compiler fills it in.
+    */
+  def apply(instructions: ujson.Value, levels: List[ujson.Value])(implicit d: DummyImplicit): Score[ujson.Value] =
+    apply[ujson.Value](instructions, levels.map(level => ScaleLevel(level, level)))
+
+  /** A Score whose levels come from the implicit `JevScale[L]`. */
+  def of[L](instructions: ujson.Value)(implicit scale: JevScale[L]): Score[L] = apply[L](instructions, scale.levels)
+}
+
+/** One level of a Score: your value, and the text or JSON that Jev reads. */
+final case class ScaleLevel[L](value: L, text: ujson.Value)
+
+/** The levels of a Score over `L`, from low to high. */
+@implicitNotFound("no levels for Score.of[${L}]: define an implicit JevScale[${L}]")
+trait JevScale[L] {
+  def levels: List[ScaleLevel[L]]
+}
+
+object JevScale {
+
+  /** Levels written by hand, from low to high. */
+  def apply[L](levels: ScaleLevel[L]*): JevScale[L] = fromLevels(levels.toList)
+
+  /** Levels from a list, from low to high. */
+  def fromLevels[L](list: List[ScaleLevel[L]]): JevScale[L] = new JevScale[L] {
+    val levels: List[ScaleLevel[L]] = list
+  }
+}
 
 /** One option out of 1 to 255. The answer is a value of your own type `C`. */
 final case class Choice[C](instructions: ujson.Value, options: List[ChoiceOption[C]]) extends Question[ChoiceAnswer[C]]

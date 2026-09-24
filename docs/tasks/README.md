@@ -36,7 +36,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T4](tasks.md#t4--fixes-from-the-review-of-the-integrated-branch) | Fixes from the review of the integrated branch | Done |
 | [T5](tasks.md#t5--a-time-limit-on-the-retries-of-a-call) | A time limit on the retries of a call | Done |
 | [T6](tasks.md#t6--user-guides) | User guides | Done |
-| [T7](tasks.md#t7--a-score-typed-by-the-callers-enum) | A Score typed by the caller's enum | Not started |
+| [T7](tasks.md#t7--a-score-typed-by-the-callers-enum) | A Score typed by the caller's enum | Done |
 | [T8](tasks.md#t8--a-reply-without-input-tokens-still-answers) | A reply without input tokens still answers | Not started |
 | [T9](tasks.md#t9--the-213-module-on-scala-21316) | The 2.13 module on Scala 2.13.16 | Not started |
 | [T10](tasks.md#t10--typed-tuples-from-the-213-client) | Typed tuples from the 2.13 client | Blocked |

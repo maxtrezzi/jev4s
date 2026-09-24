@@ -17,7 +17,7 @@ private[jev4s] object Validator {
       case Score(_, levels) if levels.size < 2 || levels.size > 10 =>
         List(Problem.ScoreLevels(name, levels.size))
       case Score(_, levels) =>
-        repeated(levels).map(level => Problem.DuplicateLevel(name, level.strOpt.getOrElse(level.render())))
+        repeated(levels.map(_.text)).map(text => Problem.DuplicateLevel(name, text.strOpt.getOrElse(text.render())))
       case Choice(_, options) =>
         val keys = options.map(_.key)
         if (keys.isEmpty || keys.size > 255) List(Problem.ChoiceOptions(name, keys.size))
