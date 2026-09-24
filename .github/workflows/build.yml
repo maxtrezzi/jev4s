@@ -91,8 +91,11 @@ jobs:
           java-version: '21'
           cache: sbt
       - uses: sbt/setup-sbt@v1
+      # Stryker4s puts its test runner, built with scala-library 2.13.18, on the classpath of the
+      # 2.13 module, and sbt stops a 2.13.16 build that sees a newer library (SIP-51). The setting
+      # allows it for this run only; the other jobs keep the check that guards ADR-0036.
       - name: Mutation testing
-        run: sbt -batch "project ${{ matrix.module }}" clean stryker
+        run: sbt -batch "project ${{ matrix.module }}" "set scala213 / allowUnsafeScalaLibUpgrade := true" clean stryker
       # Stryker's break threshold cannot exceed 99; this fails on any undetected mutant, and on a
       # mutant Stryker4s ignored without a @SuppressWarnings (ADR-0016, ADR-0024).
       - name: No undetected mutant

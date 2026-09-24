@@ -6,13 +6,14 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, T1 to T8 and T12 are done; T9 to T11 and T13 to T15 are planned, with ADR-0036 to ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, T1 to T9 and T12 are done; T10, T11 and T13 to T15 are planned, with ADR-0037 to ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
 `derives JevScale` in Scala 3 or a `JevScale` written by hand in 2.13, and its answer names the
 `mostLikely` level (ADR-0034). A reply without its input tokens still answers, with
-`Reply.inputTokens` as `None` (ADR-0035). Each module also has its client, `JevClient`:
+`Reply.inputTokens` as `None` (ADR-0035). The 2.13 module compiles with Scala 2.13.16, the Scala
+of Spark 4.0 (ADR-0036). Each module also has its client, `JevClient`:
 named tuples in Scala 3, typed keys in 2.13, over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), or over any `Transport`, and reports replies and retries as
 `JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
@@ -94,7 +95,8 @@ finding is never appended to an ADR; it goes to `docs/tasks/`.
 
 sbt 1.13, two modules with no shared code
 ([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)): `scala3` (Scala 3.9.0,
-[ADR-0017](docs/adr/0017-scala-3-9-lts.md)) and `scala213` (Scala 2.13.18). Both compile with
+[ADR-0017](docs/adr/0017-scala-3-9-lts.md)) and `scala213` (Scala 2.13.16,
+[ADR-0036](docs/adr/0036-the-2-13-module-compiles-with-spark-4s-scala.md)). Both compile with
 `-Werror`, so a warning is a failed build.
 
 ```bash
@@ -103,6 +105,7 @@ sbt scala3/test                                       # one module
 sbt "scala3/testOnly *ValidatorSuite"                 # one suite
 sbt clean coverage test coverageReport                # coverage; fails below 100%
 sbt "project scala3" clean stryker                    # mutation testing, one module
+sbt "project scala213" "set allowUnsafeScalaLibUpgrade := true" clean stryker   # the 2.13 module
 python3 build/check-mutants.py scala3                 # fails on any undetected mutant
 python3 build/check-docs.py                           # ADR index, status lines, links, quoted examples
 python3 build/check-docs.py --write-snippets          # copy each quoted example into its document
@@ -121,7 +124,9 @@ differs from its example.
 **Mutation testing is two steps, and the second is the check (ADR-0016).** Stryker4s cannot be
 set to fail on a single survivor; `build/check-mutants.py` reads its JSON report and does.
 Stryker4s runs per module (`project scala3`, `project scala213`) and reads `stryker4s.conf` from
-the root.
+the root. Its test runner is built with scala-library 2.13.18, and sbt stops a 2.13.16 build that
+sees a newer library (SIP-51), so the 2.13 run sets `allowUnsafeScalaLibUpgrade` for that run
+only. Never set it in `build.sbt`: the check is what keeps the published module on 2.13.16.
 
 **Run `sbt clean` after a coverage run** before anything else that compiles: coverage
 instruments the classes, and a `publishLocal` from an instrumented build ships the
@@ -145,6 +150,11 @@ wins and the summary is the bug.
   and the golden tests are what keeps them in step.
 - **Scala 3 first.** The Scala 3 module settles the design in each milestone; the 2.13 module
   follows it and does not invent design of its own.
+- **The 2.13 module compiles with the Scala of the oldest supported Spark 4, 2.13.16
+  (ADR-0036).** Do not raise the patch "to the latest", and do not add a runtime dependency that
+  needs a newer `scala-library`: sbt fails the build then, and the answer is not to silence it.
+  munit needs 2.13.18, so the 2.13 tests run on it; sbt does not check the test classpath, and
+  the main code still compiles against 2.13.16.
 - **100% coverage and zero unexplained mutants in both modules (ADR-0008).** No coverage
   exclusions: what cannot be tested deterministically does not go into a published module.
   An equivalent mutant is excluded with `@SuppressWarnings` **and** recorded in
