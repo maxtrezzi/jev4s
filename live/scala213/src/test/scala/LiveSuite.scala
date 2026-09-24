@@ -12,16 +12,12 @@ class LiveSuite extends munit.FunSuite {
   }
 
   test("a real reply decodes into typed answers, and a Replied event names the model") {
-    var events  = List.empty[JevEvent]
-    val client  = JevClient.create(config, e => events = events :+ e)
-    val dept    = Choice.of[Example.Dept]("Which team should handle this?").as("dept")
-    val mood    = Score("How frustrated is the customer?", List("Calm", "Frustrated", "Very angry")).as("mood")
-    val answers = client.ask(ticket, dept, mood).fold(e => fail(e.toString), identity)
-    assert(answers.get(dept).isDefined)
-    assertEquals(
-      answers.get(mood).map(_.probabilities.keySet),
-      Some(Set[ujson.Value]("Calm", "Frustrated", "Very angry"))
-    )
+    var events = List.empty[JevEvent]
+    val client = JevClient.create(config, e => events = events :+ e)
+    val dept   = Choice.of[Example.Dept]("Which team should handle this?").as("dept")
+    val mood   = Score("How frustrated is the customer?", List("Calm", "Frustrated", "Very angry")).as("mood")
+    val (_, m) = client.ask(ticket, dept, mood).fold(e => fail(e.toString), identity)
+    assertEquals(m.probabilities.keySet, Set[ujson.Value]("Calm", "Frustrated", "Very angry"))
     assertEquals(events.collect { case JevEvent.Replied(reply) => reply.model }, List(model))
   }
 

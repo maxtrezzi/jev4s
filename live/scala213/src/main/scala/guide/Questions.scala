@@ -40,12 +40,12 @@ object ThreeQuestions {
 
   def main(args: Array[String]): Unit =
     client.ask(Tickets.doubleCharge, team, urgent, feeling) match { // the Ticket of chapter 3, the keys above
-      case Right(answers) =>
-        val chosen: Option[Team]       = answers.get(team).map(_.choice)   // one of the cases of Team
-        val isUrgent: Option[Boolean]  = answers.get(urgent).map(_.isYes)
-        val score: Option[Double]      = answers.get(feeling).map(_.score) // from 0 (Calm) to 2 (Angry)
-        val angry: Option[Probability] = answers.get(feeling).flatMap(_.probabilities.get(Feeling.Angry))
-        println(s"$chosen, urgent: $isUrgent, feeling: $score, angry: $angry")
+      case Right((t, u, f)) => // the answers, in the order of the keys
+        val chosen: Team       = t.choice // one of the cases of Team
+        val isUrgent: Boolean  = u.isYes
+        val score: Double      = f.score  // from 0 (Calm) to 2 (Angry)
+        val angry: Probability = f.probabilities(Feeling.Angry)
+        println(s"$chosen, urgent: $isUrgent, feeling: $score, angry: ${angry.value}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
 }

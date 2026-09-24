@@ -20,8 +20,14 @@ sealed trait Question[A <: Answer] {
   def as(name: String): Key[A] = Key(name, this)
 }
 
-/** A question with the name it is asked under. [[Answers.get]] reads its answer, typed. */
-final case class Key[A <: Answer](name: String, question: Question[A])
+/** A question with the name it is asked under. `JevClient.ask` takes keys, and returns the answer
+  * of each one typed by its question.
+  */
+final case class Key[A <: Answer](name: String, question: Question[A]) {
+
+  // The client decodes the answer of `question` into an `A`, so the cast cannot fail.
+  private[jev4s] def answer(decoded: Answer): A = decoded.asInstanceOf[A]
+}
 
 /** A yes/no question. The answer is the probability of "yes". */
 final case class Noul(

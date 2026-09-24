@@ -55,8 +55,8 @@ object State {
 
   def main(args: Array[String]): Unit =
     client.ask(Tickets.doubleCharge, duplicate) match {
-      case Right(answers) => println(s"Duplicate charge: ${answers.get(duplicate).map(_.isYes)}")
-      case Left(error)    => println(s"Jev did not answer: $error")
+      case Right(d)    => println(s"Duplicate charge: ${d.isYes}")
+      case Left(error) => println(s"Jev did not answer: $error")
     }
 }
 // end: state

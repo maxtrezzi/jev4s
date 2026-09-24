@@ -1,6 +1,6 @@
 # ADR-0023: The Scala 2.13 client API: typed keys over the Scala 3 client's pieces
 
-- **Status:** Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; question match amended by ADR-0028
+- **Status:** Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; question match amended by ADR-0028; answers and `askMap` amended by ADR-0037
 - **Date:** 2026-09-22
 - **Supersedes:** —
 - **Amends:** —

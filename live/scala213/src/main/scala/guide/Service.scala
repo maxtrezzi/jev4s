@@ -9,10 +9,9 @@ final class Router(client: JevClient) {
 
   def route(ticket: Ticket): String =
     client.ask(ticket, team, urgent, feeling) match {
-      case Right(answers) =>
-        val chosen = answers.get(team).map(_.choice.toString).getOrElse("a person")
-        if (answers.get(urgent).exists(_.isYes)) s"$chosen, today" else chosen
-      case Left(error) => s"a person, because Jev did not answer: $error"
+      case Right((t, u, _)) if u.isYes => s"${t.choice}, today"
+      case Right((t, _, _))            => s"${t.choice}"
+      case Left(error)                 => s"a person, because Jev did not answer: $error"
     }
 }
 // end: service

@@ -73,10 +73,7 @@ object FirstQuestion {
 
   def main(args: Array[String]): Unit =
     client.ask("Help! My payouts have been failing for 3 days.", urgent) match {
-      case Right(answers) =>
-        answers.get(urgent).foreach { u =>
-          println(s"Urgent: ${u.isYes}, with a probability of ${u.probability.value}")
-        }
+      case Right(u)    => println(s"Urgent: ${u.isYes}, with a probability of ${u.probability.value}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
 }
@@ -92,12 +89,9 @@ The numbers can change a little from one run to the next: the outputs in this tu
 examples, not promises.
 
 A question with a name is a **key**: `Noul(...).as("urgent")`. A `Noul` is a yes/no question.
-`ask` takes the state and any number of keys, and returns an `Either[JevError, Answers]`. You
-read each answer with the key that asked it: `answers.get(urgent)` is an `Option[NoulAnswer]`,
+`ask` takes the state and the key, and returns an `Either`: a `JevError` on the left, or the
+answer on the right. The key knows the type of its answer, so the answer here is a `NoulAnswer`,
 with the probability of "yes" and `isYes` when that probability is 0.5 or more.
-
-The key knows the type of its answer, so `get` returns the right type with no cast. It returns
-`None` when the key was not part of the request, even if another question used the same name.
 
 Jev never sees the name `urgent`. It reads only the text of the question, so write the whole
 question there.
@@ -185,8 +179,8 @@ object State {
 
   def main(args: Array[String]): Unit =
     client.ask(Tickets.doubleCharge, duplicate) match {
-      case Right(answers) => println(s"Duplicate charge: ${answers.get(duplicate).map(_.isYes)}")
-      case Left(error)    => println(s"Jev did not answer: $error")
+      case Right(d)    => println(s"Duplicate charge: ${d.isYes}")
+      case Left(error) => println(s"Jev did not answer: $error")
     }
 }
 ```
@@ -194,7 +188,7 @@ object State {
 A run on 2026-09-22, with `jev-1.13.0`, printed:
 
 ```text
-Duplicate charge: Some(true)
+Duplicate charge: true
 ```
 
 You can also pass JSON that you build on the spot, as a `ujson.Value`, with no type of your own:
@@ -280,12 +274,12 @@ object ThreeQuestions {
 
   def main(args: Array[String]): Unit =
     client.ask(Tickets.doubleCharge, team, urgent, feeling) match { // the Ticket of chapter 3, the keys above
-      case Right(answers) =>
-        val chosen: Option[Team]       = answers.get(team).map(_.choice)   // one of the cases of Team
-        val isUrgent: Option[Boolean]  = answers.get(urgent).map(_.isYes)
-        val score: Option[Double]      = answers.get(feeling).map(_.score) // from 0 (Calm) to 2 (Angry)
-        val angry: Option[Probability] = answers.get(feeling).flatMap(_.probabilities.get(Feeling.Angry))
-        println(s"$chosen, urgent: $isUrgent, feeling: $score, angry: $angry")
+      case Right((t, u, f)) => // the answers, in the order of the keys
+        val chosen: Team       = t.choice // one of the cases of Team
+        val isUrgent: Boolean  = u.isYes
+        val score: Double      = f.score  // from 0 (Calm) to 2 (Angry)
+        val angry: Probability = f.probabilities(Feeling.Angry)
+        println(s"$chosen, urgent: $isUrgent, feeling: $score, angry: ${angry.value}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
 }
@@ -294,11 +288,13 @@ object ThreeQuestions {
 A run on 2026-09-22, with `jev-1.13.0`, printed:
 
 ```text
-Some(Billing), urgent: Some(false), feeling: Some(1.52), angry: Some(0.52)
+Billing, urgent: false, feeling: 1.52, angry: 0.52
 ```
 
-Each answer has the type of its question, and the types in this example are only there to show
-it: you do not need to write them.
+With several keys, `ask` returns a tuple of the answers, in the order of the keys, and
+`case Right((t, u, f))` gives each one a name. Each answer has the type of its question, and the
+types in this example are only there to show it: you do not need to write them. `ask` takes 1 to
+10 keys; for more, use `askMap` ([chapter 8](#8-questions-built-at-runtime)).
 
 | Question | Answer | What you read |
 |---|---|---|
@@ -315,9 +311,6 @@ You can also give the levels as text, with no type of your own:
 `Score("How does the customer feel?", List("Calm", "Annoyed", "Angry"))`. Then each level is a
 `ujson.Value`, and you read the probabilities with the level as you wrote it:
 `probabilities.get("Angry")`. A misspelt level compiles, and gives `None` when the code runs.
-
-When you need several answers together, a `for` over the `Option`s reads well. The
-[README](../../README.md#scala-213) does it this way.
 
 ## 5. The options of a Choice
 
@@ -374,8 +367,9 @@ object Options {
 
   def main(args: Array[String]): Unit =
     client.ask(Tickets.wrongSize, request, agent) match {
-      case Right(answers) =>
-        for (r <- answers.get(request); a <- answers.get(agent)) println(s"${r.choice}, answered by ${a.choice.name}")
+      case Right((r, a)) =>
+        val chosen: Agent = a.choice // one of the values in Agent.all
+        println(s"${r.choice}, answered by ${chosen.name}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
 }
@@ -401,15 +395,12 @@ val duplicate = Noul("Does `order.charges_usd` contain the same amount twice?").
 val allowed   = Noul("Does `refund_policy` allow a refund at once for this ticket?").as("allowed")
 
 def refundAtOnce(ticket: Ticket): Either[JevError, Boolean] =
-  client
-    .ask(ticket, asked, duplicate, allowed)
-    .map(answers => List(asked, duplicate, allowed).forall(key => answers.get(key).exists(_.isYes)))
+  client.ask(ticket, asked, duplicate, allowed).map { case (a, d, r) => a.isYes && d.isYes && r.isYes }
 ```
 
 This is better than one question with three conditions: each answer can be checked on its own,
 and the rule that joins them is in your code, where you can read and change it. See
-[How to write good questions](concepts.md#5-how-to-write-good-questions). Because the three keys
-have the same type, `Key[NoulAnswer]`, they fit in one `List`.
+[How to write good questions](concepts.md#5-how-to-write-good-questions).
 
 `isYes` means a probability of 0.5 or more. When a mistake costs more, use your own limits. A
 `Probability` is always from 0 to 1, and you compare it with a `Double`:
@@ -462,16 +453,9 @@ def main(args: Array[String]): Unit = {
   println(s"Refund at once: ${refundAtOnce(Tickets.doubleCharge)}, ${refundAtOnce(Tickets.wrongSize)}")
 
   client.ask(Tickets.cannotLogIn, team, urgent, severity, feeling) match {
-    case Right(answers) =>
-      for {
-        t <- answers.get(team)
-        u <- answers.get(urgent)
-        s <- answers.get(severity)
-        f <- answers.get(feeling)
-      } {
-        val priority = 0.7 * normalized(s) + 0.3 * normalized(f)
-        println(f"${route(t)}, answer ${whenToAnswer(u)}, priority $priority%.2f")
-      }
+    case Right((t, u, s, f)) =>
+      val priority = 0.7 * normalized(s) + 0.3 * normalized(f)
+      println(f"${route(t)}, answer ${whenToAnswer(u)}, priority $priority%.2f")
     case Left(error) => println(s"Jev did not answer: $error")
   }
 }
@@ -531,11 +515,9 @@ probabilities of a JSON level are keyed by the same JSON, so keep it in a `val`,
 ```scala
 def main(args: Array[String]): Unit =
   client.ask(Tickets.cannotLogIn, knownIncident, impact) match {
-    case Right(answers) =>
-      for (k <- answers.get(knownIncident); i <- answers.get(impact)) {
-        println(s"Part of ${incident("id").str}: ${k.isYes}")
-        println(s"Impact: ${i.score} of 2, out of service: ${i.probabilities.get(outOfService)}")
-      }
+    case Right((k, i)) =>
+      println(s"Part of ${incident("id").str}: ${k.isYes}")
+      println(s"Impact: ${i.score} of 2, out of service: ${i.probabilities.get(outOfService)}")
     case Left(error) => println(s"Jev did not answer: $error")
   }
 ```
@@ -552,8 +534,8 @@ do not need them.
 
 ## 8. Questions built at runtime
 
-Keys are values, so you can build them from data, such as checks kept in a database, and pass
-them to `ask` with `: _*`:
+The keys of `ask` are fixed when you compile. When the questions come from data, such as checks
+kept in a database, use `askMap` with a `Map` from names to questions:
 
 <!-- snippet: live/scala213/src/main/scala/guide/Runtime.scala#runtime -->
 ```scala
@@ -570,12 +552,17 @@ object Runtime {
   val items = List("hiking boots", "running shoes", "team subscription")
 
   def main(args: Array[String]): Unit = {
-    val keys = checks.toList.sorted.map { case (name, text) => Noul(text).as(name) }
-    val item = Choice("Which item is `message` about?", items.map(i => ChoiceOption(i, i))).as("item")
-    client.ask(Tickets.doubleCharge, (item :: keys): _*) match {
+    val questions: Map[String, Question[_]] = checks.map { case (name, text) => name -> Noul(text) } +
+      ("item" -> Choice.of[String]("Which item is `message` about?")(JevChoice.keys(items: _*)))
+    client.askMap(Tickets.doubleCharge, questions) match {
       case Right(answers) =>
-        keys.foreach(key => println(s"${key.name}: ${answers.get(key).map(_.isYes)}"))
-        println(s"item: ${answers.get(item).map(_.choice)}")
+        answers.toList.sortBy(_._1).foreach { case (name, answer) =>
+          answer match {
+            case a: NoulAnswer      => println(s"$name: ${a.isYes}")
+            case a: ScoreAnswer[_]  => println(s"$name: ${a.score}")
+            case a: ChoiceAnswer[_] => println(s"$name: ${a.choice}")
+          }
+        }
       case Left(error) => println(s"Jev did not answer: $error")
     }
   }
@@ -585,18 +572,22 @@ object Runtime {
 A run on 2026-09-22, with `jev-1.13.0`, printed:
 
 ```text
-legal: Some(false)
-press: Some(false)
-vip: Some(true)
-item: Some(hiking boots)
+item: hiking boots
+legal: false
+press: false
+vip: true
 ```
 
-Each key still knows its answer type: `answers.get(key)` on a key from `keys` is an
-`Option[NoulAnswer]`. Here the options of the Choice are strings, so the choice is a `String`.
+The answers are a `Map[String, Answer]`, with the same names. The compiler does not know which
+question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer[_]` or a
+`ChoiceAnswer[_]`. Match on it, with one case for each.
+
+`JevChoice.keys(...)` makes options from strings: each key is also the value, so the choice is a
+`String`. Use it for options that you know only at runtime.
 
 ## 9. When something goes wrong
 
-jev4s does not throw exceptions. `ask` returns `Either[JevError, Answers]`, and `JevError` is a
+jev4s does not throw exceptions. `ask` returns an `Either` with a `JevError` on the left, and `JevError` is a
 sealed type with one case for each kind of failure. The [table in the concepts
 guide](concepts.md#errors) lists them all. Match on the ones your code handles in a special way:
 
@@ -713,10 +704,9 @@ final class Router(client: JevClient) {
 
   def route(ticket: Ticket): String =
     client.ask(ticket, team, urgent, feeling) match {
-      case Right(answers) =>
-        val chosen = answers.get(team).map(_.choice.toString).getOrElse("a person")
-        if (answers.get(urgent).exists(_.isYes)) s"$chosen, today" else chosen
-      case Left(error) => s"a person, because Jev did not answer: $error"
+      case Right((t, u, _)) if u.isYes => s"${t.choice}, today"
+      case Right((t, _, _))            => s"${t.choice}"
+      case Left(error)                 => s"a person, because Jev did not answer: $error"
     }
 }
 ```

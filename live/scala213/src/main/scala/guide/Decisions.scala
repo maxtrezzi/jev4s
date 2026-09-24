@@ -11,9 +11,7 @@ object Decisions {
   val allowed   = Noul("Does `refund_policy` allow a refund at once for this ticket?").as("allowed")
 
   def refundAtOnce(ticket: Ticket): Either[JevError, Boolean] =
-    client
-      .ask(ticket, asked, duplicate, allowed)
-      .map(answers => List(asked, duplicate, allowed).forall(key => answers.get(key).exists(_.isYes)))
+    client.ask(ticket, asked, duplicate, allowed).map { case (a, d, r) => a.isYes && d.isYes && r.isYes }
   // end: refund
 
   // snippet: noul
@@ -48,16 +46,9 @@ object Decisions {
     println(s"Refund at once: ${refundAtOnce(Tickets.doubleCharge)}, ${refundAtOnce(Tickets.wrongSize)}")
 
     client.ask(Tickets.cannotLogIn, team, urgent, severity, feeling) match {
-      case Right(answers) =>
-        for {
-          t <- answers.get(team)
-          u <- answers.get(urgent)
-          s <- answers.get(severity)
-          f <- answers.get(feeling)
-        } {
-          val priority = 0.7 * normalized(s) + 0.3 * normalized(f)
-          println(f"${route(t)}, answer ${whenToAnswer(u)}, priority $priority%.2f")
-        }
+      case Right((t, u, s, f)) =>
+        val priority = 0.7 * normalized(s) + 0.3 * normalized(f)
+        println(f"${route(t)}, answer ${whenToAnswer(u)}, priority $priority%.2f")
       case Left(error) => println(s"Jev did not answer: $error")
     }
   }

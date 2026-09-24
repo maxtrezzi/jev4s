@@ -32,7 +32,7 @@ object Feeling {
 }
 
 object Triage {
-  // (4) Each question with its name: a key, used to ask in (5) and to read the answer in (6).
+  // (4) Each question with its name: a key, used to ask in (5).
   val team      = Choice.of[Team]("Which team should handle `message`?").as("team")            // options from (3)
   val duplicate = Noul("Do `charges_usd` show the same amount charged twice?").as("duplicate") // a field named in (2)
   val feeling   = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling")  // levels from (3)
@@ -48,17 +48,11 @@ object Triage {
 
     // (5) One call: the state (1) and the keys of (4).
     client.ask(ticket, team, duplicate, feeling) match {
-      case Right(answers) =>
-        // (6) Each key of (4) reads its own answer, with the type of its question.
-        for {
-          t <- answers.get(team)      // a ChoiceAnswer[Team]: t.choice is a value of (3)
-          d <- answers.get(duplicate) // a NoulAnswer
-          f <- answers.get(feeling)   // a ScoreAnswer[Feeling]
-        } {
-          if (t.confidence >= 0.8)
-            println(s"Send to ${t.choice}. Duplicate charge: ${d.isYes}. Feeling: ${f.score} of 2.")
-          else println(s"Maybe ${t.choice}, but Jev is not sure: a person decides.")
-        }
+      // (6) The answers, in the order of the keys, each with the type of its question.
+      case Right((t, d, f)) => // a ChoiceAnswer[Team], a NoulAnswer, a ScoreAnswer[Feeling]
+        if (t.confidence >= 0.8) // t.choice is a value of (3)
+          println(s"Send to ${t.choice}. Duplicate charge: ${d.isYes}. Feeling: ${f.score} of 2.")
+        else println(s"Maybe ${t.choice}, but Jev is not sure: a person decides.")
       case Left(error) => println(s"Jev did not answer: $error")
     }
   }

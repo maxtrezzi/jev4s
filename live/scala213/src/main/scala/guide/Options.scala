@@ -39,8 +39,9 @@ object Options {
 
   def main(args: Array[String]): Unit =
     client.ask(Tickets.wrongSize, request, agent) match {
-      case Right(answers) =>
-        for (r <- answers.get(request); a <- answers.get(agent)) println(s"${r.choice}, answered by ${a.choice.name}")
+      case Right((r, a)) =>
+        val chosen: Agent = a.choice // one of the values in Agent.all
+        println(s"${r.choice}, answered by ${chosen.name}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
 }

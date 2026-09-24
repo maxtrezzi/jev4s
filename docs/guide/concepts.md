@@ -384,9 +384,9 @@ This part is about jev4s, not about Jev. It is the same in both Scala versions.
 | Its name | A name in a named tuple: `(urgent = Noul(...))` | A key: `Noul(...).as("urgent")` |
 | The options of a Choice | `enum Team derives JevChoice` | An `implicit JevChoice[Team]` |
 | The levels of a Score | Text, or `enum Mood derives JevScale` | Text, or an `implicit JevScale[Mood]` |
-| The answers | A named tuple: `r.urgent` | `Answers`: `answers.get(urgent)` |
+| The answers | A named tuple: `r.urgent` | A tuple, in the order of the keys: `case Right((t, u))` |
 | A probability | `Probability`, from 0 to 1 | `Probability`, from 0 to 1 |
-| Questions built at runtime | `client.askMap(state, Map(...))` | Keys built at runtime |
+| Questions built at runtime | `client.askMap(state, Map(...))` | `client.askMap(state, Map(...))` |
 
 The answer types are the same in both versions:
 
