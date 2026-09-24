@@ -27,12 +27,12 @@ few hundred input tokens.
 
 ## 1. Set up a project
 
-You need JDK 17 or later and **Scala 2.13**. jev4s is not on Maven Central yet: clone this
-repository and run `sbt publishLocal` in it. Then, in your project:
+You need JDK 17 or later and **Scala 2.13.16 or later**. jev4s is not on Maven Central yet:
+clone this repository and run `sbt publishLocal` in it. Then, in your project:
 
 ```scala
 // build.sbt
-scalaVersion := "2.13.18"
+scalaVersion := "2.13.16"
 libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0-SNAPSHOT"
 ```
 

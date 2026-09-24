@@ -354,7 +354,7 @@ modules, tested with JSON written by hand; the definition of done holds.
 
 ### T9 — The 2.13 module on Scala 2.13.16
 
-**Status:** Not started — [ADR-0036](../adr/0036-the-2-13-module-compiles-with-spark-4s-scala.md) (Proposed)
+**Status:** Done 2026-09-24 — [ADR-0036](../adr/0036-the-2-13-module-compiles-with-spark-4s-scala.md)
 
 **Branch:** `task/scala-2-13-16`
 
@@ -365,9 +365,38 @@ that the scoverage plugin, Stryker4s and munit exist for 2.13.16. Update the REA
 **Done when:** the definition of done holds on 2.13.16, and a new project on Scala 2.13.16 runs
 an example against a `publishLocal` build.
 
+#### Found
+
+- **The owner accepted ADR-0036 on 2026-09-24.** `scala213` sets `scalaVersion := "2.13.16"`, and
+  `scala213Live` follows it.
+- **The tools exist for 2.13.16, but two of them are built with 2.13.18.** sbt-scoverage 2.4.4
+  uses the compiler plugin 2.5.2, which is published for 2.13.16. munit and the Stryker4s runner
+  are published per binary version, `_2.13`, but munit 1.3.6 and `stryker4s-testrunner` 1.1.1
+  depend on `scala-library` 2.13.18 (their poms, read 2026-09-24). munit 1.2.0 is the last on
+  2.13.16; 1.2.1 needs 2.13.17.
+- **sbt 1.13 checks the compile classpath only (SIP-51).** When a dependency of the main code
+  needs a newer `scala-library` than `scalaVersion`, the build stops with "Expected
+  `scalaVersion` to be 2.13.18 or later". The test classpath is not checked: with munit 1.3.6
+  the 2.13 tests compile with 2.13.16 and run on `scala-library` 2.13.18. The main code compiles
+  against 2.13.16, which is what ADR-0036 needs, so munit stays at 1.3.6 in both modules. munit
+  1.2.0 also passes the 107 tests, on 2.13.16, if the tests must run on that library too.
+- **Stryker4s puts its runner on the compile classpath, and the check stops it.** CI and
+  `AGENTS.md` run the mutation testing with `set scala213 / allowUnsafeScalaLibUpgrade := true`,
+  which turns the error into a warning for that run. It is not in `build.sbt`, where it would
+  also turn off the check for the published module.
+- **The published pom asks for `scala-library` 2.13.16**, where it asked for 2.13.18. A new sbt
+  project on 2.13.16, outside the repository, compiled the README's 2.13 example unchanged
+  against a `publishLocal` build, with `-Werror -Xlint`, and ran its questions over a fake
+  transport: `scala-library` 2.13.16 at run time, and the expected answers. No paid call. The
+  same project on 2.13.18 runs, and on 2.13.15 sbt refuses it with "Expected `scalaVersion` to be
+  2.13.16 or later": the refusal an sbt project on 2.13.16 got before this task, when the pom
+  asked for 2.13.18.
+- Measured on 2.13.16: `scala213` 107 tests, 100% statement and branch coverage; Stryker4s
+  detects 177 of 178 mutants (1 ignored), as on 2.13.18.
+
 ### T10 — Typed tuples from the 2.13 client
 
-**Status:** Blocked by T9 — [ADR-0037](../adr/0037-the-2-13-client-answers-with-a-typed-tuple.md) (Proposed)
+**Status:** Not started — [ADR-0037](../adr/0037-the-2-13-client-answers-with-a-typed-tuple.md) (Proposed)
 
 **Branch:** `task/fixed-arity-ask`
 

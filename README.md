@@ -75,7 +75,7 @@ compiler too: `Probability(1.5)` does not compile.
 
 ```scala
 // build.sbt
-scalaVersion := "2.13.18"
+scalaVersion := "2.13.16"
 libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0-SNAPSHOT"
 ```
 
@@ -167,8 +167,11 @@ question is a key with a name. You ask with the keys, and read each answer with 
    `src/main/scala/Triage.scala`, and run `sbt run`. It makes one call to Jev, which costs a
    few hundred input tokens.
 
-You need **JDK 17 or later**, and **Scala 3.9 or later** or **Scala 2.13**. The Scala 3 module
-does not work with Scala 3.3 to 3.8 ([ADR-0017](docs/adr/0017-scala-3-9-lts.md)).
+You need **JDK 17 or later**, and **Scala 3.9 or later** or **Scala 2.13.16 or later**. The Scala 3
+module does not work with Scala 3.3 to 3.8 ([ADR-0017](docs/adr/0017-scala-3-9-lts.md)). The 2.13
+module is built with Scala 2.13.16, the Scala of Spark 4.0, so it does not need a newer Scala
+library than a Spark 4 cluster has
+([ADR-0036](docs/adr/0036-the-2-13-module-compiles-with-spark-4s-scala.md)).
 
 ## Learn more
 

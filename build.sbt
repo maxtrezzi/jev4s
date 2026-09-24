@@ -33,7 +33,7 @@ lazy val scala3 = project
 lazy val scala213 = project
   .settings(
     name         := "jev4s",
-    scalaVersion := "2.13.18",
+    scalaVersion := "2.13.16", // ADR-0036
     scalacOptions ++= Seq("-deprecation", "-feature", "-Werror", "-Xlint"),
     libraryDependencies ++= Seq(ujson, munit),
     goldenFiles,

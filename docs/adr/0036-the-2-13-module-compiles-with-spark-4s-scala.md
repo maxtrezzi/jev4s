@@ -1,6 +1,6 @@
 # ADR-0036: The 2.13 module compiles with the Scala of the oldest Spark 4
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-23
 - **Supersedes:** —
 - **Amends:** —
@@ -36,7 +36,7 @@ method that 2.13.16 does not have.
 
 ## Decision
 
-Proposed: the `scala213` module, and so `scala213Live`, compile with **Scala 2.13.16**, the
+The `scala213` module, and so `scala213Live`, compile with **Scala 2.13.16**, the
 Scala of the oldest supported Spark 4 release. The patch moves up when the oldest supported
 Spark release moves up.
 
