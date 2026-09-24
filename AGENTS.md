@@ -110,7 +110,7 @@ sbt "project scala213" "set allowUnsafeScalaLibUpgrade := true" clean stryker   
 python3 build/check-mutants.py scala3                 # fails on any undetected mutant
 python3 build/check-docs.py                           # ADR index, status lines, links, quoted examples
 python3 build/check-docs.py --write-snippets          # copy each quoted example into its document
-sbt scalafmtAll scalafmtSbt                           # format; CI runs scalafmtCheckAll
+sbt scalafmtAll scalafmtSbt scala3Live/scalafmtAll scala213Live/scalafmtAll   # format; CI checks all four
 python3 build/capture-golden.py                       # golden/ plan only; --run makes paid calls
 sbt scala3Live/test scala213Live/test                 # real API, paid; skipped without the key
 sbt scala3Live/run                                    # the example, one paid call
