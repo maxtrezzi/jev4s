@@ -10,10 +10,8 @@
 Jev limits each **account** to 1,200 requests per minute and 250,000 input tokens per second;
 above either limit it answers 429. TypeSafe publishes these numbers on
 `https://docs.typesafe.ai/models`, and says there that the limits adjust dynamically, can change
-without notice under heavy demand, and are higher on custom and enterprise plans. Read on
-2026-09-24 through search excerpts and a third-party library that cites the page
-([lingoda/ai-sdk#6](https://github.com/lingoda/ai-sdk/pull/6)); the page itself was not
-reachable from the build environment. TypeSafe states a latency of 70 to 500 ms per request.
+without notice under heavy demand, and are higher on custom and enterprise plans (read on
+2026-09-24). TypeSafe states a latency of 70 to 500 ms per request.
 
 jev4s retries a 429, honouring `retry-after-ms` and `retry-after`, and a 529, as the official
 SDKs do ([ADR-0024](0024-http-retries-and-configuration.md),
