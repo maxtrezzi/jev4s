@@ -497,7 +497,7 @@ done holds.
 
 ### T13 — A guide section on gateways
 
-**Status:** Blocked by T7 to T12
+**Status:** Done 2026-09-24
 
 **Branch:** `docs/gateways`
 
@@ -513,6 +513,25 @@ URL ending in `/typesafe`, as the official SDKs do, and accepted a reply whose `
   by hand, with `https`.
 
 **Done when:** the section's examples are quoted from `live/` and the docs check passes.
+
+#### Found
+
+- **The sources, read 2026-09-24:** OpenRouter's page on the TypeSafe SDK and Vercel's page on the
+  TypeSafe API with AI Gateway (last updated 2026-09-21). Both serve TypeSafe's request and reply
+  at `<base URL>/v1/systemone`, and both confirm the base URLs and keys above.
+- **OpenRouter names the model without the patch number.** Its page lists `jev-1.13` (routed as
+  `typesafe/jev-1.13`) and `jev-latest`, and says nothing of `jev-1.13.0`, the name the guides use
+  with TypeSafe; its reply names `typesafe/jev-1.13-20260917`. The guide's OpenRouter example uses
+  `jev-1.13`. Vercel takes and returns `typesafe-ai/jev`.
+- **Both gateways add fields to the reply**: `id`, `provider` and `usage.cost` on OpenRouter,
+  `provider_metadata` on Vercel. The codec ignored them already; a test in each module's
+  `CodecSuite` now decodes both documented replies.
+- **Vercel's errors are `{"message", "error_type"}`**, not TypeSafe's `detail`, so their message
+  comes back as the body, cut to 200 characters. The guide says so.
+- The section is chapter 10 of `docs/guide/concepts.md`; its examples are in `guide/Gateways.scala`
+  in both live projects. The OpenRouter line is the same in both versions and quoted once.
+- Measured: `scala3` 128 tests, `scala213` 112; no main code changed, so coverage and mutants are
+  as T11 recorded. No paid call.
 
 ### T14 — A guide chapter on many requests
 

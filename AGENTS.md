@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, T1 to T12 are done; T13 to T15 are planned, with ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, T1 to T13 are done; T14 and T15 are planned, with ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -20,7 +20,8 @@ and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpCli
 `JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
-version, all quoting the examples in `live/` (ADR-0032). Everything done is on `dev`, where CI
+version, all quoting the examples in `live/` (ADR-0032); the concepts guide also shows how to reach Jev
+through OpenRouter or Vercel AI Gateway. Everything done is on `dev`, where CI
 runs it on JDK 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
 The repository is **private** for now.
 

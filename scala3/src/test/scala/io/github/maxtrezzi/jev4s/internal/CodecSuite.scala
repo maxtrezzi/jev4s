@@ -129,6 +129,21 @@ class CodecSuite extends munit.FunSuite:
     assertEquals(tokens(reply(answer, tokens = "\"3\"")), none)
     assertEquals(tokens(reply(answer, tokens = "0")), Right((List(NoulAnswer(Probability(0.5))), Reply("m", Some(0L)))))
 
+  // The replies documented by OpenRouter and Vercel AI Gateway, read 2026-09-24.
+  test("a gateway's reply, with fields of its own, decodes"):
+    val openRouter =
+      """{"id": "gen-dec-1", "model": "typesafe/jev-1.13-20260917", "provider": "TypeSafe",
+        |"answers": {"q": {"type": "noul", "noul": 0.98}},
+        |"usage": {"input_tokens": 275, "output_tokens": 20, "cost": 0.00003}}""".stripMargin
+    val vercel =
+      """{"model": "typesafe-ai/jev", "answers": {"q": {"type": "noul", "noul": 0.98}},
+        |"usage": {"input_tokens": 275, "output_tokens": 20},
+        |"provider_metadata": {"gateway": {"cost": "0.00001155", "generationId": "gen_1"}}}""".stripMargin
+    def decoded(body: String) = Codec.decode(body, noul).map(d => (d.answers, d.reply))
+    val answers               = List(NoulAnswer(Probability(0.98)))
+    assertEquals(decoded(openRouter), Right((answers, Reply("typesafe/jev-1.13-20260917", Some(275L)))))
+    assertEquals(decoded(vercel), Right((answers, Reply("typesafe-ai/jev", Some(275L)))))
+
   test("a Noul encodes only the criteria it has"):
     def criteria(q: Question[?]) = Codec.encode("m", ujson.Null, List("q" -> q))("questions")("q").obj.get("criteria")
     assertEquals(criteria(Noul("Urgent?")), None)
