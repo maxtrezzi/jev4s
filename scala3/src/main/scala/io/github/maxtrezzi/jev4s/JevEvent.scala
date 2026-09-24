@@ -11,7 +11,7 @@ import scala.concurrent.duration.FiniteDuration
 enum JevEvent derives CanEqual:
 
   /** A successful reply, after its answers were read: the model that answered and the input
-    * tokens billed. Sent once per call, not once per attempt.
+    * tokens billed, when the reply reports them. Sent once per call, not once per attempt.
     */
   case Replied(reply: Reply)
 

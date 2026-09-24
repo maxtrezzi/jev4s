@@ -438,7 +438,7 @@ numbers in `RetryPolicy`, or turn retries off with `RetryPolicy.none`.
 jev4s never writes logs. It gives each event to a function of yours, `onEvent`:
 
 - `JevEvent.Replied(reply)` after each successful call, with the model that answered and the
-  input tokens it cost;
+  input tokens it cost, when the reply reports them;
 - `JevEvent.Retrying(error, retry, delay)` before each retry.
 
 Send them to your logger or your metrics.

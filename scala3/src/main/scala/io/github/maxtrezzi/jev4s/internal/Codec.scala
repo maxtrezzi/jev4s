@@ -29,7 +29,8 @@ private[jev4s] object Codec:
         answers <- json.field("answers")
         list    <- traverse(questions)((name, question) => answers.field(name).flatMap(decodeAnswer(name, question, _)))
         model   <- json.field("model").flatMap(_.string("model"))
-        tokens  <- json.field("usage").flatMap(_.field("input_tokens")).flatMap(_.long("input_tokens"))
+        // Missing tokens cost no answers (ADR-0035).
+        tokens = json.field("usage").flatMap(_.field("input_tokens")).toOption.flatMap(_.wholeNumber)
       yield (answers = list, reply = Reply(model, tokens))
     decoded.left.map(JevError.Decoding(_))
 
@@ -108,8 +109,7 @@ private[jev4s] object Codec:
       json.strOpt.toRight(s"'$name': expected a string, got $json")
     private def number(name: String): Either[String, Double] =
       json.numOpt.toRight(s"'$name': expected a number, got $json")
-    private def long(name: String): Either[String, Long] =
-      json.numOpt.filter(_.isWhole).map(_.toLong).toRight(s"'$name': expected a whole number, got $json")
+    private def wholeNumber: Option[Long]                              = json.numOpt.filter(_.isWhole).map(_.toLong)
     private def probability(name: String): Either[String, Probability] =
       number(name).flatMap(d => Probability.from(d).toRight(s"'$name': $d is not a probability"))
     private def hasType(expected: String, name: String): Either[String, Unit] =

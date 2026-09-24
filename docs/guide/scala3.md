@@ -636,7 +636,7 @@ def withEvents(config: JevConfig): JevClient =
     config,
     onEvent = {
       case JevEvent.Replied(reply) =>
-        inputTokens.add(reply.inputTokens)
+        reply.inputTokens.foreach(inputTokens.add) // None when the reply does not report them
         log.log(System.Logger.Level.DEBUG, s"answered by ${reply.model}")
       case JevEvent.Retrying(error, retry, delay) =>
         log.log(System.Logger.Level.WARNING, s"retry $retry in $delay after $error")
@@ -645,7 +645,8 @@ def withEvents(config: JevConfig): JevClient =
 ```
 
 There are two events. `Replied` comes after each successful call, with the model that answered
-and the input tokens it cost: this example adds them up. `Retrying` comes before each retry,
+and the input tokens it cost: this example adds them up. `inputTokens` is an `Option[Long]`: it
+is `None` when the reply does not report the tokens, and the answers still come back. `Retrying` comes before each retry,
 with the error, the number of the retry and the wait.
 
 Match every case, and do not write `case _`. If a later version of jev4s adds an event, the

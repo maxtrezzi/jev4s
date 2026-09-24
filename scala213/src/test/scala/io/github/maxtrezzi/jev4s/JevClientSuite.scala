@@ -90,8 +90,17 @@ class JevClientSuite extends munit.FunSuite {
     val json = Golden.read("mixed/response.json")
     assertEquals(
       events,
-      List[JevEvent](JevEvent.Replied(Reply(json("model").str, json("usage")("input_tokens").num.toLong)))
+      List[JevEvent](JevEvent.Replied(Reply(json("model").str, Some(json("usage")("input_tokens").num.toLong))))
     )
+  }
+
+  test("a reply without usage still answers, and its Replied event has no token count") {
+    val json = Golden.read("mixed/response.json")
+    json.obj.remove("usage")
+    var events = List.empty[JevEvent]
+    val result = client(new FakeTransport(Right(json.render())), e => events = events :+ e).ask(state, urgent)
+    assertEquals(answers(result).get(urgent).map(_.probability.value), Some(recorded("urgent")("noul").num))
+    assertEquals(events, List[JevEvent](JevEvent.Replied(Reply(json("model").str, None))))
   }
 
   test("an error from the transport is returned, and no event is sent") {

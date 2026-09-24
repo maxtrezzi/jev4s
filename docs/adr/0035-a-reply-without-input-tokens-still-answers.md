@@ -1,9 +1,9 @@
 # ADR-0035: A reply without input tokens still answers
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-23
 - **Supersedes:** —
-- **Amends:** —
+- **Amends:** ADR-0021, ADR-0025
 
 ## Context
 
@@ -16,9 +16,8 @@ required: the models the official Python SDK 0.7.1 generates from
 `Usage` type makes both token counts optional, "None when the API did not report it". Jev is
 also served through gateways now (Vercel AI Gateway, OpenRouter), which relay the response.
 
-When accepted, this ADR amends [ADR-0021](0021-what-the-codec-keeps-from-a-jev-reply.md) (what
-the codec requires) and [ADR-0025](0025-client-events-through-onevent.md) (what `Replied`
-carries). The branch that implements it sets `Amends` here and records the amendment in both.
+This ADR amends [ADR-0021](0021-what-the-codec-keeps-from-a-jev-reply.md) (what the codec
+requires) and [ADR-0025](0025-client-events-through-onevent.md) (what `Replied` carries).
 
 ## Forces
 
@@ -31,13 +30,12 @@ carries). The branch that implements it sets `Amends` here and records the amend
 
 ## Decision
 
-Proposed:
-
 - `model` stays required.
 - `Reply(model: String, inputTokens: Option[Long])`: `None` when `usage` or `input_tokens` is
   missing or not a whole number.
 - `JevEvent.Replied` still carries a `Reply`, once per successful call.
-- The exact shape, `Option[Long]` or a type of its own, is settled when implementing.
+- The shape is `Option[Long]`, not a type of its own: absence is the only case to model, and
+  `Option` says it with no new name.
 
 ## Consequences
 

@@ -24,7 +24,7 @@ class CodecSuite extends munit.FunSuite {
   test("a valid reply of each kind decodes") {
     assertEquals(
       Codec.decode(reply("""{"type": "noul", "noul": 0.25}"""), noul),
-      Right(Decoded(List(NoulAnswer(p(0.25))), Reply("m", 3L)))
+      Right(Decoded(List(NoulAnswer(p(0.25))), Reply("m", Some(3L))))
     )
     assertEquals(
       Codec
@@ -142,15 +142,16 @@ class CodecSuite extends munit.FunSuite {
     )
   }
 
-  test("input tokens that are missing or not a whole number") {
-    assertEquals(
-      error("""{"model": "m", "answers": {"q": {"type": "noul", "noul": 0.5}}}""", noul),
-      "missing field 'usage'"
-    )
-    assertEquals(
-      error(reply("""{"type": "noul", "noul": 0.5}""", tokens = "3.5"), noul),
-      "'input_tokens': expected a whole number, got 3.5"
-    )
+  test("input tokens that are missing or not a whole number give no count, and the answers") {
+    val answer                       = """{"type": "noul", "noul": 0.5}"""
+    def tokens(body: String)         = Codec.decode(body, noul)
+    def counted(count: Option[Long]) = Right(Decoded(List(NoulAnswer(p(0.5))), Reply("m", count)))
+    assertEquals(tokens(s"""{"model": "m", "answers": {"q": $answer}}"""), counted(None))
+    assertEquals(tokens(s"""{"model": "m", "answers": {"q": $answer}, "usage": 3}"""), counted(None))
+    assertEquals(tokens(s"""{"model": "m", "answers": {"q": $answer}, "usage": {"output_tokens": 0}}"""), counted(None))
+    assertEquals(tokens(reply(answer, tokens = "3.5")), counted(None))
+    assertEquals(tokens(reply(answer, tokens = "\"3\"")), counted(None))
+    assertEquals(tokens(reply(answer, tokens = "0")), counted(Some(0L)))
   }
 
   test("a Noul encodes only the criteria it has") {
