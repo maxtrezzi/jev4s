@@ -264,7 +264,7 @@ Make one key for each question. Keeping the keys in an object lets you use them 
 object Triage {
   val team    = Choice.of[Team]("Which team should handle `message`?").as("team") // the options come from Team
   val urgent  = Noul("Does the customer need an answer today?").as("urgent")
-  val feeling = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling") // the levels come from Feeling
+  val feeling = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling")
 }
 ```
 
