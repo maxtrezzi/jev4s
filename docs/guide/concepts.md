@@ -20,6 +20,7 @@ has a bug.
 7. [Questions with structure](#7-questions-with-structure)
 8. [Models, cost and limits](#8-models-cost-and-limits)
 9. [How jev4s talks to Jev](#9-how-jev4s-talks-to-jev)
+10. [Through a gateway](#10-through-a-gateway)
 
 ## 1. A first request
 
@@ -451,3 +452,70 @@ an `ApiKey`, which always prints as `<hidden>`, so it does not appear in a log b
 base URL must use `https`. Plain `http` works only for `localhost`, because the key would
 travel unencrypted. `fromEnv` checks this; a `JevConfig` that you build yourself is not checked,
 so give it an `https` base URL.
+
+## 10. Through a gateway
+
+You can also reach Jev through a **gateway**: a service that sells many models with one account
+and one bill. OpenRouter and Vercel AI Gateway both serve Jev with TypeSafe's request and reply,
+so jev4s works with them: you change the base URL, the API key and the name of the model.
+jev4s adds `/v1/systemone` to the base URL and keeps its path, as the official SDKs do.
+
+| | Base URL | API key | Model | `model` in the reply |
+|---|---|---|---|---|
+| TypeSafe | `https://api.typesafe.ai` | your TypeSafe key | `jev-1.13.0`, `jev-latest` | `jev-1.13.0` |
+| OpenRouter | `https://openrouter.ai/api` | your OpenRouter key | `jev-1.13`, `jev-latest` | `typesafe/jev-1.13-20260917` |
+| Vercel AI Gateway | `https://ai-gateway.vercel.sh/typesafe` | your AI Gateway key | `typesafe-ai/jev` | `typesafe-ai/jev` |
+
+These facts come from the pages of
+[OpenRouter](https://openrouter.ai/docs/guides/community/typesafe-sdk) and
+[Vercel](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe), read on 2026-09-24. They
+can change, and each page is right when it and this guide disagree.
+
+**OpenRouter** works with `JevConfig.fromEnv`. Set `TYPESAFE_BASE_URL=https://openrouter.ai/api`,
+put your OpenRouter key in `TYPESAFE_API_KEY`, and name a model in OpenRouter's form. OpenRouter
+lists `jev-1.13` and `jev-latest`, without the patch number that TypeSafe uses in `jev-1.13.0`.
+The line is the same in both Scala versions:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Gateways.scala#openrouter -->
+```scala
+// TYPESAFE_BASE_URL=https://openrouter.ai/api, and your OpenRouter key in TYPESAFE_API_KEY
+val openRouter: Either[ConfigError, JevConfig] = JevConfig.fromEnv("jev-1.13")
+```
+
+**Vercel AI Gateway** reads its key from `AI_GATEWAY_API_KEY`, which neither `fromEnv` nor the
+official SDKs read. Build the config yourself, with the `https` base URL: a config built by hand
+is not checked.
+
+In Scala 3:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Gateways.scala#vercel -->
+```scala
+val vercel: Option[JevConfig] =
+  sys.env
+    .get("AI_GATEWAY_API_KEY")
+    .map(key => JevConfig(ApiKey(key), "typesafe-ai/jev", URI.create("https://ai-gateway.vercel.sh/typesafe")))
+```
+
+In Scala 2.13:
+
+<!-- snippet: live/scala213/src/main/scala/guide/Gateways.scala#vercel -->
+```scala
+val vercel: Option[JevConfig] =
+  sys.env
+    .get("AI_GATEWAY_API_KEY")
+    .map(key => JevConfig(new ApiKey(key), "typesafe-ai/jev", URI.create("https://ai-gateway.vercel.sh/typesafe")))
+```
+
+**What changes through a gateway:**
+
+- **The key goes to the gateway**, and the gateway calls TypeSafe. Your state and your questions
+  pass through it too.
+- **The price and the limits are the gateway's.** The bill comes from the gateway, and its limits
+  on requests can differ from TypeSafe's.
+- **The model has another name.** `Reply.model`, in the `JevEvent.Replied` event, reports the
+  name the gateway gives. When you log the model to compare versions, log that name.
+- **The reply has more fields**, such as the cost of the request. jev4s reads the model, the
+  answers and the input tokens, and ignores the rest.
+- **An error can come from the gateway.** jev4s reads the status as usual, so `isRetryable` still
+  works. When the body is not in TypeSafe's shape, the message is the body itself, cut to 200
+  characters.

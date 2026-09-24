@@ -42,7 +42,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T10](tasks.md#t10--typed-tuples-from-the-213-client) | Typed tuples from the 2.13 client | Done |
 | [T11](tasks.md#t11--the-callers-own-http-client) | The caller's own HTTP client | Done |
 | [T12](tasks.md#t12--scaladoc-fixes) | Scaladoc fixes | Done |
-| [T13](tasks.md#t13--a-guide-section-on-gateways) | A guide section on gateways | Blocked |
+| [T13](tasks.md#t13--a-guide-section-on-gateways) | A guide section on gateways | Done |
 | [T14](tasks.md#t14--a-guide-chapter-on-many-requests) | A guide chapter on many requests | Blocked |
 | [T15](tasks.md#t15--every-header-of-a-real-reply) | Every header of a real reply | Needs decision |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
