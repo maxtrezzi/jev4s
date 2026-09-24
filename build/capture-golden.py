@@ -9,13 +9,14 @@ Each case becomes a directory:
 
   golden/<case>/request.json    the body sent
   golden/<case>/response.json   the body received, unchanged
-  golden/<case>/meta.json       HTTP status, a few response headers, model, date
+  golden/<case>/meta.json       HTTP status, every response header, response time, model, date
 
 Real calls cost money, so:
 
   - without --run the script only prints the plan, and makes no call;
   - it stops before making more than JEV_MAX_CALLS calls;
-  - it refuses to overwrite a case that is already recorded, unless --force.
+  - it refuses to overwrite a case that is already recorded, unless --force;
+  - --only <case> limits the run to that one case.
 
 The API key is read from TYPESAFE_API_KEY and is never written: the script checks every file
 it writes for it. The 401 case sends a made-up key instead.
@@ -23,6 +24,7 @@ it writes for it. The 401 case sends a made-up key instead.
 Run:  set -a; . ./.env; set +a
       python3 build/capture-golden.py            # print the plan
       python3 build/capture-golden.py --run      # make the calls
+      python3 build/capture-golden.py --run --force --only noul   # record one case again
 
 Source for the request and response format: https://docs.typesafe.ai/api.md, read 2026-09-22.
 """
@@ -30,12 +32,12 @@ import datetime
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 
 GOLDEN = "golden"
 TIMEOUT_SECONDS = 30
-KEPT_HEADERS = ("content-type", "retry-after")
 FAKE_KEY = "jev4s-golden-invalid-key"
 
 TICKET = "Help! My payouts have been failing for 3 days and I have a launch tomorrow."
@@ -184,6 +186,15 @@ def call(url, key, payload):
         return error.code, error.headers, error.read()
 
 
+def all_headers(headers):
+    """Every response header, by lower-case name; a repeated header keeps its values joined by ", "."""
+    kept = {}
+    for name, value in headers.items():
+        name = name.lower()
+        kept[name] = f"{kept[name]}, {value}" if name in kept else value
+    return dict(sorted(kept.items()))
+
+
 def write_case(directory, files, key):
     for name, content in files.items():
         if key.encode("utf-8") in content:
@@ -195,9 +206,17 @@ def write_case(directory, files, key):
 
 
 def main():
-    run = "--run" in sys.argv[1:]
-    force = "--force" in sys.argv[1:]
-    unknown = [a for a in sys.argv[1:] if a not in ("--run", "--force")]
+    args = sys.argv[1:]
+    only = None
+    if "--only" in args:
+        at = args.index("--only")
+        if at + 1 >= len(args):
+            sys.exit("--only needs the name of a case")
+        only = args[at + 1]
+        del args[at:at + 2]
+    run = "--run" in args
+    force = "--force" in args
+    unknown = [a for a in args if a not in ("--run", "--force")]
     if unknown:
         sys.exit(f"unknown arguments: {unknown}")
 
@@ -206,6 +225,10 @@ def main():
     max_calls = int(require_env("JEV_MAX_CALLS"))
     url = f"{base_url}/v1/systemone"
     plan = cases(model)
+    if only is not None:
+        plan = [c for c in plan if c[0] == only]
+        if not plan:
+            sys.exit(f"no case named {only}: see the list without --only")
 
     print(f"{len(plan)} calls to POST {url}, model {model}, limit {max_calls}")
     for name, why, fake_key, body in plan:
@@ -223,12 +246,15 @@ def main():
 
     for name, why, fake_key, body in todo:
         payload = encode(body)
+        started = time.monotonic()
         status, headers, received = call(url, FAKE_KEY if fake_key else key, payload)
+        elapsed_ms = round((time.monotonic() - started) * 1000)
         meta = {
             "case": name,
             "why": why,
             "status": status,
-            "headers": {h: headers[h] for h in KEPT_HEADERS if headers.get(h) is not None},
+            "headers": all_headers(headers),
+            "elapsed_ms": elapsed_ms,
             "requested_model": model,
             "recorded_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
             "endpoint": "POST /v1/systemone",
@@ -238,7 +264,7 @@ def main():
             "response.json": received,
             "meta.json": (json.dumps(meta, indent=2) + "\n").encode("utf-8"),
         }, key)
-        print(f"  {name:14} HTTP {status}, {len(received)} bytes")
+        print(f"  {name:14} HTTP {status}, {len(received)} bytes, {elapsed_ms} ms")
 
 
 if __name__ == "__main__":

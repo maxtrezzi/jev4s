@@ -549,7 +549,7 @@ test runs the pacer against a local server without the API key.
 
 ### T15 — Every header of a real reply
 
-**Status:** Needs decision — one paid call, which the owner approves
+**Status:** Done 2026-09-24
 
 **Branch:** `task/capture-all-headers`
 
@@ -558,3 +558,19 @@ header and the response time, then make one real call: about 300 input tokens, a
 $0.00001. Record any rate-limit header and the measured latency here, for T14.
 
 **Done when:** the headers and the latency are recorded with the date and the model.
+
+#### Found
+
+- **The owner approved one paid call on 2026-09-24**: `golden/noul` recorded again with
+  `jev-1.13.0`, 289 input tokens, the same answer as on 2026-09-22 (0.98).
+- **Jev sends no rate-limit header.** The reply's headers were `connection`, `content-length`,
+  `content-type`, `date`, `server` (`istio-envoy`), `x-envoy-upstream-service-time` and
+  `x-typesafe-request-id`. Nothing tells a caller how close it is to the limit, so T14's pacer
+  cannot read its rate from the reply: the caller sets it.
+- **Latency:** 473 ms from sending to the whole body, measured from this build environment through
+  its proxy, a new TLS connection included; `x-envoy-upstream-service-time` said 66 ms. One call
+  is one sample, not a distribution.
+- **Each reply has an `x-typesafe-request-id`**, such as `req_01a0…`. jev4s drops it today; it
+  could be what TypeSafe's support asks for. Not in scope here: a candidate for a later task.
+- `build/capture-golden.py` now keeps every header and `elapsed_ms` in `meta.json`, and
+  `--only <case>` records one case alone; without it, `--force` would make all nine calls.
