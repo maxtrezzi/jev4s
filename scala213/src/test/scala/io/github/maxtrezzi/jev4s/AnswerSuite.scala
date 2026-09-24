@@ -16,8 +16,9 @@ class AnswerSuite extends munit.FunSuite {
   test("every answer type is an Answer") {
     val answers: List[Answer] = List(
       NoulAnswer(Probability.unsafe(0.9)),
-      ScoreAnswer(
+      ScoreAnswer[ujson.Value](
         1.3,
+        "Calm",
         Probability.unsafe(0.7),
         Map[ujson.Value, Probability](ujson.Str("Calm") -> Probability.unsafe(0.7))
       ),
@@ -25,7 +26,7 @@ class AnswerSuite extends munit.FunSuite {
     )
     val kinds = answers.map {
       case _: NoulAnswer      => "noul"
-      case _: ScoreAnswer     => "score"
+      case _: ScoreAnswer[_]  => "score"
       case _: ChoiceAnswer[_] => "choice"
     }
     assertEquals(kinds, List("noul", "score", "choice"))

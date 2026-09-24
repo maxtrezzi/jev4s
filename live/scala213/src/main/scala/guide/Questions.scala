@@ -14,11 +14,23 @@ object Team {
 }
 // end: team
 
+// snippet: feeling
+sealed abstract class Feeling extends Product with Serializable
+object Feeling {
+  case object Calm    extends Feeling
+  case object Annoyed extends Feeling
+  case object Angry   extends Feeling
+
+  implicit val levels: JevScale[Feeling] =
+    JevScale(ScaleLevel(Calm, "Calm"), ScaleLevel(Annoyed, "Annoyed"), ScaleLevel(Angry, "Angry"))
+}
+// end: feeling
+
 // snippet: questions
 object Triage {
   val team    = Choice.of[Team]("Which team should handle `message`?").as("team") // the options come from Team
   val urgent  = Noul("Does the customer need an answer today?").as("urgent")
-  val feeling = Score("How does the customer feel in `message`?", List("Calm", "Annoyed", "Angry")).as("feeling")
+  val feeling = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling") // the levels come from Feeling
 }
 // end: questions
 
@@ -32,7 +44,7 @@ object ThreeQuestions {
         val chosen: Option[Team]       = answers.get(team).map(_.choice)   // one of the cases of Team
         val isUrgent: Option[Boolean]  = answers.get(urgent).map(_.isYes)
         val score: Option[Double]      = answers.get(feeling).map(_.score) // from 0 (Calm) to 2 (Angry)
-        val angry: Option[Probability] = answers.get(feeling).flatMap(_.probabilities.get("Angry"))
+        val angry: Option[Probability] = answers.get(feeling).flatMap(_.probabilities.get(Feeling.Angry))
         println(s"$chosen, urgent: $isUrgent, feeling: $score, angry: $angry")
       case Left(error) => println(s"Jev did not answer: $error")
     }

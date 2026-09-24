@@ -23,7 +23,7 @@ val items = List("hiking boots", "running shoes", "team subscription")
         .foreach: (name, answer) =>
           answer match
             case a: NoulAnswer      => println(s"$name: ${a.isYes}")
-            case a: ScoreAnswer     => println(s"$name: ${a.score}")
+            case a: ScoreAnswer[?]  => println(s"$name: ${a.score}")
             case a: ChoiceAnswer[?] => println(s"$name: ${a.choice}")
     case Left(error) => println(s"Jev did not answer: $error")
 // end: runtime

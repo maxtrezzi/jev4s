@@ -197,8 +197,10 @@ above:
 `0 × 0.0 + 1 × 0.81 + 2 × 0.19 = 1.19`: the customer is "Frustrated", and a little towards
 "Very angry". Three things follow from this:
 
-- The score can fall **between two levels**. You can use it to sort, or round it to the nearest
-  level when your code needs one level.
+- The score can fall **between two levels**. You can use it to sort. When your code needs one
+  level, take the level with the highest probability, which jev4s gives as `mostLikely`, and
+  not the level nearest to the score: with probabilities 0.5, 0.0 and 0.5, the score is 1.0,
+  and level 1 has no chance at all.
 - **Different probabilities can give the same score.** A score of 1.0 can mean "all on level 1",
   or "half on level 0 and half on level 2". Read the probabilities and the confidence too.
 - A scale with 3 levels goes from 0 to 2, and a scale with 5 levels from 0 to 4. To compare or
@@ -378,9 +380,10 @@ This part is about jev4s, not about Jev. It is the same in both Scala versions.
 |---|---|---|
 | A client | `JevClient(config)` | `JevClient.create(config)` |
 | The state | A `String`, a `ujson.Value`, or your type with a `given ToState` | The same, with an `implicit ToState` |
-| A question | `Noul`, `Score`, `Choice[C]` | `Noul`, `Score`, `Choice[C]` |
+| A question | `Noul`, `Score[L]`, `Choice[C]` | `Noul`, `Score[L]`, `Choice[C]` |
 | Its name | A name in a named tuple: `(urgent = Noul(...))` | A key: `Noul(...).as("urgent")` |
 | The options of a Choice | `enum Team derives JevChoice` | An `implicit JevChoice[Team]` |
+| The levels of a Score | Text, or `enum Mood derives JevScale` | Text, or an `implicit JevScale[Mood]` |
 | The answers | A named tuple: `r.urgent` | `Answers`: `answers.get(urgent)` |
 | A probability | `Probability`, from 0 to 1 | `Probability`, from 0 to 1 |
 | Questions built at runtime | `client.askMap(state, Map(...))` | Keys built at runtime |
@@ -390,7 +393,7 @@ The answer types are the same in both versions:
 | Question | Answer | Fields |
 |---|---|---|
 | `Noul` | `NoulAnswer` | `probability`, and `isYes` for a probability of 0.5 or more |
-| `Score` | `ScoreAnswer` | `score`, `confidence`, `probabilities` keyed by each level as you wrote it |
+| `Score[L]` | `ScoreAnswer[L]` | `score`, `mostLikely` (an `L`), `confidence`, `probabilities` keyed by `L`: a value of your type, or each level as you wrote it |
 | `Choice[C]` | `ChoiceAnswer[C]` | `choice` (a `C`), `confidence`, `probabilities` keyed by `C`, and `ifConfident` |
 
 ### Checks before sending
@@ -399,7 +402,8 @@ jev4s checks a request before it sends it, and returns **every** problem at once
 `JevError.InvalidRequest(problems)`. It finds a request with no questions, an empty or repeated
 name, a Score with fewer than 2 or more than 10 levels or with a repeated level, and a Choice with
 no options, more than 255 options, or a repeated key. A request with problems costs nothing,
-because it is not sent.
+because it is not sent. In Scala 3, a Score over an enum with fewer than 2 or more than 10 cases
+does not even compile.
 
 ### Errors
 

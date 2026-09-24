@@ -272,7 +272,7 @@ and 178 mutants all detected, the docs check clean — the numbers T5 and T6 rec
 
 ### T7 — A Score typed by the caller's enum
 
-**Status:** Not started — [ADR-0034](../adr/0034-a-score-typed-by-the-callers-enum.md) (Proposed)
+**Status:** Done 2026-09-24 — [ADR-0034](../adr/0034-a-score-typed-by-the-callers-enum.md)
 
 **Branch:** `task/typed-score`
 
@@ -287,6 +287,43 @@ To settle while implementing: `mostLikely` when two levels share the highest pro
 **Done when:** both forms work in both modules; one case and eleven cases are compile errors in
 Scala 3, and `Score("How?")` gives the message of ADR-0034; the golden tests pass with `golden/`
 unchanged; the README, the guides and `live/` use the new types; the definition of done holds.
+
+#### Found
+
+- **The tie rule is confirmed**: the owner accepted ADR-0034 on 2026-09-24 with `mostLikely` as
+  the lower of two equal levels. `maxByOption` over the levels in the order of the scale keeps
+  the first of equal maxima, so the Codec needs no rule of its own; `CodecSuite` tests it with the
+  keys of `probabilities` in both orders.
+- **A Score answer with an empty `probabilities` is now a `Decoding` error**, `'q': no
+  probabilities`: there is no level to give as `mostLikely`. Before, it decoded to an empty map.
+  No real reply has been seen without probabilities.
+- **In 2.13 the typed form is `Score.of[L]`**, as `Choice.of[C]` is. A second public `apply` is
+  not possible: the case class's own `apply(instructions, List[ScaleLevel[L]])` and the text
+  `apply(instructions, List[ujson.Value])` have the same erasure, and even with a
+  `DummyImplicit` to tell them apart, `Score("How?", List("Calm", "Angry"))` stops compiling,
+  because Scala 2 types an argument of an overloaded method without its expected type and
+  `List[String]` is not a `List[ujson.Value]`. The companion therefore defines the case class's
+  `apply` itself, `private`, which hides it from callers, and the text `apply` keeps a
+  `DummyImplicit` for the erasure. The constructor is private too. Checked on Scala 2.13.18 with
+  `-Xlint -Werror`.
+- **Scala 3 also has `JevScale(levels*)`, levels written by hand**, as `JevChoice(options*)` is,
+  for a type that is not an enum. Its level count is checked by the `Validator`, as for the text
+  form.
+- **The level count needs no `inline`**, as ADR-0034 expected: `JevScale.LevelCount[N]` has one
+  given, which needs `(N >= 2 && N <= 10) =:= true`. Its `@implicitNotFound` gives the first line
+  of the error; the compiler adds the failed search after it.
+- **`JevChoice.Cases` is shared, so its message names both type classes**: "JevChoice and
+  JevScale can be derived only for an enum whose cases have no parameters; …". ADR-0022 quotes
+  the old text, which named only `JevChoice`.
+- **The recorded outputs in the README and the guides stay true.** The enums `Feeling` use the
+  same names as the text levels they replace, so the requests are the same as the recorded runs,
+  and the examples still print `score` and the probability of `Angry`. They do not print
+  `mostLikely`: that would need a new paid run.
+- **`docs/guide/concepts.md` said to round the score to the nearest level** when code needs one
+  level: the trap ADR-0034 names. It now points to `mostLikely`.
+- Measured: `scala3` 123 tests and `scala213` 106, 100% statement and branch coverage in both;
+  Stryker4s detects every mutant, 174 of 188 in `scala3` (12 ignored, 2 compile errors) and 179 of
+  180 in `scala213` (1 ignored).
 
 ### T8 — A reply without input tokens still answers
 

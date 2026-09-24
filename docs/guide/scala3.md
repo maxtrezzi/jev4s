@@ -207,6 +207,19 @@ enum Team derives JevChoice, CanEqual:
 `technical`. `derives CanEqual` lets you compare a `Team` with `==`; you need it only if your
 project compiles with `-language:strictEquality`, as this one does.
 
+The levels of a Score can be the cases of an `enum` too, from low to high:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Questions.scala#feeling -->
+```scala
+enum Feeling derives JevScale, CanEqual:
+  case Calm, Annoyed, Angry
+```
+
+`derives JevScale` makes the levels: Jev reads the name of each case, `Calm`, `Annoyed` and
+`Angry`, and the order of the cases is the order of the scale. Declare the lowest level first:
+no check can see an enum in the wrong order. An enum with fewer than 2 or more than 10 cases
+does not compile.
+
 Put the three questions in one named tuple. You can keep it in a `val` and use it many times:
 
 <!-- snippet: live/scala3/src/main/scala/guide/Questions.scala#questions -->
@@ -214,12 +227,11 @@ Put the three questions in one named tuple. You can keep it in a `val` and use i
 val triage = (
   team = Choice[Team]("Which team should handle `message`?"), // the options come from Team
   urgent = Noul("Does the customer need an answer today?"),
-  feeling = Score("How does the customer feel in `message`?", "Calm", "Annoyed", "Angry"),
+  feeling = Score[Feeling]("How does the customer feel in `message`?"), // the levels come from Feeling
 )
 ```
 
-The levels of a Score go from low to high: here `Calm` is level 0 and `Angry` is level 2. Now
-ask all three about a ticket, in one call. Jev answers them in parallel, so three questions take
+Here `Calm` is level 0 and `Angry` is level 2. Now ask all three about a ticket, in one call. Jev answers them in parallel, so three questions take
 about the same time as one:
 
 <!-- snippet: live/scala3/src/main/scala/guide/Questions.scala#ask -->
@@ -230,7 +242,7 @@ about the same time as one:
       val team: Team         = r.team.choice   // one of the cases of Team
       val urgent: Boolean    = r.urgent.isYes
       val feeling: Double    = r.feeling.score // from 0 (Calm) to 2 (Angry)
-      val angry: Probability = r.feeling.probabilities("Angry")
+      val angry: Probability = r.feeling.probabilities(Feeling.Angry)
       println(s"$team, urgent: $urgent, feeling: $feeling, angry: ${angry.value}")
     case Left(error) => println(s"Jev did not answer: $error")
 ```
@@ -247,22 +259,32 @@ it: you do not need to write them.
 | Question | Answer | What you read |
 |---|---|---|
 | `Noul` | `NoulAnswer` | `probability`, `isYes` |
-| `Score` | `ScoreAnswer` | `score`, `confidence`, `probabilities` |
+| `Score[Feeling]` | `ScoreAnswer[Feeling]` | `score`, `mostLikely` (a `Feeling`), `confidence`, `probabilities` |
 | `Choice[Team]` | `ChoiceAnswer[Team]` | `choice` (a `Team`), `confidence`, `probabilities`, `ifConfident` |
 
 `r.feeling.score` is a `Double` from 0 to 2, and it can fall between two levels, such as 1.3.
-`r.feeling.probabilities` gives the probability of each level, and you read it with the level
-as you wrote it: `probabilities("Angry")`.
+`r.feeling.mostLikely` is the level with the highest probability, a `Feeling`; when two levels
+have the same probability, it is the lower one. `r.feeling.probabilities` gives the probability
+of each level, and you read it with a case of the enum: `probabilities(Feeling.Angry)`.
+
+You can also give the levels as text, with no enum:
+`Score("How does the customer feel?", "Calm", "Annoyed", "Angry")`. Then each level is a
+`ujson.Value`, and you read the probabilities with the level as you wrote it:
+`probabilities("Angry")`. A misspelt level compiles, and fails only when the code runs; with an
+enum, the compiler finds it.
 
 The compiler checks the whole call. These mistakes do not compile:
 
 | Mistake | What the compiler says |
 |---|---|
 | A name that you did not ask: `r.urgnet` | `value urgnet is not a member of ...` |
-| The wrong answer type: `r.urgent` used as a `ScoreAnswer` | `Found: ...NoulAnswer`, `Required: ...ScoreAnswer` |
+| The wrong answer type: `r.urgent` used as a `ScoreAnswer[Feeling]` | `Found: ...NoulAnswer`, `Required: ...ScoreAnswer[...Feeling]` |
+| A text key on a Score over an enum: `probabilities("Angry")` | `Found: ("Angry" : String)`, `Required: ...Feeling` |
 | A value that is not a question: `(urgent = Noul("U?"), count = 3)` | `every value in the named tuple must be a question: Noul, Score or Choice.` |
 | A tuple without names: `(Noul("U?"), Noul("V?"))` | `the questions must be a named tuple, such as (urgent = Noul("Is it urgent?")).` |
 | A Choice over a type with no options | `no options for Choice[...]: define a given JevChoice[...]` |
+| A Score with no levels: `Score("How?")` | `a Score needs its levels: give them, as in Score("How?", "Calm", "Angry"), or name an enum that derives JevScale, as in Score[Mood]("How?")` |
+| An enum with 1 case, or 11, that derives `JevScale` | `a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases.` |
 | A state with no `ToState` | `no ToState[...]: give one, for example ...` |
 
 ## 5. The options of a Choice
@@ -378,7 +400,7 @@ To combine Scores, bring each one to a scale from 0 to 1 first. A Score with 3 l
 <!-- snippet: live/scala3/src/main/scala/guide/Decisions.scala#normalized -->
 ```scala
 /** The score on a scale from 0 to 1, whatever the number of levels. */
-extension (answer: ScoreAnswer) def normalized: Double = answer.score / (answer.probabilities.size - 1)
+extension (answer: ScoreAnswer[?]) def normalized: Double = answer.score / (answer.probabilities.size - 1)
 ```
 
 Now the code can decide. The weights, 0.7 and 0.3, are yours: when the result does not match
@@ -393,7 +415,7 @@ what your team would decide, change them in the code.
     team = Choice[Team]("Which team should handle `message`?"),
     urgent = Noul("Does the customer need an answer today?"),
     severity = Score("How bad is the problem in `message`?", "Cosmetic", "A workaround exists", "No workaround exists"),
-    feeling = Score("How does the customer feel in `message`?", "Calm", "Annoyed", "Angry"),
+    feeling = Score[Feeling]("How does the customer feel in `message`?"),
   )
   client.ask(cannotLogIn, questions) match
     case Right(r) =>
@@ -497,7 +519,7 @@ val items = List("hiking boots", "running shoes", "team subscription")
         .foreach: (name, answer) =>
           answer match
             case a: NoulAnswer      => println(s"$name: ${a.isYes}")
-            case a: ScoreAnswer     => println(s"$name: ${a.score}")
+            case a: ScoreAnswer[?]  => println(s"$name: ${a.score}")
             case a: ChoiceAnswer[?] => println(s"$name: ${a.choice}")
     case Left(error) => println(s"Jev did not answer: $error")
 ```
@@ -558,6 +580,9 @@ nothing, and you get all the problems at once:
 
 This prints `Left(score 'feeling' needs 2 to 10 levels, got 1; score 'risk' uses the level 'Low'
 more than once)`.
+
+A Score over an enum that derives `JevScale` has its number of levels checked by the compiler
+instead: an enum of 1 case does not compile.
 
 ## 10. Configuration
 

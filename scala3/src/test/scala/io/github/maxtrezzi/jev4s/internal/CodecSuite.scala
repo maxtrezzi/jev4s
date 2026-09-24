@@ -29,7 +29,9 @@ class CodecSuite extends munit.FunSuite:
           score,
         )
         .map(_.answers),
-      Right(List(ScoreAnswer(0.5, p(0.5), Map(ujson.Str("Low") -> p(0.5), ujson.Str("High") -> p(0.5))))),
+      Right(
+        List(ScoreAnswer[ujson.Value](0.5, "Low", p(0.5), Map(ujson.Str("Low") -> p(0.5), ujson.Str("High") -> p(0.5))))
+      ),
     )
     assertEquals(
       Codec
@@ -75,6 +77,23 @@ class CodecSuite extends munit.FunSuite:
     assertEquals(error(reply(base + """{"2": 0.5}}"""), score), "'q': unknown key '2' in probabilities")
     assertEquals(error(reply(base + """{"-1": 0.5}}"""), score), "'q': unknown key '-1' in probabilities")
     assertEquals(error(reply(base + """{"low": 0.5}}"""), score), "'q': unknown key 'low' in probabilities")
+
+  test("the most likely level has the highest probability, and a tie goes to the lower level"):
+    val levels                            = List("q" -> Score("How?", "Low", "Mid", "High"))
+    def mostLikely(probabilities: String) =
+      Codec
+        .decode(reply(s"""{"type": "score", "score": 1, "confidence": 0.5, "probabilities": $probabilities}"""), levels)
+        .map(_.answers.map { case a: ScoreAnswer[?] => a.mostLikely; case other => other })
+    assertEquals(mostLikely("""{"0": 0.2, "1": 0.3, "2": 0.5}"""), Right(List(ujson.Str("High"))))
+    assertEquals(mostLikely("""{"0": 0.5, "1": 0.0, "2": 0.5}"""), Right(List(ujson.Str("Low"))))
+    assertEquals(mostLikely("""{"2": 0.4, "1": 0.4, "0": 0.2}"""), Right(List(ujson.Str("Mid"))))
+    assertEquals(mostLikely("""{"2": 0.9}"""), Right(List(ujson.Str("High"))))
+
+  test("a Score with no probabilities"):
+    assertEquals(
+      error(reply("""{"type": "score", "score": 0.5, "confidence": 0.5, "probabilities": {}}"""), score),
+      "'q': no probabilities",
+    )
 
   test("a Choice key that is not an option"):
     assertEquals(

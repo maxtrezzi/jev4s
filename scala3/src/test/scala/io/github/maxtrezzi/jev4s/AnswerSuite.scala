@@ -16,11 +16,11 @@ class AnswerSuite extends munit.FunSuite:
   test("the answer union covers the three answer types"):
     val answers: List[Answer] = List(
       NoulAnswer(Probability.unsafe(0.9)),
-      ScoreAnswer(1.3, Probability.unsafe(0.7), Map(ujson.Str("Calm") -> Probability.unsafe(0.7))),
+      ScoreAnswer[ujson.Value](1.3, "Calm", Probability.unsafe(0.7), Map(ujson.Str("Calm") -> Probability.unsafe(0.7))),
       ChoiceAnswer(1, Probability.unsafe(0.6), Map(1 -> Probability.unsafe(0.6))),
     )
     val kinds = answers.map:
       case _: NoulAnswer      => "noul"
-      case _: ScoreAnswer     => "score"
+      case _: ScoreAnswer[?]  => "score"
       case _: ChoiceAnswer[?] => "choice"
     assertEquals(kinds, List("noul", "score", "choice"))

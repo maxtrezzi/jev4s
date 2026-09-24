@@ -238,6 +238,25 @@ object of `Team`, so the compiler finds it without an import. `extends Product w
 Serializable` keeps the inferred types simple: a `List(Team.Billing, Team.Sales)` is a
 `List[Team]`.
 
+The levels of a Score can be values of your own type too, with an implicit `JevScale` that lists
+them from low to high:
+
+<!-- snippet: live/scala213/src/main/scala/guide/Questions.scala#feeling -->
+```scala
+sealed abstract class Feeling extends Product with Serializable
+object Feeling {
+  case object Calm    extends Feeling
+  case object Annoyed extends Feeling
+  case object Angry   extends Feeling
+
+  implicit val levels: JevScale[Feeling] =
+    JevScale(ScaleLevel(Calm, "Calm"), ScaleLevel(Annoyed, "Annoyed"), ScaleLevel(Angry, "Angry"))
+}
+```
+
+Each `ScaleLevel` has your value and the text that Jev reads. The order of the list is the order
+of the scale, so put the lowest level first: no check can see a list in the wrong order.
+
 Make one key for each question. Keeping the keys in an object lets you use them in many places:
 
 <!-- snippet: live/scala213/src/main/scala/guide/Questions.scala#questions -->
@@ -245,13 +264,13 @@ Make one key for each question. Keeping the keys in an object lets you use them 
 object Triage {
   val team    = Choice.of[Team]("Which team should handle `message`?").as("team") // the options come from Team
   val urgent  = Noul("Does the customer need an answer today?").as("urgent")
-  val feeling = Score("How does the customer feel in `message`?", List("Calm", "Annoyed", "Angry")).as("feeling")
+  val feeling = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling") // the levels come from Feeling
 }
 ```
 
-`Choice.of[Team]` takes its options from the implicit `JevChoice[Team]`. The levels of a Score
-are a `List`, from low to high: here `Calm` is level 0 and `Angry` is level 2. Now ask all three
-about a ticket, in one call. Jev answers them in parallel, so three questions take about the
+`Choice.of[Team]` takes its options from the implicit `JevChoice[Team]`, and `Score.of[Feeling]`
+its levels from the implicit `JevScale[Feeling]`: here `Calm` is level 0 and `Angry` is level 2.
+Now ask all three about a ticket, in one call. Jev answers them in parallel, so three questions take about the
 same time as one:
 
 <!-- snippet: live/scala213/src/main/scala/guide/Questions.scala#ask -->
@@ -265,7 +284,7 @@ object ThreeQuestions {
         val chosen: Option[Team]       = answers.get(team).map(_.choice)   // one of the cases of Team
         val isUrgent: Option[Boolean]  = answers.get(urgent).map(_.isYes)
         val score: Option[Double]      = answers.get(feeling).map(_.score) // from 0 (Calm) to 2 (Angry)
-        val angry: Option[Probability] = answers.get(feeling).flatMap(_.probabilities.get("Angry"))
+        val angry: Option[Probability] = answers.get(feeling).flatMap(_.probabilities.get(Feeling.Angry))
         println(s"$chosen, urgent: $isUrgent, feeling: $score, angry: $angry")
       case Left(error) => println(s"Jev did not answer: $error")
     }
@@ -284,12 +303,18 @@ it: you do not need to write them.
 | Question | Answer | What you read |
 |---|---|---|
 | `Noul` | `NoulAnswer` | `probability`, `isYes` |
-| `Score` | `ScoreAnswer` | `score`, `confidence`, `probabilities` |
+| `Score[Feeling]` | `ScoreAnswer[Feeling]` | `score`, `mostLikely` (a `Feeling`), `confidence`, `probabilities` |
 | `Choice[Team]` | `ChoiceAnswer[Team]` | `choice` (a `Team`), `confidence`, `probabilities`, `ifConfident` |
 
 The score is a `Double` from 0 to 2, and it can fall between two levels, such as 1.3.
-`probabilities` gives the probability of each level, and you read it with the level as you
-wrote it: `probabilities.get("Angry")`.
+`mostLikely` is the level with the highest probability, a `Feeling`; when two levels have the
+same probability, it is the lower one. `probabilities` gives the probability of each level, and
+you read it with a value of your type: `probabilities.get(Feeling.Angry)`.
+
+You can also give the levels as text, with no type of your own:
+`Score("How does the customer feel?", List("Calm", "Annoyed", "Angry"))`. Then each level is a
+`ujson.Value`, and you read the probabilities with the level as you wrote it:
+`probabilities.get("Angry")`. A misspelt level compiles, and gives `None` when the code runs.
 
 When you need several answers together, a `for` over the `Option`s reads well. The
 [README](../../README.md#scala-213) does it this way.
@@ -418,7 +443,7 @@ To combine Scores, bring each one to a scale from 0 to 1 first. A Score with 3 l
 <!-- snippet: live/scala213/src/main/scala/guide/Decisions.scala#normalized -->
 ```scala
 /** The score on a scale from 0 to 1, whatever the number of levels. */
-def normalized(answer: ScoreAnswer): Double = answer.score / (answer.probabilities.size - 1)
+def normalized(answer: ScoreAnswer[_]): Double = answer.score / (answer.probabilities.size - 1)
 ```
 
 Now the code can decide. The weights, 0.7 and 0.3, are yours: when the result does not match
@@ -431,7 +456,7 @@ val urgent   = Noul("Does the customer need an answer today?").as("urgent")
 val severity =
   Score("How bad is the problem in `message`?", List("Cosmetic", "A workaround exists", "No workaround exists"))
     .as("severity")
-val feeling = Score("How does the customer feel in `message`?", List("Calm", "Annoyed", "Angry")).as("feeling")
+val feeling = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling")
 
 def main(args: Array[String]): Unit = {
   println(s"Refund at once: ${refundAtOnce(Tickets.doubleCharge)}, ${refundAtOnce(Tickets.wrongSize)}")

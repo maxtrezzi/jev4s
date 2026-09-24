@@ -34,9 +34,11 @@ class CompileErrorSuite extends munit.FunSuite:
 
   test("an answer read as the wrong type"):
     val errors =
-      compileErrors("""val a: Either[JevError, ScoreAnswer] = client.ask("s", (urgent = Noul("U?"))).map(_.urgent)""")
+      compileErrors(
+        """val a: Either[JevError, ScoreAnswer[ujson.Value]] = client.ask("s", (urgent = Noul("U?"))).map(_.urgent)"""
+      )
     assert(errors.contains("Found:    io.github.maxtrezzi.jev4s.NoulAnswer"), errors)
-    assert(errors.contains("Required: io.github.maxtrezzi.jev4s.ScoreAnswer"), errors)
+    assert(errors.contains("Required: io.github.maxtrezzi.jev4s.ScoreAnswer[ujson.Value]"), errors)
 
   test("a tuple without names"):
     assertEquals(
@@ -53,5 +55,40 @@ class CompileErrorSuite extends munit.FunSuite:
   test("JevChoice derived for an enum case with parameters"):
     assertEquals(
       message(compileErrors("enum Shape derives JevChoice:\n  case Point\n  case Circle(radius: Double)")),
-      "JevChoice can be derived only for an enum whose cases have no parameters; write the options of Shape by hand with JevChoice(...).",
+      "JevChoice and JevScale can be derived only for an enum whose cases have no parameters; write the options or the levels of Shape by hand with JevChoice(...) or JevScale(...).",
+    )
+
+  test("JevScale derived for an enum case with parameters"):
+    assertEquals(
+      message(compileErrors("enum Shape derives JevScale:\n  case Point\n  case Circle(radius: Double)")),
+      "JevChoice and JevScale can be derived only for an enum whose cases have no parameters; write the options or the levels of Shape by hand with JevChoice(...) or JevScale(...).",
+    )
+
+  test("a Score with no levels"):
+    assertEquals(
+      message(compileErrors("""Score("How?")""")),
+      "a Score needs its levels: give them, as in Score(\"How?\", \"Calm\", \"Angry\"), or name an enum that derives JevScale, as in Score[Mood](\"How?\")",
+    )
+
+  test("a typed Score over a type with no JevScale"):
+    assertEquals(
+      message(compileErrors("""Score[java.time.DayOfWeek]("How?")""")),
+      "a Score needs its levels: give them, as in Score(\"How?\", \"Calm\", \"Angry\"), or name an enum that derives JevScale, as in Score[Mood](\"How?\")",
+    )
+
+  test("JevScale derived for an enum of one case, or of eleven"):
+    val expected = "a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases."
+    assertEquals(message(compileErrors("enum One derives JevScale:\n  case A")), expected)
+    assertEquals(
+      message(compileErrors("enum Eleven derives JevScale:\n  case A, B, C, D, E, F, G, H, I, J, K")),
+      expected,
+    )
+    assertEquals(compileErrors("enum Two derives JevScale:\n  case A, B"), "")
+    assertEquals(compileErrors("enum Ten derives JevScale:\n  case A, B, C, D, E, F, G, H, I, J"), "")
+
+  test("a typed Score is not read with a text key"):
+    assert(
+      message(compileErrors("""(null: ScoreAnswer[JevScaleSuite.Mood]).probabilities("Calm")""")).startsWith(
+        "Found:    (\"Calm\" : String)"
+      )
     )

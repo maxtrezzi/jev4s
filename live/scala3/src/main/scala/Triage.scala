@@ -8,9 +8,12 @@ final case class Ticket(message: String, plan: String, chargesUsd: List[Double])
 // (2) How a Ticket becomes JSON. The questions in (4) point at its fields by name: `message`.
 given ToState[Ticket] = t => ujson.Obj("message" -> t.message, "plan" -> t.plan, "charges_usd" -> t.chargesUsd)
 
-// (3) The possible answers of the Choice in (4). Jev picks one, and (5) gets a Team back.
+// (3) The possible answers of the Choice in (4), and the levels of its Score, from low to high.
 enum Team derives JevChoice:
   case Billing, Technical, Sales
+
+enum Feeling derives JevScale:
+  case Calm, Annoyed, Angry
 
 @main def triage(): Unit =
   val client = JevConfig.fromEnv("jev-1.13.0") match
@@ -26,7 +29,7 @@ enum Team derives JevChoice:
     (
       team = Choice[Team]("Which team should handle `message`?"),               // options from (3)
       duplicate = Noul("Do `charges_usd` show the same amount charged twice?"), // a field named in (2)
-      feeling = Score("How does the customer feel in `message`?", "Calm", "Annoyed", "Angry"),
+      feeling = Score[Feeling]("How does the customer feel in `message`?"),     // levels from (3)
     ),
   )
 

@@ -33,7 +33,7 @@ object Decisions {
 
   // snippet: normalized
   /** The score on a scale from 0 to 1, whatever the number of levels. */
-  def normalized(answer: ScoreAnswer): Double = answer.score / (answer.probabilities.size - 1)
+  def normalized(answer: ScoreAnswer[_]): Double = answer.score / (answer.probabilities.size - 1)
   // end: normalized
 
   // snippet: decisions
@@ -42,7 +42,7 @@ object Decisions {
   val severity =
     Score("How bad is the problem in `message`?", List("Cosmetic", "A workaround exists", "No workaround exists"))
       .as("severity")
-  val feeling = Score("How does the customer feel in `message`?", List("Calm", "Annoyed", "Angry")).as("feeling")
+  val feeling = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling")
 
   def main(args: Array[String]): Unit = {
     println(s"Refund at once: ${refundAtOnce(Tickets.doubleCharge)}, ${refundAtOnce(Tickets.wrongSize)}")

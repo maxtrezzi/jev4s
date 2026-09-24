@@ -1,6 +1,6 @@
 # ADR-0021: What the codec keeps from a Jev reply
 
-- **Status:** Accepted — instructions and criteria amended by ADR-0031
+- **Status:** Accepted — instructions and criteria amended by ADR-0031; shape of ScoreAnswer amended by ADR-0034
 - **Date:** 2026-09-22
 - **Supersedes:** —
 - **Amends:** —

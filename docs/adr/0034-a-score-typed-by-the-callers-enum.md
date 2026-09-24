@@ -1,9 +1,9 @@
 # ADR-0034: A Score typed by the caller's enum
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-23
 - **Supersedes:** —
-- **Amends:** —
+- **Amends:** ADR-0021
 
 ## Context
 
@@ -15,9 +15,8 @@ runtime. T6 found that a `Score(...)` has the type `Question[ScoreAnswer]`, so i
 be read back. The Score is the part of the API furthest from the showcase bar of
 [ADR-0001](0001-a-study-and-portfolio-project.md).
 
-When accepted, this ADR amends [ADR-0021](0021-what-the-codec-keeps-from-a-jev-reply.md) (the
-shape of `ScoreAnswer`). The branch that implements it sets `Amends` here and records the
-amendment in ADR-0021's status.
+This ADR amends [ADR-0021](0021-what-the-codec-keeps-from-a-jev-reply.md): the shape of
+`ScoreAnswer`.
 
 ## Forces
 
@@ -39,7 +38,7 @@ amendment in ADR-0021's status.
 
 ## Decision
 
-Proposed, Scala 3 first:
+Scala 3 first:
 
 - `Question.Score[L](instructions, levels: List[ScaleLevel[L]])`, with
   `ScaleLevel[L](value: L, text: ujson.Value)`.
@@ -53,7 +52,7 @@ Proposed, Scala 3 first:
 - `ScoreAnswer[L](score: Double, mostLikely: L, confidence: Probability, probabilities: Map[L,
   Probability])`. No "nearest level" field.
 - When two levels have the same highest probability, `mostLikely` is the first of them in the
-  order of the scale. To confirm when implementing.
+  order of the scale: the lower level. The owner confirmed it on 2026-09-24.
 - The `@implicitNotFound` text of `JevScale`:
   `a Score needs its levels: give them, as in Score("How?", "Calm", "Angry"), or name an enum that derives JevScale, as in Score[Mood]("How?")`.
 - 2.13 follows: a `JevScale[L]` written by hand, as `JevChoice` is, and the level count stays a

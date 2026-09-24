@@ -30,7 +30,7 @@ def route(team: ChoiceAnswer[Team]): String =
 
 // snippet: normalized
 /** The score on a scale from 0 to 1, whatever the number of levels. */
-extension (answer: ScoreAnswer) def normalized: Double = answer.score / (answer.probabilities.size - 1)
+extension (answer: ScoreAnswer[?]) def normalized: Double = answer.score / (answer.probabilities.size - 1)
 // end: normalized
 
 // snippet: decisions
@@ -41,7 +41,7 @@ extension (answer: ScoreAnswer) def normalized: Double = answer.score / (answer.
     team = Choice[Team]("Which team should handle `message`?"),
     urgent = Noul("Does the customer need an answer today?"),
     severity = Score("How bad is the problem in `message`?", "Cosmetic", "A workaround exists", "No workaround exists"),
-    feeling = Score("How does the customer feel in `message`?", "Calm", "Annoyed", "Angry"),
+    feeling = Score[Feeling]("How does the customer feel in `message`?"),
   )
   client.ask(cannotLogIn, questions) match
     case Right(r) =>

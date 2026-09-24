@@ -6,10 +6,12 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, T1 to T6 and T12 are done; T7 to T11 and T13 to T15 are planned, with ADR-0034 to ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, T1 to T7 and T12 are done; T8 to T11 and T13 to T15 are planned, with ADR-0035 to ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
-levels are text or JSON (`ujson.Value`, ADR-0031). Each module also has its client, `JevClient`:
+levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
+`derives JevScale` in Scala 3 or a `JevScale` written by hand in 2.13, and its answer names the
+`mostLikely` level (ADR-0034). Each module also has its client, `JevClient`:
 named tuples in Scala 3, typed keys in 2.13, over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), or over any `Transport`, and reports replies and retries as
 `JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,

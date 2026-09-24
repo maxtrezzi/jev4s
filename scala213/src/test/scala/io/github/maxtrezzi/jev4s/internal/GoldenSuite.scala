@@ -21,6 +21,18 @@ class GoldenSuite extends munit.FunSuite {
   private val frustration =
     "frustration" -> Score("How frustrated is the customer?", List("Calm", "Frustrated", "Very angry"))
 
+  /** The levels of `frustration` as a type of our own, with the text of the recorded request. */
+  sealed abstract class Frustration extends Product with Serializable
+  object Frustration {
+    case object Calm      extends Frustration
+    case object Upset     extends Frustration
+    case object VeryAngry extends Frustration
+    val all: List[Frustration]                = List(Calm, Upset, VeryAngry)
+    implicit val scale: JevScale[Frustration] =
+      JevScale(ScaleLevel(Calm, "Calm"), ScaleLevel(Upset, "Frustrated"), ScaleLevel(VeryAngry, "Very angry"))
+  }
+  private val typed = "frustration" -> Score.of[Frustration]("How frustrated is the customer?")
+
   private val mixedState = ujson.Obj("channel" -> "email", "customer_tier" -> "pro", "message" -> ticket)
   private val mixed: List[(String, Question[_])] = List(
     "urgent"     -> Noul("Does `message` convey urgency?"),
@@ -64,6 +76,7 @@ class GoldenSuite extends munit.FunSuite {
 
   private def answerOf(recorded: String, name: String): ujson.Value = read(s"$recorded/response.json")("answers")(name)
   private def probability(json: ujson.Value): Probability           = Probability.from(json.num).get
+  private def mostLikelyIndex(answer: ujson.Value): Int = answer("probabilities").obj.maxBy(_._2.num)._1.toInt
   private def decodeOk(recorded: String, questions: List[(String, Question[_])]): Decoded =
     Codec.decode(file(s"$recorded/response.json"), questions).fold(e => fail(s"$recorded: $e"), identity)
 
@@ -74,6 +87,7 @@ class GoldenSuite extends munit.FunSuite {
     assertEquals(Codec.encode(model, ticket, List(criteria)), read("noul-criteria/request.json"))
     assertEquals(Codec.encode(model, ticket, List(department)), read("choice/request.json"))
     assertEquals(Codec.encode(model, ticket, List(frustration)), read("score/request.json"))
+    assertEquals(Codec.encode(model, ticket, List(typed)), read("score/request.json"))
     assertEquals(Codec.encode(model, mixedState, mixed), read("mixed/request.json"))
   }
 
@@ -86,12 +100,25 @@ class GoldenSuite extends munit.FunSuite {
     val levels = recorded("questions")("risk")("criteria").arr.toList
     val answer = ScoreAnswer(
       json("score").num,
+      levels(mostLikelyIndex(json)),
       probability(json("confidence")),
       json("probabilities").obj.map { case (k, v) => levels(k.toInt) -> probability(v) }.toMap
     )
     assertEquals(decodeOk("structured", structured).answers.last, answer)
     assertEquals(json("legend").obj.toList.sortBy(_._1.toInt).map(_._2), levels)
     assert(answer.probabilities.contains("Harmless"))
+  }
+
+  test("a typed Score keys each probability by a value of its type") {
+    val json     = answerOf("score", "frustration")
+    val levels   = Frustration.all
+    val expected = ScoreAnswer(
+      json("score").num,
+      levels(mostLikelyIndex(json)),
+      probability(json("confidence")),
+      json("probabilities").obj.map { case (k, v) => levels(k.toInt) -> probability(v) }.toMap
+    )
+    assertEquals(decodeOk("score", List(typed)).answers, List[Answer](expected))
   }
 
   test("a Noul answer is the probability of yes") {
@@ -116,6 +143,7 @@ class GoldenSuite extends munit.FunSuite {
     val levels   = List[ujson.Value]("Calm", "Frustrated", "Very angry")
     val expected = ScoreAnswer(
       json("score").num,
+      levels(mostLikelyIndex(json)),
       probability(json("confidence")),
       json("probabilities").obj.map { case (k, v) => levels(k.toInt) -> probability(v) }.toMap
     )

@@ -25,9 +25,12 @@ final case class Ticket(message: String, plan: String, chargesUsd: List[Double])
 // (2) How a Ticket becomes JSON. The questions in (4) point at its fields by name: `message`.
 given ToState[Ticket] = t => ujson.Obj("message" -> t.message, "plan" -> t.plan, "charges_usd" -> t.chargesUsd)
 
-// (3) The possible answers of the Choice in (4). Jev picks one, and (5) gets a Team back.
+// (3) The possible answers of the Choice in (4), and the levels of its Score, from low to high.
 enum Team derives JevChoice:
   case Billing, Technical, Sales
+
+enum Feeling derives JevScale:
+  case Calm, Annoyed, Angry
 
 @main def triage(): Unit =
   val client = JevConfig.fromEnv("jev-1.13.0") match
@@ -43,7 +46,7 @@ enum Team derives JevChoice:
     (
       team = Choice[Team]("Which team should handle `message`?"),               // options from (3)
       duplicate = Noul("Do `charges_usd` show the same amount charged twice?"), // a field named in (2)
-      feeling = Score("How does the customer feel in `message`?", "Calm", "Annoyed", "Angry"),
+      feeling = Score[Feeling]("How does the customer feel in `message`?"),     // levels from (3)
     ),
   )
 
@@ -65,7 +68,7 @@ Send to Billing. Duplicate charge: true. Feeling: 1.82 of 2.
 The state is your own `Ticket`: jev4s turns it into JSON with the `ToState` of (2), and each
 question names the field it is about. The questions are a named tuple, and the answers are a
 named tuple with the same names. Each answer has the type of its question, so `r.team.choice` is
-a `Team`, and a name you did not ask is a compile error. `Probability(0.8)` is checked by the
+a `Team`, `r.feeling.mostLikely` is a `Feeling`, and a name you did not ask is a compile error. `Probability(0.8)` is checked by the
 compiler too: `Probability(1.5)` does not compile.
 
 ## Scala 2.13
@@ -88,7 +91,7 @@ object Ticket {
     t => ujson.Obj("message" -> t.message, "plan" -> t.plan, "charges_usd" -> t.chargesUsd)
 }
 
-// (3) The possible answers of the Choice in (4). Jev picks one, and (6) gets a Team back.
+// (3) The possible answers of the Choice in (4), and the levels of its Score, from low to high.
 sealed abstract class Team extends Product with Serializable
 object Team {
   case object Billing   extends Team
@@ -99,11 +102,21 @@ object Team {
     JevChoice(ChoiceOption(Billing, "billing"), ChoiceOption(Technical, "technical"), ChoiceOption(Sales, "sales"))
 }
 
+sealed abstract class Feeling extends Product with Serializable
+object Feeling {
+  case object Calm    extends Feeling
+  case object Annoyed extends Feeling
+  case object Angry   extends Feeling
+
+  implicit val levels: JevScale[Feeling] =
+    JevScale(ScaleLevel(Calm, "Calm"), ScaleLevel(Annoyed, "Annoyed"), ScaleLevel(Angry, "Angry"))
+}
+
 object Triage {
   // (4) Each question with its name: a key, used to ask in (5) and to read the answer in (6).
   val team      = Choice.of[Team]("Which team should handle `message`?").as("team")            // options from (3)
   val duplicate = Noul("Do `charges_usd` show the same amount charged twice?").as("duplicate") // a field named in (2)
-  val feeling   = Score("How does the customer feel in `message`?", List("Calm", "Annoyed", "Angry")).as("feeling")
+  val feeling   = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling")  // levels from (3)
 
   def main(args: Array[String]): Unit = {
     val client = JevConfig.fromEnv("jev-1.13.0") match {
@@ -121,7 +134,7 @@ object Triage {
         for {
           t <- answers.get(team)      // a ChoiceAnswer[Team]: t.choice is a value of (3)
           d <- answers.get(duplicate) // a NoulAnswer
-          f <- answers.get(feeling)   // a ScoreAnswer
+          f <- answers.get(feeling)   // a ScoreAnswer[Feeling]
         } {
           if (t.confidence >= 0.8)
             println(s"Send to ${t.choice}. Duplicate charge: ${d.isYes}. Feeling: ${f.score} of 2.")
@@ -171,8 +184,9 @@ and you can run each one from this repository, for example `sbt "scala3Live/runM
 
 ## What jev4s gives you
 
-- **Typed answers.** A Noul gives a probability, a Score a position on your scale, a Choice a
-  value of your own type.
+- **Typed answers.** A Noul gives a probability, a Score a position on your scale and its most
+  likely level, a Choice a value of your own type. The levels of a Score and the options of a
+  Choice can be your own types too.
 - **No exceptions.** Every call returns `Either[JevError, A]`. Mistakes that the compiler can
   see are compile errors, and a request with problems is not sent.
 - **Retries like the official SDKs**, with a limit on the total time of a call.

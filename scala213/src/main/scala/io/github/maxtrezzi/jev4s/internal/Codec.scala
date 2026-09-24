@@ -68,7 +68,7 @@ private[jev4s] object Codec {
       if (criteria.nonEmpty) base("criteria") = ujson.Obj.from(criteria)
       base
     case Score(instructions, levels) =>
-      ujson.Obj("type" -> "score", "instructions" -> instructions, "criteria" -> ujson.Arr.from(levels))
+      ujson.Obj("type" -> "score", "instructions" -> instructions, "criteria" -> ujson.Arr.from(levels.map(_.text)))
     case Choice(instructions, options) =>
       val criteria = options.map(o => o.key -> o.description.getOrElse(ujson.Null))
       ujson.Obj("type" -> "choice", "instructions" -> instructions, "criteria" -> ujson.Obj.from(criteria))
@@ -81,15 +81,24 @@ private[jev4s] object Codec {
           _ <- hasType(json, "noul", name)
           p <- field(json, "noul").flatMap(probability(_, name))
         } yield NoulAnswer(p)
-      case Score(_, levels) =>
-        for {
-          _             <- hasType(json, "score", name)
-          score         <- field(json, "score").flatMap(number(_, name))
-          confidence    <- field(json, "confidence").flatMap(probability(_, name))
-          probabilities <- probabilitiesOf(json, name)(index => index.toIntOption.flatMap(levels.lift))
-        } yield ScoreAnswer(score, confidence, probabilities)
+      case s: Score[_]  => decodeScore(name, s, json)
       case c: Choice[_] => decodeChoice(name, c, json)
     }
+
+  private def decodeScore[L](name: String, question: Score[L], json: ujson.Value): Either[String, Answer] = {
+    val values = question.levels.map(_.value)
+    for {
+      _             <- hasType(json, "score", name)
+      score         <- field(json, "score").flatMap(number(_, name))
+      confidence    <- field(json, "confidence").flatMap(probability(_, name))
+      probabilities <- probabilitiesOf(json, name)(index => index.toIntOption.flatMap(values.lift))
+      // maxByOption keeps the first of equal maxima: a tie goes to the lower level.
+      mostLikely <- values
+        .filter(probabilities.contains)
+        .maxByOption(probabilities)
+        .toRight(s"'$name': no probabilities")
+    } yield ScoreAnswer(score, mostLikely, confidence, probabilities)
+  }
 
   private def decodeChoice[C](name: String, question: Choice[C], json: ujson.Value): Either[String, Answer] = {
     val byKey = question.options.map(o => o.key -> o.value).toMap
