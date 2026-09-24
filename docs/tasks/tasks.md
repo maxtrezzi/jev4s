@@ -327,7 +327,7 @@ unchanged; the README, the guides and `live/` use the new types; the definition 
 
 ### T8 — A reply without input tokens still answers
 
-**Status:** Not started — [ADR-0035](../adr/0035-a-reply-without-input-tokens-still-answers.md) (Proposed)
+**Status:** Done 2026-09-24 — [ADR-0035](../adr/0035-a-reply-without-input-tokens-still-answers.md)
 
 **Branch:** `task/tolerant-codec`
 
@@ -336,6 +336,21 @@ answers. `model` stays required. Follows T7, which also changes the codec.
 
 **Done when:** a reply without `usage` gives `Right` and a `Replied` with no token count, in both
 modules, tested with JSON written by hand; the definition of done holds.
+
+#### Found
+
+- **The shape is `Option[Long]`.** ADR-0035 left `Option[Long]` or a type of its own open; absence
+  is the only case, so `Option` needs no new name. The owner accepted ADR-0035 on 2026-09-24.
+- **Every way to lose the count gives `None`, never an error**: no `usage`, a `usage` that is not
+  an object, a `usage` without `input_tokens`, and an `input_tokens` that is `3.5` or `"3"`.
+  `CodecSuite` tests each, and `0` stays `Some(0)`. The Codec's error `'input_tokens': expected a
+  whole number` is gone with them.
+- **The examples in `live/` read the count as an `Option`**: the tutorials' `onEvent` adds it with
+  `foreach`, and the example of each module logs `unknown` when it is missing. Both tutorials and
+  `concepts.md` say that `inputTokens` can be `None`.
+- Measured: `scala3` 124 tests and `scala213` 107, 100% statement and branch coverage in both;
+  Stryker4s detects every mutant, 172 of 186 in `scala3` (12 ignored, 2 compile errors in
+  `RetryPolicy`, as before) and 177 of 178 in `scala213` (1 ignored).
 
 ### T9 — The 2.13 module on Scala 2.13.16
 

@@ -17,7 +17,10 @@ enum Dept derives JevChoice, CanEqual:
         config,
         onEvent = {
           case JevEvent.Replied(reply) =>
-            log.log(System.Logger.Level.INFO, s"answered by ${reply.model}, ${reply.inputTokens} input tokens")
+            log.log(
+              System.Logger.Level.INFO,
+              s"answered by ${reply.model}, ${reply.inputTokens.getOrElse("unknown")} input tokens",
+            )
           case JevEvent.Retrying(error, n, delay) =>
             log.log(System.Logger.Level.WARNING, s"retry $n in $delay after $error")
         },

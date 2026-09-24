@@ -20,7 +20,7 @@ class CodecSuite extends munit.FunSuite:
     val p = Probability.unsafe
     assertEquals(
       Codec.decode(reply("""{"type": "noul", "noul": 0.25}"""), noul),
-      Right((answers = List(NoulAnswer(p(0.25))), reply = Reply("m", 3L))),
+      Right((answers = List(NoulAnswer(p(0.25))), reply = Reply("m", Some(3L)))),
     )
     assertEquals(
       Codec
@@ -118,15 +118,16 @@ class CodecSuite extends munit.FunSuite:
       "'model': expected a string, got 7",
     )
 
-  test("input tokens that are missing or not a whole number"):
-    assertEquals(
-      error("""{"model": "m", "answers": {"q": {"type": "noul", "noul": 0.5}}}""", noul),
-      "missing field 'usage'",
-    )
-    assertEquals(
-      error(reply("""{"type": "noul", "noul": 0.5}""", tokens = "3.5"), noul),
-      "'input_tokens': expected a whole number, got 3.5",
-    )
+  test("input tokens that are missing or not a whole number give no count, and the answers"):
+    val answer               = """{"type": "noul", "noul": 0.5}"""
+    def tokens(body: String) = Codec.decode(body, noul).map(d => (d.answers, d.reply))
+    val none                 = Right((List(NoulAnswer(Probability(0.5))), Reply("m", None)))
+    assertEquals(tokens(s"""{"model": "m", "answers": {"q": $answer}}"""), none)
+    assertEquals(tokens(s"""{"model": "m", "answers": {"q": $answer}, "usage": 3}"""), none)
+    assertEquals(tokens(s"""{"model": "m", "answers": {"q": $answer}, "usage": {"output_tokens": 0}}"""), none)
+    assertEquals(tokens(reply(answer, tokens = "3.5")), none)
+    assertEquals(tokens(reply(answer, tokens = "\"3\"")), none)
+    assertEquals(tokens(reply(answer, tokens = "0")), Right((List(NoulAnswer(Probability(0.5))), Reply("m", Some(0L)))))
 
   test("a Noul encodes only the criteria it has"):
     def criteria(q: Question[?]) = Codec.encode("m", ujson.Null, List("q" -> q))("questions")("q").obj.get("criteria")

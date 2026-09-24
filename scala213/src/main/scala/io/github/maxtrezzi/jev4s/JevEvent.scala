@@ -13,7 +13,7 @@ sealed abstract class JevEvent extends Product with Serializable
 object JevEvent {
 
   /** A successful reply, after its answers were read: the model that answered and the input
-    * tokens billed. Sent once per call, not once per attempt.
+    * tokens billed, when the reply reports them. Sent once per call, not once per attempt.
     */
   final case class Replied(reply: Reply) extends JevEvent
 

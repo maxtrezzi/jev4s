@@ -154,7 +154,7 @@ class GoldenSuite extends munit.FunSuite {
     val json = read("noul/response.json")
     assertEquals(
       decodeOk("noul", List(urgent)).reply,
-      Reply(json("model").str, json("usage")("input_tokens").num.toLong)
+      Reply(json("model").str, Some(json("usage")("input_tokens").num.toLong))
     )
   }
 

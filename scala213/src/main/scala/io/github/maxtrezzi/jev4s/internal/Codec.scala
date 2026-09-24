@@ -29,8 +29,9 @@ private[jev4s] object Codec {
       list    <- traverse(questions) { case (name, question) =>
         field(answers, name).flatMap(decodeAnswer(name, question, _))
       }
-      model  <- field(json, "model").flatMap(string(_, "model"))
-      tokens <- field(json, "usage").flatMap(field(_, "input_tokens")).flatMap(long(_, "input_tokens"))
+      model <- field(json, "model").flatMap(string(_, "model"))
+      // Missing tokens cost no answers (ADR-0035).
+      tokens = field(json, "usage").flatMap(field(_, "input_tokens")).toOption.flatMap(wholeNumber)
     } yield Decoded(list, Reply(model, tokens))
     decoded.left.map(JevError.Decoding)
   }
@@ -120,8 +121,7 @@ private[jev4s] object Codec {
   private def number(json: ujson.Value, name: String): Either[String, Double] =
     json.numOpt.toRight(s"'$name': expected a number, got $json")
 
-  private def long(json: ujson.Value, name: String): Either[String, Long] =
-    json.numOpt.filter(_.isWhole).map(_.toLong).toRight(s"'$name': expected a whole number, got $json")
+  private def wholeNumber(json: ujson.Value): Option[Long] = json.numOpt.filter(_.isWhole).map(_.toLong)
 
   private def probability(json: ujson.Value, name: String): Either[String, Probability] =
     number(json, name).flatMap(d => Probability.from(d).toRight(s"'$name': $d is not a probability"))
