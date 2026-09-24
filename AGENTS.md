@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, T1 to T10 and T12 are done; T11 and T13 to T15 are planned, with ADR-0038 and ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, T1 to T12 are done; T13 to T15 are planned, with ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -16,7 +16,7 @@ levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can als
 of Spark 4.0 (ADR-0036). Each module also has its client, `JevClient`:
 named tuples in Scala 3; in 2.13, typed keys answered as a tuple, 1 to 10 per call (ADR-0037);
 `askMap` in both for questions built at runtime; over `JdkTransport` with the official SDKs' retries
-and a 30 s budget per call (ADR-0030), or over any `Transport`, and reports replies and retries as
+and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpClient` (ADR-0038), or over any `Transport`, and reports replies and retries as
 `JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each

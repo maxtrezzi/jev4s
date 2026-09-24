@@ -120,6 +120,23 @@ class JdkTransportSuite extends munit.FunSuite:
       val quick = config(server, RetryPolicy.none).copy(timeout = 200.millis)
       assertEquals(JdkTransport(quick).send("{}"), Left(JevError.Network("no response within 200 milliseconds")))
 
+  test("a client of your own sends every request, retries included"):
+    withServer(Reply(503, ""), Reply(200, "done")): server =>
+      val own = CountingHttpClient()
+      assertEquals(JdkTransport(config(server), Recorder(), httpClient = Some(own)).send("{}"), Right("done"))
+      assertEquals(own.sent.get, 2)
+      assertEquals(server.requests.size, 2)
+
+  test("config.timeout still limits each request sent with a client of your own"):
+    withServer(Hang): server =>
+      val quick = config(server, RetryPolicy.none).copy(timeout = 200.millis)
+      val own   = CountingHttpClient()
+      assertEquals(
+        JdkTransport(quick, httpClient = Some(own)).send("{}"),
+        Left(JevError.Network("no response within 200 milliseconds")),
+      )
+      assertEquals(own.sent.get, 1)
+
   test("the default sleeper and random source are used when none is given"):
     withServer(Reply(503, ""), Reply(200, "done")): server =>
       val fast = config(server, RetryPolicy(backoffInitial = 1.millis))

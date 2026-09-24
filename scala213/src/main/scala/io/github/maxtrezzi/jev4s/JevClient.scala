@@ -1,5 +1,7 @@
 package io.github.maxtrezzi.jev4s
 
+import java.net.http.HttpClient
+
 import io.github.maxtrezzi.jev4s.internal.{Codec, Validator}
 
 /** A client for Jev. Build one with [[JevClient.create]] to call the real API, or with
@@ -261,9 +263,16 @@ final class JevClient private (model: String, transport: Transport, onEvent: Jev
 
 object JevClient {
 
-  /** A client that calls the real API as `config` says, over [[JdkTransport]]. */
-  def create(config: JevConfig, onEvent: JevEvent => Unit = _ => ()): JevClient =
-    new JevClient(config.model, new JdkTransport(config, onEvent = onEvent), onEvent)
+  /** A client that calls the real API as `config` says, over [[JdkTransport]]. Pass `httpClient`
+    * to send the requests with a `java.net.http.HttpClient` of your own: [[JdkTransport]] says
+    * what changes, and you close it.
+    */
+  def create(
+      config: JevConfig,
+      onEvent: JevEvent => Unit = _ => (),
+      httpClient: Option[HttpClient] = None
+  ): JevClient =
+    new JevClient(config.model, new JdkTransport(config, onEvent = onEvent, httpClient = httpClient), onEvent)
 
   /** A client for `model` over a transport of your own, such as a fake in tests. The model has
     * no default, because `jev-latest` moves.

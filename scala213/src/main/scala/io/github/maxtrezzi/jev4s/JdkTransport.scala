@@ -17,8 +17,11 @@ import io.github.maxtrezzi.jev4s.internal.Codec
   * it sends a [[JevEvent.Retrying]] to `onEvent`. `nanoTime` is the clock that measures
   * `maxElapsed`; replace it only in tests.
   *
-  * Each instance has its own `java.net.http.HttpClient`, with its own threads: build one and
-  * reuse it.
+  * Without `httpClient`, each instance builds its own `java.net.http.HttpClient`, with its own
+  * threads, and never closes it: build one transport and reuse it. Pass `httpClient` to use a
+  * client of your own, for example with your executor or a proxy, or to close it on JDK 21. Then
+  * its connect timeout is its own, and `config.timeout` still limits each request. jev4s never
+  * closes a client you pass: you close it, after the last call.
   *
   * A thread interrupted while it sends or waits gets its `InterruptedException`: interruption is
   * a request to stop, not an error to return.
@@ -28,10 +31,11 @@ final class JdkTransport(
     sleeper: Sleeper = Sleeper.thread,
     random: () => Double = () => ThreadLocalRandom.current().nextDouble(),
     onEvent: JevEvent => Unit = _ => (),
-    nanoTime: () => Long = () => System.nanoTime()
+    nanoTime: () => Long = () => System.nanoTime(),
+    httpClient: Option[HttpClient] = None
 ) extends Transport {
 
-  private val client   = HttpClient.newBuilder().connectTimeout(config.timeout.toJava).build()
+  private val client   = httpClient.getOrElse(HttpClient.newBuilder().connectTimeout(config.timeout.toJava).build())
   private val endpoint = URI.create(s"${config.baseUrl.toString.stripSuffix("/")}/v1/systemone")
 
   def send(body: String): Either[JevError, String] = attempt(body, retry = 1, start = nanoTime())

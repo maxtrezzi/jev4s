@@ -40,7 +40,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T8](tasks.md#t8--a-reply-without-input-tokens-still-answers) | A reply without input tokens still answers | Done |
 | [T9](tasks.md#t9--the-213-module-on-scala-21316) | The 2.13 module on Scala 2.13.16 | Done |
 | [T10](tasks.md#t10--typed-tuples-from-the-213-client) | Typed tuples from the 2.13 client | Done |
-| [T11](tasks.md#t11--the-callers-own-http-client) | The caller's own HTTP client | Not started |
+| [T11](tasks.md#t11--the-callers-own-http-client) | The caller's own HTTP client | Done |
 | [T12](tasks.md#t12--scaladoc-fixes) | Scaladoc fixes | Done |
 | [T13](tasks.md#t13--a-guide-section-on-gateways) | A guide section on gateways | Blocked |
 | [T14](tasks.md#t14--a-guide-chapter-on-many-requests) | A guide chapter on many requests | Blocked |
