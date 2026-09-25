@@ -598,8 +598,8 @@ $0.00001. Record any rate-limit header and the measured latency here, for T14.
 
 ### T16 — The request id of each reply
 
-**Status:** Needs decision — where the id goes is an API change, settled by an ADR the owner
-accepts
+**Status:** Needs decision — [ADR-0040](../adr/0040-the-request-id-of-each-response-is-an-event.md)
+(Proposed), which the owner accepts
 
 **Branch:** `task/request-id`
 

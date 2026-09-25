@@ -93,3 +93,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0037](0037-the-2-13-client-answers-with-a-typed-tuple.md) | The 2.13 client answers with a typed tuple | Accepted |
 | [0038](0038-the-caller-may-pass-its-own-http-client.md) | The caller may pass its own HTTP client | Accepted |
 | [0039](0039-the-library-does-not-limit-the-request-rate.md) | The library does not limit the request rate | Accepted |
+| [0040](0040-the-request-id-of-each-response-is-an-event.md) | The request id of each response is an event | Proposed |
