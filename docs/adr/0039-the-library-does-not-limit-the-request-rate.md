@@ -1,6 +1,6 @@
 # ADR-0039: The library does not limit the request rate
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-24
 - **Supersedes:** —
 - **Amends:** —
@@ -46,7 +46,7 @@ client against a local server that answers in 100 ms and accepts 20 requests in 
 
 ## Decision
 
-Proposed: the library ships no rate limiter. The user guides show how to send many requests: a
+The library ships no rate limiter. The user guides show how to send many requests: a
 small thread pool, a pacer whose rate is a parameter, and what to do with the `RateLimited`
 errors that remain. The guides may quote the published limits, with the date they were read and
 a link to the page, as an example of a rate to start from; never as a constant of the library.

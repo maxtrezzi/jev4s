@@ -92,4 +92,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0036](0036-the-2-13-module-compiles-with-spark-4s-scala.md) | The 2.13 module compiles with the Scala of the oldest Spark 4 | Accepted |
 | [0037](0037-the-2-13-client-answers-with-a-typed-tuple.md) | The 2.13 client answers with a typed tuple | Accepted |
 | [0038](0038-the-caller-may-pass-its-own-http-client.md) | The caller may pass its own HTTP client | Accepted |
-| [0039](0039-the-library-does-not-limit-the-request-rate.md) | The library does not limit the request rate | Proposed |
+| [0039](0039-the-library-does-not-limit-the-request-rate.md) | The library does not limit the request rate | Accepted |

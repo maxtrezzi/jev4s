@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, T1 to T13 and T15 are done; T14 is planned, with ADR-0039 proposed, and T16 needs an ADR; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6 and T1 to T15 are done; T16 needs an ADR; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -17,7 +17,7 @@ of Spark 4.0 (ADR-0036). Each module also has its client, `JevClient`:
 named tuples in Scala 3; in 2.13, typed keys answered as a tuple, 1 to 10 per call (ADR-0037);
 `askMap` in both for questions built at runtime; over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpClient` (ADR-0038), or over any `Transport`, and reports replies and retries as
-`JevEvent`s. The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
+`JevEvent`s. The library has no rate limiter; the tutorials show a pacer (ADR-0039). The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
 version, all quoting the examples in `live/` (ADR-0032); the concepts guide also shows how to reach Jev
@@ -114,6 +114,7 @@ python3 build/check-docs.py --write-snippets          # copy each quoted example
 sbt scalafmtAll scalafmtSbt scala3Live/scalafmtAll scala213Live/scalafmtAll   # format; CI checks all four
 python3 build/capture-golden.py                       # golden/ plan only; --run makes paid calls
 sbt scala3Live/test scala213Live/test                 # real API, paid; skipped without the key
+sbt "scala3Live/testOnly guide.*"                     # the guides' tests only: free, CI runs them
 sbt scala3Live/run                                    # the example, one paid call
 sbt "scala3Live/runMain guide.firstQuestion"          # one example of a guide, one paid call
 ```
@@ -135,7 +136,7 @@ instruments the classes, and a `publishLocal` from an instrumented build ships t
 instrumentation.
 
 CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each module on JDK 17
-and 21 with Scaladoc and the live project compiled, runs coverage and Stryker4s with the mutant
+and 21 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`), runs coverage and Stryker4s with the mutant
 check per module, and runs the docs check. Mutation testing runs on
 every pull request ([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md));
 never point it at a project that calls the real API.

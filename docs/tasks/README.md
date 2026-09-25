@@ -43,7 +43,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T11](tasks.md#t11--the-callers-own-http-client) | The caller's own HTTP client | Done |
 | [T12](tasks.md#t12--scaladoc-fixes) | Scaladoc fixes | Done |
 | [T13](tasks.md#t13--a-guide-section-on-gateways) | A guide section on gateways | Done |
-| [T14](tasks.md#t14--a-guide-chapter-on-many-requests) | A guide chapter on many requests | Blocked |
+| [T14](tasks.md#t14--a-guide-chapter-on-many-requests) | A guide chapter on many requests | Done |
 | [T15](tasks.md#t15--every-header-of-a-real-reply) | Every header of a real reply | Done |
 | [T16](tasks.md#t16--the-request-id-of-each-reply) | The request id of each reply | Needs decision |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |

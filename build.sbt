@@ -42,9 +42,12 @@ lazy val scala213 = project
 
 // Tests and examples against the real API (M5). They cost money, so they are separate projects
 // that the root does not aggregate: `sbt test`, coverage and Stryker4s never run them. Each test
-// is skipped unless TYPESAFE_API_KEY is set. Run with `sbt scala3Live/test`, `sbt scala3Live/run`.
+// of LiveSuite is skipped unless TYPESAFE_API_KEY is set. Run with `sbt scala3Live/test`,
+// `sbt scala3Live/run`.
 // The projects also hold the examples that the README and the guides quote, each with its own
 // main: `run` starts the example of M5, and `runMain guide.firstQuestion` starts one of the others.
+// The tests of the guides (package guide) use a fake transport or a local server, cost nothing,
+// and run in CI: `sbt "scala3Live/testOnly guide.*"`.
 lazy val scala3Live = project
   .in(file("live/scala3"))
   .dependsOn(scala3)

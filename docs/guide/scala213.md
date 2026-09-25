@@ -24,6 +24,7 @@ few hundred input tokens.
 10. [Configuration](#10-configuration)
 11. [Logs and metrics](#11-logs-and-metrics)
 12. [Testing your code](#12-testing-your-code)
+13. [Many requests](#13-many-requests)
 
 ## 1. Set up a project
 
@@ -659,7 +660,8 @@ def fromVault(secret: String): JevConfig = JevConfig(new ApiKey(secret), model =
 
 `ask` blocks the calling thread until the answer arrives. To make several calls at the same
 time, call `ask` from several threads, for example with `Future`s. One client serves all the
-threads.
+threads. [Chapter 13](#13-many-requests) shows how to stay under the limit
+of your account.
 
 `JevClient.create(config)` builds its own `java.net.http.HttpClient`. To use one of yours, for
 example with a proxy or your own executor, pass `httpClient = Some(yours)`. It keeps its own
@@ -754,3 +756,92 @@ A client over your own transport does not retry: the retries belong to the trans
 `JevClient.create(config)`.
 
 This test uses [munit](https://scalameta.org/munit/), but any test library works.
+
+## 13. Many requests
+
+To send many requests, call `ask` from a small pool of threads, and keep the number of calls in
+each second under the limit of your account.
+
+**The limit.** Jev limits each account. On 2026-09-24, TypeSafe's page
+[Models](https://docs.typesafe.ai/models.md) gave 1,200 requests per minute (20 per second) and
+250,000 input tokens per second for `jev-1.13.0`. The same page says that the limits can change
+without notice, and that they are higher on custom and enterprise plans. Through a
+[gateway](concepts.md#10-through-a-gateway), the gateway's limits apply. A reply has no header
+that says how close you are to the limit, so you choose the rate yourself.
+
+**More threads do not give more answers.** Above the limit, Jev answers "429 Too Many Requests".
+jev4s retries a few times, then returns `RateLimited`. On a test server that accepted 20
+requests per second, 32 threads without any control lost 67 to 92 answers out of 200. With the
+same 32 threads and a pacer at 19 requests per second, no answer was lost.
+
+A **pacer** gives each call a start time, evenly spaced: with 15 calls per second, one call
+every 67 ms. A thread that comes too early sleeps until its time. It is a few lines, and jev4s
+does not include one, because only you know the right rate for your account:
+
+<!-- snippet: live/scala213/src/main/scala/guide/Many.scala#pacer -->
+```scala
+/** Starts at most `perSecond` calls in each second, evenly spaced: each caller waits for its slot. */
+final class Pacer(perSecond: Double) {
+  private val gap  = (1e9 / perSecond).toLong // nanoseconds between two calls
+  private val next = new AtomicLong(System.nanoTime())
+
+  def pace[A](call: => A): A = {
+    val now  = System.nanoTime()
+    val slot = math.max(next.getAndAccumulate(now, (last, t) => math.max(last, t) + gap), now)
+    TimeUnit.NANOSECONDS.sleep(slot - now)
+    call
+  }
+}
+```
+
+Use it around each call, from a fixed pool of threads:
+
+<!-- snippet: live/scala213/src/main/scala/guide/Many.scala#many -->
+```scala
+val urgent = Noul("Is the message urgent?").as("urgent")
+
+/** Asks if each message is urgent: `threads` calls at a time, and at most `perSecond` per second. */
+def urgentAll(
+    client: JevClient,
+    messages: List[String],
+    perSecond: Double,
+    threads: Int = 8
+): List[(String, Either[JevError, Boolean])] = {
+  val pool                          = Executors.newFixedThreadPool(threads)
+  implicit val ec: ExecutionContext = ExecutionContext.fromExecutorService(pool)
+  val pacer                         = new Pacer(perSecond)
+  try {
+    val answers = Future.traverse(messages) { message =>
+      Future(message -> pacer.pace(client.ask(message, urgent)).map(_.isYes))
+    }
+    Await.result(answers, Duration.Inf)
+  } finally pool.shutdown()
+}
+```
+
+How many threads? About the rate multiplied by the time of one call: at 15 calls per second and
+about 0.5 s per call, 8 threads. With fewer, you do not reach the rate; with more, the extra
+threads only wait for the pacer. One client serves all the threads.
+
+Some calls can still fail with `RateLimited`, for example when another program uses the same
+account. The client already retried them, so do not send them again at once, in a loop. Keep
+them, and send them again later at a lower rate, or give them to a person:
+
+<!-- snippet: live/scala213/src/main/scala/guide/Many.scala#rate-limited -->
+```scala
+def main(args: Array[String]): Unit = {
+  val messages = List(
+    "Help! My payouts have been failing for 3 days.",
+    "Can I change the colour of my invoices?",
+    "Our whole team is locked out, and the demo starts in 10 minutes."
+  )
+  val (limited, answered) = urgentAll(client, messages, perSecond = 15).partition {
+    case (_, Left(JevError.RateLimited(_))) => true
+    case _                                  => false
+  }
+  answered.foreach { case (message, isUrgent) => println(s"$message -> $isUrgent") }
+  if (limited.nonEmpty) println(s"Send ${limited.size} messages again later, at a lower rate")
+}
+```
+
+Run it with `sbt "scala213Live/runMain guide.Many"`. It makes three calls to Jev.
