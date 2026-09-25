@@ -658,6 +658,10 @@ yourself:
 def fromVault(secret: String): JevConfig = JevConfig(new ApiKey(secret), model = "jev-1.13.0")
 ```
 
+A config that you build is not checked for `https`, so give it an `https` base URL. A value that
+HTTP cannot carry, such as a secret with a newline at the end, does not throw: each call returns
+`JevError.InvalidConfig`, whose message never shows the key.
+
 `ask` blocks the calling thread until the answer arrives. To make several calls at the same
 time, call `ask` from several threads, for example with `Future`s. One client serves all the
 threads. [Chapter 13](#13-many-requests) shows how to stay under the limit

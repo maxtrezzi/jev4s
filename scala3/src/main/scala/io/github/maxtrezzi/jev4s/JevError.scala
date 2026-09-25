@@ -8,6 +8,11 @@ enum JevError derives CanEqual:
   /** The request was not sent: it has the listed problems. */
   case InvalidRequest(problems: List[Problem])
 
+  /** The request was not sent: the config has a value that HTTP cannot carry, such as an API key
+    * with a newline or a timeout of zero. The message says which, and never shows the key.
+    */
+  case InvalidConfig(message: String)
+
   /** HTTP 401: the API key is missing or wrong. */
   case Unauthorized
 
@@ -40,8 +45,9 @@ enum JevError derives CanEqual:
 
   /** True when sending the same request again may succeed. */
   def isRetryable: Boolean = this match
-    case RateLimited(_) | Overloaded | ServerError(_, _) | Network(_)                    => true
-    case InvalidRequest(_) | Unauthorized | Rejected(_) | Unexpected(_, _) | Decoding(_) => false
+    case RateLimited(_) | Overloaded | ServerError(_, _) | Network(_)                                       => true
+    case InvalidRequest(_) | InvalidConfig(_) | Unauthorized | Rejected(_) | Unexpected(_, _) | Decoding(_) =>
+      false
 
 /** A problem found in a request before it is sent. */
 enum Problem derives CanEqual:
@@ -52,6 +58,8 @@ enum Problem derives CanEqual:
   case DuplicateLevel(name: String, level: String)
   case ChoiceOptions(name: String, options: Int)
   case DuplicateOptionKey(name: String, key: String)
+  case DuplicateLevelValue(name: String, value: String)
+  case DuplicateOptionValue(name: String, value: String)
 
   def message: String = this match
     case NoQuestions                => "a request needs at least one question"
@@ -61,3 +69,5 @@ enum Problem derives CanEqual:
     case DuplicateLevel(n, level)   => s"score '$n' uses the level '$level' more than once"
     case ChoiceOptions(n, got)      => s"choice '$n' needs 1 to 255 options, got $got"
     case DuplicateOptionKey(n, key) => s"choice '$n' uses the option key '$key' more than once"
+    case DuplicateLevelValue(n, v)  => s"score '$n' gives the value '$v' to more than one level"
+    case DuplicateOptionValue(n, v) => s"choice '$n' gives the value '$v' to more than one option"

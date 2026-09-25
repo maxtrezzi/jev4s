@@ -13,6 +13,7 @@ class JevErrorSuite extends munit.FunSuite {
 
   test("invalid, unauthorized, rejected and undecodable requests are not retryable") {
     assert(!JevError.InvalidRequest(List(Problem.NoQuestions)).isRetryable)
+    assert(!JevError.InvalidConfig("the timeout must be more than zero: 0 days").isRetryable)
     assert(!JevError.Unauthorized.isRetryable)
     assert(!JevError.Rejected("bad field").isRetryable)
     assert(!JevError.Decoding("not JSON").isRetryable)
@@ -29,6 +30,14 @@ class JevErrorSuite extends munit.FunSuite {
     assertEquals(
       Problem.DuplicateOptionKey("dept", "a").message,
       "choice 'dept' uses the option key 'a' more than once"
+    )
+    assertEquals(
+      Problem.DuplicateLevelValue("mood", "Calm").message,
+      "score 'mood' gives the value 'Calm' to more than one level"
+    )
+    assertEquals(
+      Problem.DuplicateOptionValue("dept", "Billing").message,
+      "choice 'dept' gives the value 'Billing' to more than one option"
     )
   }
 }

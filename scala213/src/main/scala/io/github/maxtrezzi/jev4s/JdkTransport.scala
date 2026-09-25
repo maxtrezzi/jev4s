@@ -23,6 +23,11 @@ import io.github.maxtrezzi.jev4s.internal.Codec
   * its connect timeout is its own, and `config.timeout` still limits each request. jev4s never
   * closes a client you pass: you close it, after the last call.
   *
+  * Before it sends anything, it checks what `java.net.http` would refuse with an exception: a base
+  * URL that is not `http` or `https` with a host, a timeout of zero or less, an API key with a
+  * character that an HTTP header cannot carry. It returns [[JevError.InvalidConfig]] instead, and
+  * sends nothing.
+  *
   * A thread interrupted while it sends or waits gets its `InterruptedException`: interruption is
   * a request to stop, not an error to return.
   */
@@ -35,10 +40,14 @@ final class JdkTransport(
     httpClient: Option[HttpClient] = None
 ) extends Transport {
 
-  private val client   = httpClient.getOrElse(HttpClient.newBuilder().connectTimeout(config.timeout.toJava).build())
-  private val endpoint = URI.create(s"${config.baseUrl.toString.stripSuffix("/")}/v1/systemone")
+  private val problems = JdkTransport.problems(config)
+  // Lazy: with a timeout of zero or less, the JDK's builder throws, and no request is sent.
+  private lazy val client = httpClient.getOrElse(HttpClient.newBuilder().connectTimeout(config.timeout.toJava).build())
+  private val endpoint    = URI.create(s"${config.baseUrl.toString.stripSuffix("/")}/v1/systemone")
 
-  def send(body: String): Either[JevError, String] = attempt(body, retry = 1, start = nanoTime())
+  def send(body: String): Either[JevError, String] =
+    if (problems.isEmpty) attempt(body, retry = 1, start = nanoTime())
+    else Left(JevError.InvalidConfig(problems.mkString("; ")))
 
   @tailrec private def attempt(body: String, retry: Int, start: Long): Either[JevError, String] = {
     val result = once(body)
@@ -100,6 +109,26 @@ object JdkTransport {
       .map(ms => (ms * 1e6).toLong.nanos)
       .orElse(number("retry-after").map(s => (s * 1e9).toLong.nanos))
   }
+
+  /** What in `config` `java.net.http` refuses with an `IllegalArgumentException`, whose message
+    * can hold the API key. The rules are the JDK's, measured on JDK 21: a scheme `http` or `https`
+    * in any case, a host, a positive timeout, and header characters from a tab and from space to
+    * `\u00ff`, except `\u007f`. The key itself never appears in a problem.
+    */
+  private[jev4s] def problems(config: JevConfig): List[String] = {
+    val url = config.baseUrl
+    List(
+      Option.unless(url.getHost != null && List("http", "https").exists(_.equalsIgnoreCase(url.getScheme)))(
+        s"the base URL must be an http or https URL with a host: $url"
+      ),
+      Option.unless(config.timeout > Duration.Zero)(s"the timeout must be more than zero: ${config.timeout}"),
+      Option.unless(config.apiKey.value.forall(headerCharacter))(
+        "the API key has a character that an HTTP header cannot carry, such as a newline"
+      )
+    ).flatten
+  }
+
+  private def headerCharacter(c: Char): Boolean = c == '\t' || (c >= ' ' && c <= '\u00ff' && c != '\u007f')
 
   private def retryAfterOf(error: JevError): Option[FiniteDuration] = error match {
     case JevError.RateLimited(delay) => delay

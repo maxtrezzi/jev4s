@@ -667,25 +667,41 @@ Checked on 2026-09-25, on `dev` at fe14ec4, JDK 21, no call to the real API:
   pass, the formatting check passes in the five projects, and `build/check-docs.py` finds no
   problem in 41 ADRs, 57 Markdown files and 74 quoted examples.
 
-Open, for the owner:
+Found in the code, and fixed on this branch, as the owner asked (2026-09-25):
 
 1. **The API key in an exception message.** `ApiKey("abc\n")`, for example a key read from a
-   file with its final newline, makes `ask` throw `IllegalArgumentException: invalid header
-   value: "Bearer abc…"` from `java.net.http`, with the whole key in the message. It breaks
+   file with its final newline, made `ask` throw `IllegalArgumentException: invalid header
+   value: "Bearer abc…"` from `java.net.http`, with the whole key in the message. It broke
    [ADR-0027](../adr/0027-the-api-key-is-a-type-and-travels-over-tls.md) (the key never in a log)
    and [ADR-0002](../adr/0002-direct-style-no-effect-system.md) (no exceptions).
-   `JevConfig.fromEnv` trims the key, so only a key given by hand does it.
-2. **A config built by hand can make the client throw.** Measured, each with
+   `JevConfig.fromEnv` trims the key, so only a key given by hand did it.
+2. **A config built by hand could make the client throw.** Measured, each with
    `IllegalArgumentException` from `java.net.http`: a base URL with no scheme
    (`URI.create("api.typesafe.ai")`) or with a scheme other than `http` and `https`, on `ask`;
-   a `timeout` of zero or less, when the client is built. The README, the concepts guide and both
+   a `timeout` of zero or less, when the client was built. The README, the concepts guide and both
    tutorials say that jev4s does not throw.
-3. **Two options of a Choice, or two levels of a Score, with the same value.** The `Validator`
-   checks keys and level texts, not values. With `ChoiceOption(1, "a")` and
-   `ChoiceOption(1, "b")` the request is sent, and `probabilities` keeps one of the two. Only
-   options or levels written by hand can do it; derived ones cannot.
 
-Fixed on this branch:
+   Points 1 and 2 are [ADR-0042](../adr/0042-a-config-java-net-http-refuses-is-an-error.md):
+   `JdkTransport` checks the JDK's own rules, measured on JDK 21 (a scheme `http` or `https` in
+   any case, a host, a positive timeout, header characters from a tab and from space to `\u00ff`
+   except `\u007f`), builds its `HttpClient` only when it first sends, and returns the new
+   `JevError.InvalidConfig` without sending. Tests check each boundary character, that nothing
+   is sent and no event goes out, that the key is not in the message, and that
+   `JevClient(config)` with a zero timeout does not throw.
+3. **Two options of a Choice, or two levels of a Score, with the same value.** The `Validator`
+   checked keys and level texts, not values. With `ChoiceOption(1, "a")` and
+   `ChoiceOption(1, "b")` the request was sent, and `probabilities` kept one of the two. Two new
+   problems, `DuplicateOptionValue` and `DuplicateLevelValue`, report it. A value repeated
+   together with its key or text is reported once, by the problem that already existed, so
+   `Score("How?", "Low", "High", "Low")` still gives one `DuplicateLevel`.
+
+- Measured after the fixes: `scala3` 139 tests, `scala213` 123; 100% statement and branch
+  coverage in both; Stryker4s detects every mutant, 205 of 220 in `scala3` (12 ignored as
+  before, 3 compile errors: the new `timeout > Duration.Zero` mutated to `==` does not compile
+  under `strictEquality`, as the two of `RetryPolicy` since T7) and 204 of 205 in `scala213`
+  (1 ignored).
+
+Found in the documentation, and fixed on this branch:
 
 - `CONTRIBUTING.md` gave the formatting command without `scala213Spark/scalafmtAll`, which CI
   checks.

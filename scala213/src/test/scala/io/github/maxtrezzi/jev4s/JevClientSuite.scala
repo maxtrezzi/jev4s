@@ -189,4 +189,12 @@ class JevClientSuite extends munit.FunSuite {
       errors
     )
   }
+
+  test("a client built from a config that java.net.http would refuse does not throw: ask returns the error") {
+    val config = JevConfig(new ApiKey("k"), "jev-1.13.0", timeout = scala.concurrent.duration.Duration.Zero)
+    assertEquals(
+      JevClient.create(config).ask(ticket, urgent),
+      Left(JevError.InvalidConfig("the timeout must be more than zero: 0 days"))
+    )
+  }
 }
