@@ -7,8 +7,9 @@
 
 ## Context
 
-Every response of Jev carries an `x-typesafe-request-id` header, such as `req_01a0…`, recorded
-on a real reply on 2026-09-24 (T15). It is what a caller gives TypeSafe's support about one call.
+Every response of Jev carries an `x-typesafe-request-id` header, such as `req_01a0…`: recorded
+on a real reply on 2026-09-24 (T15), and on a 401 on 2026-09-25 (`golden/error-401`), so an
+error has one too. It is what a caller gives TypeSafe's support about one call.
 TypeSafe's official SDKs keep it on their errors, as `request_id` in Python and `requestId` in
 JavaScript: "the `x-typesafe-request-id` response header, or `None` if absent" (SDK references,
 read 2026-09-25). A gateway may not send it (T13).
