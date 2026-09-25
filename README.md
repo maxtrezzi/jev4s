@@ -59,10 +59,10 @@ enum Feeling derives JevScale:
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
-Send to Billing. Duplicate charge: true. Feeling: 1.82 of 2.
+Send to Billing. Duplicate charge: true. Feeling: 1.78 of 2.
 ```
 
 The state is your own `Ticket`: jev4s turns it into JSON with the `ToState` of (2), and each
@@ -140,7 +140,7 @@ object Triage {
 }
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Send to Billing. Duplicate charge: true. Feeling: 1.8 of 2.

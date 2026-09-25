@@ -1,6 +1,6 @@
 # ADR-0042: A config that `java.net.http` refuses is an error, not an exception
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-25
 - **Supersedes:** —
 - **Amends:** —

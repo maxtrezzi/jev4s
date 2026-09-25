@@ -74,10 +74,10 @@ so build it once, when the program starts, and use it everywhere. Then ask a que
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
-Urgent: true, with a probability of 0.92
+Urgent: true, with a probability of 0.91
 ```
 
 The numbers can change a little from one run to the next: the outputs in this tutorial are
@@ -170,7 +170,7 @@ does not compile, and the message says what to write:
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Duplicate charge: true
@@ -248,10 +248,10 @@ about the same time as one:
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
-Billing, urgent: false, feeling: 1.53, angry: 0.53
+Billing, urgent: false, feeling: 1.46, angry: 0.46
 ```
 
 Each answer has the type of its question, and the types in this example are only there to show
@@ -339,7 +339,7 @@ The ticket `wrongSize` says that the customer prefers Italian, so Jev can match 
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Exchange, answered by Marco
@@ -425,11 +425,11 @@ what your team would decide, change them in the code.
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Refund at once: Right(true), Right(false)
-send to Technical, answer a person decides, priority 0.91
+send to Technical, answer a person decides, priority 0.90
 ```
 
 ## 7. Questions with structure
@@ -483,7 +483,7 @@ probabilities of a JSON level are keyed by the same JSON, so keep it in a `val`,
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Part of INC-12: true
@@ -525,7 +525,7 @@ val items = List("hiking boots", "running shoes", "team subscription")
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 item: hiking boots

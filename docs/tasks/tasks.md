@@ -647,7 +647,7 @@ the definition of done holds.
 
 ### T17 — A review before the first release
 
-**Status:** In progress
+**Status:** Done 2026-09-25 — [ADR-0042](../adr/0042-a-config-java-net-http-refuses-is-an-error.md)
 
 **Branch:** `task/pre-release-review`
 
@@ -710,7 +710,15 @@ Found in the documentation, and fixed on this branch:
   it is `ScoreAnswer[?]`.
 - A Scaladoc line of `JdkTransport` broke in the middle of a sentence, in both modules.
 
+- **The owner accepted ADR-0042 on 2026-09-25.**
+- **The README's two examples and the seven examples of the Scala 3 tutorial ran again against
+  the real API on 2026-09-25** (approved by the owner, eleven calls, `jev-1.13.0`), and the
+  documents now show those outputs. Four values moved: the README's Scala 3 feeling 1.82 to
+  1.78; the first question's probability 0.92 to 0.91; `threeQuestions` feeling 1.53 to 1.46
+  and angry 0.53 to 0.46; the priority of `decisions` 0.91 to 0.90. The other five printed the
+  same lines as on 2026-09-22. The 2.13 tutorial's chapters 2, 5, 6 and 7 still show the runs
+  of 2026-09-22.
+
 Left for M7, not defects: no CHANGELOG yet; `build.sbt` has no `scmInfo`, `developers` or
 `versionScheme`; the README and the guides say that jev4s is not on Maven Central and use
-`0.1.0-SNAPSHOT`. The outputs in the README and the Scala 3 tutorial come from the runs of
-2026-09-22.
+`0.1.0-SNAPSHOT`.
