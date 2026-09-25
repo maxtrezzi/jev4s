@@ -354,6 +354,38 @@ new project, Scala 3 or 2.13.
 
 ### M8 — Optional
 
-**Status:** Not started
+**Status:** In progress — [ADR-0041](../adr/0041-the-spark-example-builds-its-client-on-the-executors.md)
+proposed, waiting on the owner
 
 - An Apache Spark example (2.13 module).
+
+**Done when:** an example asks Jev about each row of a Spark `Dataset`, CI compiles and tests it
+without the API key, and a guide explains it.
+
+#### Built
+
+- **`live/spark`** (`scala213Spark`): `SparkTriage.triage` asks if each ticket is urgent, with
+  one client per partition built on the executors, the guide's `Pacer` at the account's rate
+  divided by the partitions, and each answer or error as columns of a `Triaged` row. Spark 4.0.4
+  is `Provided`; `run`, `runMain` and the tests fork a JVM with it.
+- **Four tests** on Spark in local mode, with a fake transport or a local server that answers 429
+  above 10 requests per second: answers and an error in their own rows, the calls each action
+  makes with and without `cache`, 429s without a pacer, none with the shared rate. The rate test
+  fails when the pacer is not divided by the partitions (applied by hand).
+- **CI** checks the project's formatting and runs its tests in the 2.13 test job.
+- **`docs/guide/spark.md`**, quoting the example, and a row in the README's table of guides.
+
+#### Found
+
+- **Each action on the result calls Jev again.** For 10 tickets: `collect` 10 calls, `count` 10,
+  `orderBy("id").collect` 20, because a sort samples its input first; after `cache`, a first
+  `count` 10 and then none. The example makes one action and sorts on the driver.
+- **Spark's UI shows `spark.executorEnv.TYPESAFE_API_KEY`**: the default `spark.redaction.regex`
+  of spark-core 4.0.4, `(?i)secret|password|token|access[.]?key`, does not match `API_KEY`.
+- **Two test traps**: a fake transport that called a method of the suite failed with "Task not
+  serializable", and a counter captured by the fake transport stayed at 0, because the tasks got
+  a copy. Both now live in the suite's companion object.
+- **No `--add-opens` is needed** for these tests: they pass on JDK 21 and on JDK 17 (Temurin
+  17.0.16, fetched into a temporary directory).
+- **sbt 1.13 leaves `Provided` classes off the `run` classpath**: `runMain` failed with
+  `NoClassDefFoundError: SparkSession$` until `run` and `runMain` used `Compile / fullClasspath`.

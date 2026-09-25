@@ -29,7 +29,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [M5](milestones.md#m5--real-http) | Real HTTP | Done |
 | [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | Done |
 | [M7](milestones.md#m7--publishing) | Publishing | Not started |
-| [M8](milestones.md#m8--optional) | Optional | Not started |
+| [M8](milestones.md#m8--optional) | Optional | In progress |
 | [T1](tasks.md#t1--scala-3-model-polish-before-m2) | Scala 3 model polish before M2 | Done |
 | [T2](tasks.md#t2--structured-instructions-and-criteria) | Structured instructions and criteria | Done |
 | [T3](tasks.md#t3--newer-major-versions-of-the-github-actions) | Newer major versions of the GitHub actions | Done |

@@ -74,3 +74,21 @@ lazy val root = project
   .in(file("."))
   .aggregate(scala3, scala213)
   .settings(publish / skip := true)
+
+// M8: an Apache Spark example of the 2.13 module, in a project of its own so that Spark's
+// dependencies stay out of scala213Live. Spark is Provided: a cluster brings its own.
+lazy val scala213Spark = project
+  .in(file("live/spark"))
+  .dependsOn(scala213Live) // the Pacer of the guide, and so the scala213 module
+  .settings(
+    scalaVersion := (scala213 / scalaVersion).value,
+    scalacOptions ++= (scala213 / scalacOptions).value,
+    libraryDependencies ++= Seq("org.apache.spark" %% "spark-sql" % "4.0.4" % Provided, munit),
+    publish / skip := true,
+    // `run` and the tests start Spark with the Provided classes, in a JVM of their own.
+    Compile / run := Defaults
+      .runTask(Compile / fullClasspath, Compile / run / mainClass, Compile / run / runner)
+      .evaluated,
+    Compile / runMain := Defaults.runMainTask(Compile / fullClasspath, Compile / run / runner).evaluated,
+    fork              := true,
+  )

@@ -25,7 +25,7 @@ jobs:
       # One config, two dialects (.scalafmt.conf). The live projects are not aggregated by the
       # root, so they are checked by name.
       - name: Check formatting
-        run: sbt -batch scalafmtCheckAll scalafmtSbtCheck scala3Live/scalafmtCheckAll scala213Live/scalafmtCheckAll
+        run: sbt -batch scalafmtCheckAll scalafmtSbtCheck scala3Live/scalafmtCheckAll scala213Live/scalafmtCheckAll scala213Spark/scalafmtCheckAll
 
   test:
     # The modules share no code (ADR-0009): each is tested on its own, on both supported JDKs.
@@ -49,6 +49,10 @@ jobs:
       # Scaladoc is built too: a comment it cannot read fails publishLocal, and no test sees it.
       - name: Test, build the Scaladoc, compile the live project, and run the guides' tests
         run: sbt -batch "project ${{ matrix.module }}" test doc "${{ matrix.module }}Live/testOnly guide.*"
+      # The Spark example (M8) runs Spark in local mode against a fake transport or a local server.
+      - name: Test the Spark example
+        if: matrix.module == 'scala213'
+        run: sbt -batch scala213Spark/test
 
   coverage:
     # ADR-0008: below 100% statement or branch coverage the build fails.
