@@ -13,7 +13,8 @@ import io.github.maxtrezzi.jev4s.internal.{Codec, Validator}
   * until the garbage collector frees it, so a new client for each request wastes threads.
   *
   * `onEvent` receives each [[JevEvent]]: a [[JevEvent.Replied]] for every successful reply, and,
-  * over [[JdkTransport]], a [[JevEvent.Retrying]] before each retry. It runs on the calling
+  * over [[JdkTransport]], a [[JevEvent.Responded]] for each HTTP response and a
+  * [[JevEvent.Retrying]] before each retry. It runs on the calling
   * thread, before `ask` returns. An exception it throws is not caught: it reaches the caller of
   * `ask`. Connect it to your logger or metrics:
   *
@@ -21,6 +22,7 @@ import io.github.maxtrezzi.jev4s.internal.{Codec, Validator}
   * JevClient(config, onEvent = {
   *   case JevEvent.Replied(reply)             => log.info(s"answered by \${reply.model}")
   *   case JevEvent.Retrying(error, n, delay)  => log.warn(s"retry \$n in \$delay after \$error")
+  *   case JevEvent.Responded(status, id)      => log.debug(s"HTTP \$status, request \$id")
   * })
   * }}}
   */

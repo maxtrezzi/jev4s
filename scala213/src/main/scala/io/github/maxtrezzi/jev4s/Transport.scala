@@ -5,7 +5,8 @@ package io.github.maxtrezzi.jev4s
   * the transport. Implement it to put a fake in your own tests.
   *
   * The client does not retry. [[JdkTransport]] does, and sends a [[JevEvent.Retrying]] before
-  * each retry; a transport of your own retries only if it does so itself.
+  * each retry and a [[JevEvent.Responded]] for each response; a transport of your own retries,
+  * or sends events, only if it does so itself.
   */
 trait Transport {
   def send(body: String): Either[JevError, String]

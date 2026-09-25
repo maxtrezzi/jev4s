@@ -443,7 +443,9 @@ jev4s never writes logs. It gives each event to a function of yours, `onEvent`:
 
 - `JevEvent.Replied(reply)` after each successful call, with the model that answered and the
   input tokens it cost, when the reply reports them;
-- `JevEvent.Retrying(error, retry, delay)` before each retry.
+- `JevEvent.Retrying(error, retry, delay)` before each retry;
+- `JevEvent.Responded(status, requestId)` after each HTTP response, with its
+  `x-typesafe-request-id`, which TypeSafe's support asks for when a call goes wrong.
 
 Send them to your logger or your metrics.
 

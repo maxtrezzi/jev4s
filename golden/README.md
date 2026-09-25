@@ -16,7 +16,7 @@ One directory per case:
 |---|---|
 | `request.json` | The body sent to `POST /v1/systemone`, byte for byte |
 | `response.json` | The body received, byte for byte, unformatted |
-| `meta.json` | HTTP status, the response headers, the model asked for, and when; `noul` also has every header and the response time |
+| `meta.json` | HTTP status, the response headers, the model asked for, and when; `noul` and `error-401` also have every header and the response time |
 
 | Case | What it shows |
 |---|---|
@@ -30,8 +30,8 @@ One directory per case:
 | `error-422` | A Choice without its criteria: `detail` is a list |
 | `error-401` | A made-up API key: `detail` is an object |
 
-Recorded on 2026-09-22 with `jev-1.13.0`; `noul` again on 2026-09-24, with every header and the
-response time. To record again, load `.env` and run
+Recorded on 2026-09-22 with `jev-1.13.0`; `noul` again on 2026-09-24 and `error-401` on 2026-09-25, with
+every header and the response time. To record again, load `.env` and run
 `python3 build/capture-golden.py --run`; add `--force` to replace a case, and `--only <case>` to
 record one case alone. A new recording
 changes the numbers in the answers, so the tests must read them from the files, never repeat

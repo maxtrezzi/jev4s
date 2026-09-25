@@ -598,8 +598,7 @@ $0.00001. Record any rate-limit header and the measured latency here, for T14.
 
 ### T16 — The request id of each reply
 
-**Status:** Needs decision — where the id goes is an API change, settled by an ADR the owner
-accepts
+**Status:** Done 2026-09-25 — [ADR-0040](../adr/0040-the-request-id-of-each-response-is-an-event.md)
 
 **Branch:** `task/request-id`
 
@@ -622,3 +621,22 @@ The ADR decides, in the Scala 3 module first:
 **Done when:** the ADR is accepted; both modules keep the id where it decides, tested against the
 local server with and without the header; the guides' chapter on events and errors mentions it;
 the definition of done holds.
+
+#### Found
+
+- **An error carries a request id too.** `golden/error-401` was recorded again on 2026-09-25 with
+  a made-up key, approved by the owner: the 401 has the same headers as a success, with its own
+  `x-typesafe-request-id`. Its body did not change.
+- **The owner accepted ADR-0040 on 2026-09-25, the event over the two other forms**: the id on
+  each `JevError` (as the SDKs do) and the id on `Reply` through a second `Transport` method. The
+  event changes no existing type and gives the id of every attempt; the cost is that a caller
+  links it to the error through the order of the events.
+- **`JdkTransport` sends `Responded` for every HTTP response**, before it decides to retry or to
+  return, and none for a request that got no response. The `try` now covers only
+  `client.send`, so an `IOException` thrown by `onEvent` is not taken for a network error.
+- **The guides show how to keep the id with the error**: `onEvent` stores the latest id in a
+  `ThreadLocal`, and `askOrReport` clears it before the call and adds it to the error after.
+- Measured: `scala3` 130 tests, `scala213` 114; 100% statement and branch coverage in both;
+  Stryker4s detects every mutant, 173 of 187 in `scala3` (12 ignored, 2 compile errors, as since
+  T7) and 171 of 172 in `scala213` (1 ignored). The one new mutant in each module is the header
+  name, killed by the tests with and without the header.

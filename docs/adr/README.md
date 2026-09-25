@@ -78,7 +78,7 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0022](0022-the-scala-3-client-api.md) | The Scala 3 client API, with compile-time checks and no inline code | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025 |
 | [0023](0023-the-scala-2-13-client-api.md) | The Scala 2.13 client API: typed keys over the Scala 3 client's pieces | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; question match amended by ADR-0028; answers and `askMap` amended by ADR-0037 |
 | [0024](0024-http-retries-and-configuration.md) | HTTP over java.net.http, the official SDKs' retries, and configuration from the environment | Accepted — 400 mapping amended by ADR-0026; API key and base URL amended by ADR-0027; server error message amended by ADR-0029; retry budget amended by ADR-0030; the caller's HTTP client amended by ADR-0038 |
-| [0025](0025-client-events-through-onevent.md) | Client events through `onEvent`, replacing `onReply` | Accepted — content of Replied amended by ADR-0035 |
+| [0025](0025-client-events-through-onevent.md) | Client events through `onEvent`, replacing `onReply` | Accepted — content of Replied amended by ADR-0035; events amended by ADR-0040 |
 | [0026](0026-http-400-is-a-rejected-request.md) | HTTP 400 is a rejected request, and other statuses carry a readable message | Accepted — raw body length amended by ADR-0029 |
 | [0027](0027-the-api-key-is-a-type-and-travels-over-tls.md) | The API key is a type of its own, and travels only over TLS | Accepted |
 | [0028](0028-a-key-matches-a-question-of-the-same-classes.md) | In 2.13, a key reads an answer only for a question of the same classes | Superseded by ADR-0037 |
@@ -93,3 +93,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0037](0037-the-2-13-client-answers-with-a-typed-tuple.md) | The 2.13 client answers with a typed tuple | Accepted |
 | [0038](0038-the-caller-may-pass-its-own-http-client.md) | The caller may pass its own HTTP client | Accepted |
 | [0039](0039-the-library-does-not-limit-the-request-rate.md) | The library does not limit the request rate | Accepted |
+| [0040](0040-the-request-id-of-each-response-is-an-event.md) | The request id of each response is an event | Accepted |

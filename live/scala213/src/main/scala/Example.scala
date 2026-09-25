@@ -33,6 +33,8 @@ object Example {
               )
             case JevEvent.Retrying(error, n, delay) =>
               log.log(System.Logger.Level.WARNING, s"retry $n in $delay after $error")
+            case JevEvent.Responded(status, requestId) =>
+              log.log(System.Logger.Level.DEBUG, s"HTTP $status, request ${requestId.getOrElse("with no id")}")
           }
         )
         val ticket = "Help! My payouts have been failing for 3 days and I have a launch tomorrow."

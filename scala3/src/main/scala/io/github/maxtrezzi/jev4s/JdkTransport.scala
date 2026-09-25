@@ -13,8 +13,9 @@ import scala.jdk.OptionConverters.*
 
 import io.github.maxtrezzi.jev4s.internal.Codec
 
-/** The [[Transport]] over `java.net.http`, with the retries of `config.retry`. Before each wait
-  * it sends a [[JevEvent.Retrying]] to `onEvent`. `nanoTime` is the clock that measures
+/** The [[Transport]] over `java.net.http`, with the retries of `config.retry`. It sends a
+  * [[JevEvent.Responded]] to `onEvent` for each response, and a [[JevEvent.Retrying]] before each
+  * wait. `nanoTime` is the clock that measures
   * `maxElapsed`; replace it only in tests.
   *
   * Without `httpClient`, each instance builds its own `java.net.http.HttpClient`, with its own
@@ -60,12 +61,15 @@ final class JdkTransport(
       .header("Content-Type", "application/json")
       .POST(BodyPublishers.ofString(body))
       .build()
-    try
-      val response = client.send(request, BodyHandlers.ofString())
-      JdkTransport.result(response.statusCode, response.body, name => response.headers.firstValue(name).toScala)
-    catch
-      case _: HttpTimeoutException => Left(JevError.Network(s"no response within ${config.timeout}"))
-      case e: IOException          => Left(JevError.Network(Option(e.getMessage).getOrElse(e.getClass.getName)))
+    val sent =
+      try Right(client.send(request, BodyHandlers.ofString()))
+      catch
+        case _: HttpTimeoutException => Left(JevError.Network(s"no response within ${config.timeout}"))
+        case e: IOException          => Left(JevError.Network(Option(e.getMessage).getOrElse(e.getClass.getName)))
+    sent.flatMap: response =>
+      val header = (name: String) => response.headers.firstValue(name).toScala
+      onEvent(JevEvent.Responded(response.statusCode, header("x-typesafe-request-id")))
+      JdkTransport.result(response.statusCode, response.body, header)
 
 object JdkTransport:
 

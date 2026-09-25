@@ -17,3 +17,10 @@ enum JevEvent derives CanEqual:
 
   /** A retryable error, just before the wait for retry number `retry` (1 for the first). */
   case Retrying(error: JevError, retry: Int, delay: FiniteDuration)
+
+  /** An HTTP response, of any status, before the transport returns it or retries. `requestId` is
+    * its `x-typesafe-request-id` header, which TypeSafe's support asks for, or `None` when the
+    * response has none. Sent once per attempt by [[JdkTransport]]; a request that got no response
+    * sends none.
+    */
+  case Responded(status: Int, requestId: Option[String])

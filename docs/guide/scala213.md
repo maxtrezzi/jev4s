@@ -673,8 +673,9 @@ jev4s never writes logs. It gives each event to a function that you pass as `onE
 
 <!-- snippet: live/scala213/src/main/scala/guide/Events.scala#events -->
 ```scala
-val inputTokens = new LongAdder()
-val log         = System.getLogger("jev")
+val inputTokens   = new LongAdder()
+val log           = System.getLogger("jev")
+val lastRequestId = ThreadLocal.withInitial[Option[String]](() => None)
 
 def withEvents(config: JevConfig): JevClient =
   JevClient.create(
@@ -685,14 +686,42 @@ def withEvents(config: JevConfig): JevClient =
         log.log(System.Logger.Level.DEBUG, s"answered by ${reply.model}")
       case JevEvent.Retrying(error, retry, delay) =>
         log.log(System.Logger.Level.WARNING, s"retry $retry in $delay after $error")
+      case JevEvent.Responded(status, requestId) =>
+        lastRequestId.set(requestId) // the latest response on this thread
+        log.log(System.Logger.Level.DEBUG, s"HTTP $status, request ${requestId.getOrElse("with no id")}")
     }
   )
 ```
 
-There are two events. `Replied` comes after each successful call, with the model that answered
+There are three events. `Replied` comes after each successful call, with the model that answered
 and the input tokens it cost: this example adds them up. `inputTokens` is an `Option[Long]`: it
-is `None` when the reply does not report the tokens, and the answers still come back. `Retrying` comes before each retry,
-with the error, the number of the retry and the wait.
+is `None` when the reply does not report the tokens, and the answers still come back. `Retrying`
+comes before each retry, with the error, the number of the retry and the wait. `Responded` comes
+after each HTTP response, also an error or one that is retried, with its status and its
+**request id**: the `x-typesafe-request-id` header, or `None` when the response has none. A
+request that gets no response, such as a timeout, sends no `Responded`.
+
+The request id is what TypeSafe's support asks for when a call goes wrong. The error does not
+carry it, but the events come in order, on the thread that called `ask`, before `ask` returns. So
+the last `Responded` on that thread belongs to the error. The example keeps it in a
+`ThreadLocal`, and this function adds it to the error:
+
+<!-- snippet: live/scala213/src/main/scala/guide/Events.scala#request-id -->
+```scala
+val urgent = Noul("Is the message urgent?").as("urgent")
+
+/** On an error, says which request failed: TypeSafe's support asks for its id. */
+def askOrReport(client: JevClient, message: String): Either[String, Boolean] = {
+  lastRequestId.remove() // forget the id of an earlier call on this thread
+  client.ask(message, urgent) match {
+    case Right(u)    => Right(u.isYes)
+    case Left(error) => Left(s"$error, request ${lastRequestId.get.getOrElse("with no response")}")
+  }
+}
+```
+
+It forgets the id of an earlier call first: if this call gets no response at all, there is no id
+to show.
 
 Match every case, and do not write `case _`. If a later version of jev4s adds an event, the
 compiler then shows you each place where you need to handle it. `onEvent` runs on the thread
