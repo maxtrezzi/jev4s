@@ -186,7 +186,7 @@ object State {
 }
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Duplicate charge: true
@@ -286,10 +286,10 @@ object ThreeQuestions {
 }
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
-Billing, urgent: false, feeling: 1.52, angry: 0.52
+Billing, urgent: false, feeling: 1.51, angry: 0.51
 ```
 
 With several keys, `ask` returns a tuple of the answers, in the order of the keys, and
@@ -570,7 +570,7 @@ object Runtime {
 }
 ```
 
-A run on 2026-09-22, with `jev-1.13.0`, printed:
+A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 item: hiking boots
