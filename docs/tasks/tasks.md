@@ -497,7 +497,7 @@ done holds.
 
 ### T13 — A guide section on gateways
 
-**Status:** Blocked by T7 to T12
+**Status:** Done 2026-09-24
 
 **Branch:** `docs/gateways`
 
@@ -513,6 +513,25 @@ URL ending in `/typesafe`, as the official SDKs do, and accepted a reply whose `
   by hand, with `https`.
 
 **Done when:** the section's examples are quoted from `live/` and the docs check passes.
+
+#### Found
+
+- **The sources, read 2026-09-24:** OpenRouter's page on the TypeSafe SDK and Vercel's page on the
+  TypeSafe API with AI Gateway (last updated 2026-09-21). Both serve TypeSafe's request and reply
+  at `<base URL>/v1/systemone`, and both confirm the base URLs and keys above.
+- **OpenRouter names the model without the patch number.** Its page lists `jev-1.13` (routed as
+  `typesafe/jev-1.13`) and `jev-latest`, and says nothing of `jev-1.13.0`, the name the guides use
+  with TypeSafe; its reply names `typesafe/jev-1.13-20260917`. The guide's OpenRouter example uses
+  `jev-1.13`. Vercel takes and returns `typesafe-ai/jev`.
+- **Both gateways add fields to the reply**: `id`, `provider` and `usage.cost` on OpenRouter,
+  `provider_metadata` on Vercel. The codec ignored them already; a test in each module's
+  `CodecSuite` now decodes both documented replies.
+- **Vercel's errors are `{"message", "error_type"}`**, not TypeSafe's `detail`, so their message
+  comes back as the body, cut to 200 characters. The guide says so.
+- The section is chapter 10 of `docs/guide/concepts.md`; its examples are in `guide/Gateways.scala`
+  in both live projects. The OpenRouter line is the same in both versions and quoted once.
+- Measured: `scala3` 128 tests, `scala213` 112; no main code changed, so coverage and mutants are
+  as T11 recorded. No paid call.
 
 ### T14 — A guide chapter on many requests
 
@@ -530,7 +549,7 @@ test runs the pacer against a local server without the API key.
 
 ### T15 — Every header of a real reply
 
-**Status:** Needs decision — one paid call, which the owner approves
+**Status:** Done 2026-09-24
 
 **Branch:** `task/capture-all-headers`
 
@@ -539,3 +558,19 @@ header and the response time, then make one real call: about 300 input tokens, a
 $0.00001. Record any rate-limit header and the measured latency here, for T14.
 
 **Done when:** the headers and the latency are recorded with the date and the model.
+
+#### Found
+
+- **The owner approved one paid call on 2026-09-24**: `golden/noul` recorded again with
+  `jev-1.13.0`, 289 input tokens, the same answer as on 2026-09-22 (0.98).
+- **Jev sends no rate-limit header.** The reply's headers were `connection`, `content-length`,
+  `content-type`, `date`, `server` (`istio-envoy`), `x-envoy-upstream-service-time` and
+  `x-typesafe-request-id`. Nothing tells a caller how close it is to the limit, so T14's pacer
+  cannot read its rate from the reply: the caller sets it.
+- **Latency:** 473 ms from sending to the whole body, measured from this build environment through
+  its proxy, a new TLS connection included; `x-envoy-upstream-service-time` said 66 ms. One call
+  is one sample, not a distribution.
+- **Each reply has an `x-typesafe-request-id`**, such as `req_01a0…`. jev4s drops it today; it
+  could be what TypeSafe's support asks for. Not in scope here: a candidate for a later task.
+- `build/capture-golden.py` now keeps every header and `elapsed_ms` in `meta.json`, and
+  `--only <case>` records one case alone; without it, `--force` would make all nine calls.
