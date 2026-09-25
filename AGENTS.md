@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6 and T1 to T16 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, M8 and T1 to T16 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -22,7 +22,7 @@ outside the root build, and the live tests and the examples run against the real
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
 version, all quoting the examples in `live/` (ADR-0032); the concepts guide also shows how to reach Jev
 through OpenRouter or Vercel AI Gateway. An Apache Spark example of the 2.13 module is in `live/spark`
-(`scala213Spark`, M8 in progress, ADR-0041 proposed), with its guide `docs/guide/spark.md`. Everything done is on `dev`, where CI
+(`scala213Spark`, ADR-0041), with its guide `docs/guide/spark.md`. Everything done is on `dev`, where CI
 runs it on JDK 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
 The repository is **private** for now.
 

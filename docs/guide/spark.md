@@ -133,6 +133,14 @@ def main(args: Array[String]): Unit = {
 }
 ```
 
+It prints, for example:
+
+```
+Triaged(t1,Some(true),Some(0.92),None)
+Triaged(t2,Some(false),Some(0.07),None)
+Triaged(t3,Some(true),Some(0.97),None)
+```
+
 Spark also runs a task again when it fails, for example when an executor is lost. The calls of
 that task are made again, and paid again.
 

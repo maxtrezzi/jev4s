@@ -1,6 +1,6 @@
 # ADR-0041: The Spark example builds its client on the executors
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-25
 - **Supersedes:** —
 - **Amends:** —

@@ -354,8 +354,7 @@ new project, Scala 3 or 2.13.
 
 ### M8 — Optional
 
-**Status:** In progress — [ADR-0041](../adr/0041-the-spark-example-builds-its-client-on-the-executors.md)
-proposed, waiting on the owner
+**Status:** Done 2026-09-25 — [ADR-0041](../adr/0041-the-spark-example-builds-its-client-on-the-executors.md)
 
 - An Apache Spark example (2.13 module).
 
@@ -385,6 +384,9 @@ without the API key, and a guide explains it.
 - **Two test traps**: a fake transport that called a method of the suite failed with "Task not
   serializable", and a counter captured by the fake transport stayed at 0, because the tasks got
   a copy. Both now live in the suite's companion object.
+- **The example runs against the real API** (approved by the owner, three calls, 2026-09-25):
+  local Spark with two partitions answered t1 urgent (0.92), t2 not urgent (0.07), t3 urgent
+  (0.97), with no error.
 - **No `--add-opens` is needed** for these tests: they pass on JDK 21 and on JDK 17 (Temurin
   17.0.16, fetched into a temporary directory).
 - **sbt 1.13 leaves `Provided` classes off the `run` classpath**: `runMain` failed with
