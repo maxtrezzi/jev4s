@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6 and T1 to T16 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, M8 and T1 to T16 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -21,7 +21,8 @@ and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpCli
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
 version, all quoting the examples in `live/` (ADR-0032); the concepts guide also shows how to reach Jev
-through OpenRouter or Vercel AI Gateway. Everything done is on `dev`, where CI
+through OpenRouter or Vercel AI Gateway. An Apache Spark example of the 2.13 module is in `live/spark`
+(`scala213Spark`, ADR-0041), with its guide `docs/guide/spark.md`. Everything done is on `dev`, where CI
 runs it on JDK 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
 The repository is **private** for now.
 
@@ -111,12 +112,14 @@ sbt "project scala213" "set allowUnsafeScalaLibUpgrade := true" clean stryker   
 python3 build/check-mutants.py scala3                 # fails on any undetected mutant
 python3 build/check-docs.py                           # ADR index, status lines, links, quoted examples
 python3 build/check-docs.py --write-snippets          # copy each quoted example into its document
-sbt scalafmtAll scalafmtSbt scala3Live/scalafmtAll scala213Live/scalafmtAll   # format; CI checks all four
+sbt scalafmtAll scalafmtSbt scala3Live/scalafmtAll scala213Live/scalafmtAll scala213Spark/scalafmtAll   # format; CI checks all
 python3 build/capture-golden.py                       # golden/ plan only; --run makes paid calls
 sbt scala3Live/test scala213Live/test                 # real API, paid; skipped without the key
 sbt "scala3Live/testOnly guide.*"                     # the guides' tests only: free, CI runs them
 sbt scala3Live/run                                    # the example, one paid call
 sbt "scala3Live/runMain guide.firstQuestion"          # one example of a guide, one paid call
+sbt scala213Spark/test                                # the Spark example on local Spark: free, CI runs it
+sbt "scala213Spark/runMain spark.SparkTriage"         # the Spark example, three paid calls
 ```
 
 **The code in the README and in `docs/guide/` is quoted from `live/` (ADR-0032).** Edit the
@@ -136,7 +139,7 @@ instruments the classes, and a `publishLocal` from an instrumented build ships t
 instrumentation.
 
 CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each module on JDK 17
-and 21 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`), runs coverage and Stryker4s with the mutant
+and 21 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`), the Spark example's tests in the 2.13 job, runs coverage and Stryker4s with the mutant
 check per module, and runs the docs check. Mutation testing runs on
 every pull request ([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md));
 never point it at a project that calls the real API.

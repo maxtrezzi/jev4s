@@ -175,6 +175,7 @@ library than a Spark 4 cluster has
 | [Jev concepts](docs/guide/concepts.md) | What Jev is, the three kinds of question, probabilities and confidence, how to write good questions, errors and retries. For both Scala versions. |
 | [Tutorial for Scala 3](docs/guide/scala3.md) | jev4s step by step, from the first call to tests without the network. |
 | [Tutorial for Scala 2.13](docs/guide/scala213.md) | The same steps in Scala 2.13. |
+| [jev4s with Apache Spark](docs/guide/spark.md) | One question for each row of a Spark `Dataset`: a client on each executor, a shared rate, and why each action calls Jev again. |
 
 Every piece of code in this README and in the guides is compiled with the project. The programs
 are in [`live/scala3`](live/scala3/src/main/scala) and [`live/scala213`](live/scala213/src/main/scala),
