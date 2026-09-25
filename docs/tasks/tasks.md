@@ -428,6 +428,10 @@ definition of done holds.
 - **The guide's printed outputs lost their `Some(...)`**: chapters 3, 4 and 8 printed `Option`s,
   and now print the values. The values are those of the runs of 2026-09-22; the examples were not
   run again against the real API.
+- **The three examples ran again against the real API on 2026-09-25**, with `jev-1.13.0`, and
+  printed the values that the guide now shows. `State` and `Runtime` printed the same lines as on
+  2026-09-22; `ThreeQuestions` printed a feeling of 1.51 and an angry probability of 0.51, where
+  the run of 2026-09-22 printed 1.52 and 0.52.
 - Measured: `scala213` 108 tests, 100% statement and branch coverage; Stryker4s detects 170 of
   171 mutants (1 ignored), where it counted 178 with `Answers`.
 
