@@ -574,3 +574,30 @@ $0.00001. Record any rate-limit header and the measured latency here, for T14.
   could be what TypeSafe's support asks for. Not in scope here: a candidate for a later task.
 - `build/capture-golden.py` now keeps every header and `elapsed_ms` in `meta.json`, and
   `--only <case>` records one case alone; without it, `--force` would make all nine calls.
+
+### T16 — The request id of each reply
+
+**Status:** Needs decision — where the id goes is an API change, settled by an ADR the owner
+accepts
+
+**Branch:** `task/request-id`
+
+Every reply of Jev carries an `x-typesafe-request-id` header, such as `req_01a0…` (T15). jev4s
+drops it: `Transport` returns only the body of a successful response, and a `JevError` carries
+no header. TypeSafe's official SDKs keep it on their errors, as `request_id` in Python and
+`requestId` in JavaScript, "the `x-typesafe-request-id` response header, or `None` if absent"
+(SDK references, read 2026-09-25). It is what a caller would give TypeSafe's support about one
+call.
+
+The ADR decides, in the Scala 3 module first:
+
+- where the id of a successful reply goes: `Reply`, and so `JevEvent.Replied`, fits ADR-0025;
+- where the id of a failed call goes: on the `JevError` values that come from a response, or in
+  a `JevEvent`;
+- how it crosses `Transport`, which today returns a body and nothing else, without breaking a
+  caller's own `Transport`;
+- whether a gateway's reply, which may not carry it (T13), gives `None`.
+
+**Done when:** the ADR is accepted; both modules keep the id where it decides, tested against the
+local server with and without the header; the guides' chapter on events and errors mentions it;
+the definition of done holds.

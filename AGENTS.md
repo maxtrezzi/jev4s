@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, T1 to T13 and T15 are done; T14 is planned, with ADR-0039 proposed; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, T1 to T13 and T15 are done; T14 is planned, with ADR-0039 proposed, and T16 needs an ADR; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
