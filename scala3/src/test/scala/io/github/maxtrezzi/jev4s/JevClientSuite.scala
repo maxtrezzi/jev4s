@@ -98,3 +98,10 @@ class JevClientSuite extends munit.FunSuite:
     val transport         = FakeTransport.golden("noul")
     client(transport).ask(Ticket(ticket), (is_urgent = Noul("Does this convey urgency?")))
     assertEquals(transport.sent.map(ujson.read(_)), List(Golden.read("noul/request.json")))
+
+  test("a client built from a config that java.net.http would refuse does not throw: ask returns the error"):
+    val config = JevConfig(ApiKey("k"), "jev-1.13.0", timeout = scala.concurrent.duration.Duration.Zero)
+    assertEquals(
+      JevClient(config).ask(ticket, (urgent = Noul("Urgent?"))),
+      Left(JevError.InvalidConfig("the timeout must be more than zero: 0 days")),
+    )

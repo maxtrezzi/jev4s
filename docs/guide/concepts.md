@@ -405,7 +405,8 @@ The answer types are the same in both versions:
 jev4s checks a request before it sends it, and returns **every** problem at once, as
 `JevError.InvalidRequest(problems)`. It finds a request with no questions, an empty or repeated
 name, a Score with fewer than 2 or more than 10 levels or with a repeated level, and a Choice with
-no options, more than 255 options, or a repeated key. A request with problems costs nothing,
+no options, more than 255 options, or a repeated key. It also finds two levels, or two options,
+with the same value of your type: the answer could not tell them apart. A request with problems costs nothing,
 because it is not sent. In Scala 3, a Score over an enum with fewer than 2 or more than 10 cases
 does not even compile.
 
@@ -417,6 +418,7 @@ if sending the same request again can help.
 | Error | What it means | Retried |
 |---|---|---|
 | `InvalidRequest(problems)` | jev4s found problems before sending, for example 11 levels in a Score | no |
+| `InvalidConfig(message)` | the config has a value that HTTP cannot carry, for example an API key with a newline | no |
 | `Unauthorized` | HTTP 401: the API key is missing or wrong | no |
 | `Rejected(message)` | HTTP 400 or 422: Jev refused the request, for example for an unknown model | no |
 | `RateLimited(retryAfter)` | HTTP 429: too many requests | yes |
@@ -456,7 +458,9 @@ Send them to your logger or your metrics.
 an `ApiKey`, which always prints as `<hidden>`, so it does not appear in a log by mistake. The
 base URL must use `https`. Plain `http` works only for `localhost`, because the key would
 travel unencrypted. `fromEnv` checks this; a `JevConfig` that you build yourself is not checked,
-so give it an `https` base URL.
+so give it an `https` base URL. A value that HTTP cannot carry, such as a key with the newline
+at the end of a file, or a timeout of zero, does not throw: each call returns
+`JevError.InvalidConfig`, and the message never shows the key.
 
 ## 10. Through a gateway
 

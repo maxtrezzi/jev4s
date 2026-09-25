@@ -8,8 +8,8 @@ sealed abstract class JevError extends Product with Serializable {
   /** True when sending the same request again may succeed. */
   def isRetryable: Boolean = this match {
     case JevError.RateLimited(_) | JevError.Overloaded | JevError.ServerError(_, _) | JevError.Network(_) => true
-    case JevError.InvalidRequest(_) | JevError.Unauthorized | JevError.Rejected(_) | JevError.Unexpected(_, _) |
-        JevError.Decoding(_) =>
+    case JevError.InvalidRequest(_) | JevError.InvalidConfig(_) | JevError.Unauthorized | JevError.Rejected(_) |
+        JevError.Unexpected(_, _) | JevError.Decoding(_) =>
       false
   }
 }
@@ -18,6 +18,11 @@ object JevError {
 
   /** The request was not sent: it has the listed problems. */
   final case class InvalidRequest(problems: List[Problem]) extends JevError
+
+  /** The request was not sent: the config has a value that HTTP cannot carry, such as an API key
+    * with a newline or a timeout of zero. The message says which, and never shows the key.
+    */
+  final case class InvalidConfig(message: String) extends JevError
 
   /** HTTP 401: the API key is missing or wrong. */
   case object Unauthorized extends JevError
@@ -60,15 +65,19 @@ sealed abstract class Problem extends Product with Serializable {
     case Problem.DuplicateLevel(n, level)   => s"score '$n' uses the level '$level' more than once"
     case Problem.ChoiceOptions(n, got)      => s"choice '$n' needs 1 to 255 options, got $got"
     case Problem.DuplicateOptionKey(n, key) => s"choice '$n' uses the option key '$key' more than once"
+    case Problem.DuplicateLevelValue(n, v)  => s"score '$n' gives the value '$v' to more than one level"
+    case Problem.DuplicateOptionValue(n, v) => s"choice '$n' gives the value '$v' to more than one option"
   }
 }
 
 object Problem {
-  case object NoQuestions                                        extends Problem
-  case object EmptyName                                          extends Problem
-  final case class DuplicateName(name: String)                   extends Problem
-  final case class ScoreLevels(name: String, levels: Int)        extends Problem
-  final case class DuplicateLevel(name: String, level: String)   extends Problem
-  final case class ChoiceOptions(name: String, options: Int)     extends Problem
-  final case class DuplicateOptionKey(name: String, key: String) extends Problem
+  case object NoQuestions                                            extends Problem
+  case object EmptyName                                              extends Problem
+  final case class DuplicateName(name: String)                       extends Problem
+  final case class ScoreLevels(name: String, levels: Int)            extends Problem
+  final case class DuplicateLevel(name: String, level: String)       extends Problem
+  final case class ChoiceOptions(name: String, options: Int)         extends Problem
+  final case class DuplicateOptionKey(name: String, key: String)     extends Problem
+  final case class DuplicateLevelValue(name: String, value: String)  extends Problem
+  final case class DuplicateOptionValue(name: String, value: String) extends Problem
 }

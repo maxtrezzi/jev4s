@@ -195,6 +195,51 @@ class JdkTransportSuite extends munit.FunSuite {
     }
   }
 
+  test("a config that java.net.http would refuse is an error, and nothing is sent") {
+    withServer(Reply(200, "{}")) { server =>
+      val events  = collection.mutable.ListBuffer.empty[JevEvent]
+      val invalid = config(server).copy(apiKey = new ApiKey("secret-key\n"), timeout = Duration.Zero)
+      assertEquals(
+        new JdkTransport(invalid, onEvent = events += _).send("{}"),
+        Left(
+          JevError.InvalidConfig(
+            "the timeout must be more than zero: 0 days; " +
+              "the API key has a character that an HTTP header cannot carry, such as a newline"
+          )
+        )
+      )
+      assertEquals(server.requests.size, 0)
+      assertEquals(events.toList, Nil)
+    }
+  }
+
+  test("a base URL is http or https, in any case, with a host") {
+    def problems(url: String) = JdkTransport.problems(JevConfig(new ApiKey("k"), "m", java.net.URI.create(url)))
+    assertEquals(problems("https://api.typesafe.ai"), Nil)
+    assertEquals(problems("HTTP://localhost:8080"), Nil)
+    for (url <- List("api.typesafe.ai", "ftp://api.typesafe.ai", "https:///v1"))
+      assertEquals(problems(url), List(s"the base URL must be an http or https URL with a host: $url"))
+  }
+
+  test("a timeout is more than zero") {
+    def problems(timeout: FiniteDuration) =
+      JdkTransport.problems(JevConfig(new ApiKey("k"), "m", timeout = timeout))
+    assertEquals(problems(1.nanosecond), Nil)
+    assertEquals(problems(Duration.Zero), List("the timeout must be more than zero: 0 days"))
+    assertEquals(problems((-1).second), List("the timeout must be more than zero: -1 seconds"))
+  }
+
+  test("an API key has only the characters an HTTP header can carry, and never appears in a problem") {
+    def problems(key: String) = JdkTransport.problems(JevConfig(new ApiKey(key), "m"))
+    for (c <- List('\t', ' ', '~', '\u0080', '\u00ff')) assertEquals(problems(s"key${c}key"), Nil, c.toInt)
+    for (c <- List('\u0000', '\n', '\u001f', '\u007f', '\u0100'))
+      assertEquals(
+        problems(s"secret${c}key"),
+        List("the API key has a character that an HTTP header cannot carry, such as a newline"),
+        c.toInt
+      )
+  }
+
   test("the default sleeper and random source are used when none is given") {
     withServer(Reply(503, ""), Reply(200, "done")) { server =>
       val fast = config(server, RetryPolicy(backoffInitial = 1.millis))

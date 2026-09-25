@@ -95,3 +95,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0039](0039-the-library-does-not-limit-the-request-rate.md) | The library does not limit the request rate | Accepted |
 | [0040](0040-the-request-id-of-each-response-is-an-event.md) | The request id of each response is an event | Accepted |
 | [0041](0041-the-spark-example-builds-its-client-on-the-executors.md) | The Spark example builds its client on the executors | Accepted |
+| [0042](0042-a-config-java-net-http-refuses-is-an-error.md) | A config that `java.net.http` refuses is an error, not an exception | Accepted |

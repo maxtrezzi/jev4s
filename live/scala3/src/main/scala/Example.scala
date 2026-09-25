@@ -1,13 +1,13 @@
 import io.github.maxtrezzi.jev4s.*
 
+enum Dept derives JevChoice, CanEqual:
+  case Billing, Technical, Sales
+
 /** Calls the real API once and shows how to handle each error a caller meets in practice. The
   * answer is the program's output, so it is printed; what the client did goes to a logger, here
   * the JDK's `System.Logger`, as it would in an application.
   * Run with TYPESAFE_API_KEY set: `sbt scala3Live/run`. It costs a few hundred input tokens.
   */
-enum Dept derives JevChoice, CanEqual:
-  case Billing, Technical, Sales
-
 @main def example(): Unit =
   JevConfig.fromEnv("jev-1.13.0") match
     case Left(error)   => println(s"cannot start: ${error.message}")

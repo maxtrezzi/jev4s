@@ -55,6 +55,26 @@ class ValidatorSuite extends munit.FunSuite {
     assertEquals(Validator.validate(List("c" -> choice)), List(Problem.DuplicateOptionKey("c", "a")))
   }
 
+  test("a Score may not give one value to two levels") {
+    val score = Score.of("How?")(JevScale(ScaleLevel(1, "Low"), ScaleLevel(2, "High"), ScaleLevel(1, "Very low")))
+    assertEquals(Validator.validate(List("s" -> score)), List(Problem.DuplicateLevelValue("s", "1")))
+  }
+
+  test("a repeated level with the same value is one problem, not two") {
+    val score = Score.of("How?")(JevScale(ScaleLevel(1, "Low"), ScaleLevel(2, "High"), ScaleLevel(1, "Low")))
+    assertEquals(Validator.validate(List("s" -> score)), List(Problem.DuplicateLevel("s", "Low")))
+  }
+
+  test("a Choice may not give one value to two options") {
+    val choice = Choice("Which?", List(ChoiceOption(1, "a"), ChoiceOption(2, "b"), ChoiceOption(1, "c")))
+    assertEquals(Validator.validate(List("c" -> choice)), List(Problem.DuplicateOptionValue("c", "1")))
+  }
+
+  test("a repeated option key with the same value is one problem, not two") {
+    val choice = Choice("Which?", List(ChoiceOption(1, "a"), ChoiceOption(2, "b"), ChoiceOption(1, "a")))
+    assertEquals(Validator.validate(List("c" -> choice)), List(Problem.DuplicateOptionKey("c", "a")))
+  }
+
   test("every problem is reported at once, in a stable order") {
     val problems = Validator.validate(List("x" -> levels(1), "x" -> Noul("q"), " " -> options(0)))
     assertEquals(

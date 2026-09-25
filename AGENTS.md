@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, M8 and T1 to T16 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, M8 and T1 to T17 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -17,7 +17,7 @@ of Spark 4.0 (ADR-0036). Each module also has its client, `JevClient`:
 named tuples in Scala 3; in 2.13, typed keys answered as a tuple, 1 to 10 per call (ADR-0037);
 `askMap` in both for questions built at runtime; over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpClient` (ADR-0038), or over any `Transport`, and reports replies, retries and each HTTP response with its request id as
-`JevEvent`s (ADR-0040). The library has no rate limiter; the tutorials show a pacer (ADR-0039). The API key is an `ApiKey` (ADR-0027). Live tests and examples are in `live/`,
+`JevEvent`s (ADR-0040). The library has no rate limiter; the tutorials show a pacer (ADR-0039). The API key is an `ApiKey` (ADR-0027), and a config that `java.net.http` would refuse, such as a key with a newline, is `JevError.InvalidConfig`, never an exception (ADR-0042). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
 version, all quoting the examples in `live/` (ADR-0032); the concepts guide also shows how to reach Jev
