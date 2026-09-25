@@ -644,3 +644,57 @@ the definition of done holds.
   Stryker4s detects every mutant, 173 of 187 in `scala3` (12 ignored, 2 compile errors, as since
   T7) and 171 of 172 in `scala213` (1 ignored). The one new mutant in each module is the header
   name, killed by the tests with and without the header.
+
+### T17 — A review before the first release
+
+**Status:** In progress
+
+**Branch:** `task/pre-release-review`
+
+Before M7 publishes `0.1.0`, a review of the code of both modules, of the README and the guides,
+and of the examples in `live/` that they quote.
+
+**Done when:** each point found is fixed, or the owner decided to leave it; the definition of
+done holds.
+
+#### Found
+
+Checked on 2026-09-25, on `dev` at fe14ec4, JDK 21, no call to the real API:
+
+- `sbt test`: `scala3` 130 tests, `scala213` 114, no warning. Scaladoc builds in both modules;
+  the Scala 3 Scaladoc prints its own warning, "Option -classpath was updated", which
+  `-Werror` does not cover. The live projects compile, the guides' tests and the four Spark tests
+  pass, the formatting check passes in the five projects, and `build/check-docs.py` finds no
+  problem in 41 ADRs, 57 Markdown files and 74 quoted examples.
+
+Open, for the owner:
+
+1. **The API key in an exception message.** `ApiKey("abc\n")`, for example a key read from a
+   file with its final newline, makes `ask` throw `IllegalArgumentException: invalid header
+   value: "Bearer abc…"` from `java.net.http`, with the whole key in the message. It breaks
+   [ADR-0027](../adr/0027-the-api-key-is-a-type-and-travels-over-tls.md) (the key never in a log)
+   and [ADR-0002](../adr/0002-direct-style-no-effect-system.md) (no exceptions).
+   `JevConfig.fromEnv` trims the key, so only a key given by hand does it.
+2. **A config built by hand can make the client throw.** Measured, each with
+   `IllegalArgumentException` from `java.net.http`: a base URL with no scheme
+   (`URI.create("api.typesafe.ai")`) or with a scheme other than `http` and `https`, on `ask`;
+   a `timeout` of zero or less, when the client is built. The README, the concepts guide and both
+   tutorials say that jev4s does not throw.
+3. **Two options of a Choice, or two levels of a Score, with the same value.** The `Validator`
+   checks keys and level texts, not values. With `ChoiceOption(1, "a")` and
+   `ChoiceOption(1, "b")` the request is sent, and `probabilities` keeps one of the two. Only
+   options or levels written by hand can do it; derived ones cannot.
+
+Fixed on this branch:
+
+- `CONTRIBUTING.md` gave the formatting command without `scala213Spark/scalafmtAll`, which CI
+  checks.
+- The Scaladoc of the Scala 3 `Example.scala` was on `enum Dept`, not on `example`.
+- The Scala 3 tutorial, chapter 8, called the answer `ScoreAnswer` next to `ChoiceAnswer[?]`;
+  it is `ScoreAnswer[?]`.
+- A Scaladoc line of `JdkTransport` broke in the middle of a sentence, in both modules.
+
+Left for M7, not defects: no CHANGELOG yet; `build.sbt` has no `scmInfo`, `developers` or
+`versionScheme`; the README and the guides say that jev4s is not on Maven Central and use
+`0.1.0-SNAPSHOT`. The outputs in the README and the Scala 3 tutorial come from the runs of
+2026-09-22.

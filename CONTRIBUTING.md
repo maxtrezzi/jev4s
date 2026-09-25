@@ -17,8 +17,8 @@ the discussion starts from the reasons already written there.
 - One branch per change.
 - The build stays green, and CI must pass before a merge.
 - **Format your code** with
-  `sbt scalafmtAll scalafmtSbt scala3Live/scalafmtAll scala213Live/scalafmtAll` before you
-  commit. The root build does not include the projects in `live/`, so they are named one by one.
+  `sbt scalafmtAll scalafmtSbt scala3Live/scalafmtAll scala213Live/scalafmtAll scala213Spark/scalafmtAll`
+  before you commit. The root build does not include the projects in `live/`, so they are named one by one.
   CI fails on code that is not formatted.
 - **Both modules get the change.** jev4s has a Scala 3 module and a Scala 2.13 module, with no
   shared code ([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)). The Scala 3

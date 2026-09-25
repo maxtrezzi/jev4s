@@ -535,7 +535,7 @@ vip: true
 ```
 
 The answers are a `Map[String, Answer]`, with the same names. The compiler does not know which
-question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer` or a
+question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer[?]` or a
 `ChoiceAnswer[?]`. Match on it, with one case for each.
 
 `JevChoice.keys(...)` makes options from strings: each key is also the value, so the choice is a

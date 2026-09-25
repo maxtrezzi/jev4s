@@ -15,8 +15,7 @@ import io.github.maxtrezzi.jev4s.internal.Codec
 
 /** The [[Transport]] over `java.net.http`, with the retries of `config.retry`. It sends a
   * [[JevEvent.Responded]] to `onEvent` for each response, and a [[JevEvent.Retrying]] before each
-  * wait. `nanoTime` is the clock that measures
-  * `maxElapsed`; replace it only in tests.
+  * wait. `nanoTime` is the clock that measures `maxElapsed`; replace it only in tests.
   *
   * Without `httpClient`, each instance builds its own `java.net.http.HttpClient`, with its own
   * threads, and never closes it: build one transport and reuse it. Pass `httpClient` to use a
