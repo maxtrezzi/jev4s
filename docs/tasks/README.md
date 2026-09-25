@@ -45,7 +45,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T13](tasks.md#t13--a-guide-section-on-gateways) | A guide section on gateways | Done |
 | [T14](tasks.md#t14--a-guide-chapter-on-many-requests) | A guide chapter on many requests | Done |
 | [T15](tasks.md#t15--every-header-of-a-real-reply) | Every header of a real reply | Done |
-| [T16](tasks.md#t16--the-request-id-of-each-reply) | The request id of each reply | Needs decision |
+| [T16](tasks.md#t16--the-request-id-of-each-reply) | The request id of each reply | Done |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
 | [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |

@@ -1,6 +1,6 @@
 # ADR-0025: Client events through `onEvent`, replacing `onReply`
 
-- **Status:** Accepted — content of Replied amended by ADR-0035
+- **Status:** Accepted — content of Replied amended by ADR-0035; events amended by ADR-0040
 - **Date:** 2026-09-22
 - **Supersedes:** [ADR-0010](0010-reply-metadata-through-onreply.md)
 - **Amends:** [ADR-0022](0022-the-scala-3-client-api.md), [ADR-0023](0023-the-scala-2-13-client-api.md)

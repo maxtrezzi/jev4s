@@ -1,9 +1,9 @@
 # ADR-0040: The request id of each response is an event
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-25
 - **Supersedes:** —
-- **Amends:** —
+- **Amends:** [ADR-0025](0025-client-events-through-onevent.md)
 
 ## Context
 
@@ -45,8 +45,6 @@ matters most when a call fails.
 - **A transport of the caller's own sends no `Responded`**, as it sends no `Retrying`.
 
 ## Decision
-
-Proposed, amending ADR-0025 once accepted:
 
 - `JevEvent` gains `Responded(status: Int, requestId: Option[String])`, in both modules.
   `JdkTransport` sends it for every HTTP response it receives, before it decides to retry or to

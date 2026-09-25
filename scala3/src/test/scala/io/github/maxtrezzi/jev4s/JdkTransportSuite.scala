@@ -59,18 +59,41 @@ class JdkTransportSuite extends munit.FunSuite:
       assertEquals(JdkTransport(config(server), sleeper, () => 0.0).send("{}"), Right("done"))
       assertEquals(sleeper.delays, List(3.seconds))
 
-  test("each retry sends a Retrying event before its wait"):
-    withServer(Reply(429, "{}", "Retry-After" -> "3"), Reply(503, "down"), Reply(200, "done")): server =>
+  test("each response sends a Responded event with its request id, and each retry a Retrying event"):
+    val id = "x-typesafe-request-id"
+    withServer(
+      Reply(429, "{}", "Retry-After" -> "3", id -> "req_1"),
+      Reply(503, "down"),
+      Reply(200, "done", id -> "req_3"),
+    ): server =>
       var events    = List.empty[JevEvent]
       val transport = JdkTransport(config(server), Recorder(), () => 0.0, e => events = events :+ e)
       assertEquals(transport.send("{}"), Right("done"))
       assertEquals(
         events,
         List(
+          JevEvent.Responded(429, Some("req_1")),
           JevEvent.Retrying(JevError.RateLimited(Some(3.seconds)), 1, 3.seconds),
+          JevEvent.Responded(503, None),
           JevEvent.Retrying(JevError.ServerError(503, "down"), 2, 1.second),
+          JevEvent.Responded(200, Some("req_3")),
         ),
       )
+
+  test("an error that is not retried sends its Responded event too"):
+    withServer(Reply(401, "{}", "x-typesafe-request-id" -> "req_401")): server =>
+      var events = List.empty[JevEvent]
+      assertEquals(
+        JdkTransport(config(server), onEvent = e => events = events :+ e).send("{}"),
+        Left(JevError.Unauthorized),
+      )
+      assertEquals(events, List(JevEvent.Responded(401, Some("req_401"))))
+
+  test("a request that gets no response sends no Responded event"):
+    var events = List.empty[JevEvent]
+    val closed = JevConfig(ApiKey("k"), "jev-1.13.0", LocalServer.closedUrl(), retry = RetryPolicy.none)
+    assert(JdkTransport(closed, onEvent = e => events = events :+ e).send("{}").isLeft)
+    assertEquals(events, Nil)
 
   test("529, 503 and 408 are retried with a doubling backoff, less the jitter"):
     withServer(Reply(529, ""), Reply(503, ""), Reply(200, "done")): server =>
