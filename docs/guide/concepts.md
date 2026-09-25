@@ -368,8 +368,11 @@ are free. A request with one short question costs a few hundred input tokens.
 
 - 64,000 tokens for one request: the state and all the questions together;
 - 32,000 tokens for the state and the longest question;
-- a limit on requests per minute and on tokens per second, which TypeSafe changes often. Above
-  it, the API answers "429 Too Many Requests".
+- 1,200 requests per minute and 250,000 input tokens per second for each account, read on
+  2026-09-24. TypeSafe says that these limits can change without notice, and that they are
+  higher on custom and enterprise plans. Above them, the API answers "429 Too Many Requests".
+  The tutorials show how to send many requests under the limit: [Scala 3](scala3.md#13-many-requests),
+  [Scala 2.13](scala213.md#13-many-requests).
 
 ## 9. How jev4s talks to Jev
 

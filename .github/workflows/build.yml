@@ -44,10 +44,11 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: sbt
       - uses: sbt/setup-sbt@v1
-      # The live project is compiled, never run: its tests call the paid API and CI has no key.
+      # The live project is compiled, and only the tests of the guides run (package guide): they
+      # use a fake transport or a local server. LiveSuite calls the paid API, and never runs here.
       # Scaladoc is built too: a comment it cannot read fails publishLocal, and no test sees it.
-      - name: Test, build the Scaladoc, and compile the example and live tests
-        run: sbt -batch "project ${{ matrix.module }}" test doc "${{ matrix.module }}Live/Test/compile"
+      - name: Test, build the Scaladoc, compile the live project, and run the guides' tests
+        run: sbt -batch "project ${{ matrix.module }}" test doc "${{ matrix.module }}Live/testOnly guide.*"
 
   coverage:
     # ADR-0008: below 100% statement or branch coverage the build fails.

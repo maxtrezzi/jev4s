@@ -535,7 +535,7 @@ URL ending in `/typesafe`, as the official SDKs do, and accepted a reply whose `
 
 ### T14 — A guide chapter on many requests
 
-**Status:** Blocked by T7 to T12 — [ADR-0039](../adr/0039-the-library-does-not-limit-the-request-rate.md) (Proposed)
+**Status:** Done 2026-09-25 — [ADR-0039](../adr/0039-the-library-does-not-limit-the-request-rate.md)
 
 **Branch:** `docs/parallel-requests`
 
@@ -546,6 +546,27 @@ stable.
 
 **Done when:** the chapters are in both tutorials; their examples compile on JDK 17 and 21; a
 test runs the pacer against a local server without the API key.
+
+#### Found
+
+- **The owner accepted ADR-0039** with no limiter in the library. Its Context was rewritten first:
+  TypeSafe's Models page, read directly on 2026-09-24, publishes 1,200 requests per minute and
+  250,000 input tokens per second, and says they move and are higher on custom and enterprise
+  plans. The Forces now add that a limit is per account while a limiter is per process, and name
+  the alternative, a library that ships one at 90% of the published limits.
+- **Jev sends no rate-limit header (T15)**, so the chapter says the caller chooses the rate, and
+  quotes the published limits with their date as a place to start.
+- **The pacer is about ten lines**: one `AtomicLong` holds the next free start time, and
+  `getAndAccumulate` gives each caller its own slot without a lock.
+- **The test is a local server that answers 429 above 20 requests in any second.** Without
+  pacing, 30 messages on 8 threads get at least one `RateLimited`; at 15 per second, all 30 are
+  answered and the run takes at least 29/15 s. With the pacer's gap set to 0 by hand, the second
+  test fails. Ten runs per module passed.
+- **CI now runs the guides' tests** (`testOnly guide.*` in each live project), which it only
+  compiled before: `RouterSuite` runs too. `LiveSuite`, which calls the paid API, still never
+  runs in CI.
+- Chapter 13 in both tutorials; chapter 10 points to it; the concepts guide's limits give the
+  published numbers with their date. No paid call.
 
 ### T15 — Every header of a real reply
 
@@ -574,3 +595,30 @@ $0.00001. Record any rate-limit header and the measured latency here, for T14.
   could be what TypeSafe's support asks for. Not in scope here: a candidate for a later task.
 - `build/capture-golden.py` now keeps every header and `elapsed_ms` in `meta.json`, and
   `--only <case>` records one case alone; without it, `--force` would make all nine calls.
+
+### T16 — The request id of each reply
+
+**Status:** Needs decision — where the id goes is an API change, settled by an ADR the owner
+accepts
+
+**Branch:** `task/request-id`
+
+Every reply of Jev carries an `x-typesafe-request-id` header, such as `req_01a0…` (T15). jev4s
+drops it: `Transport` returns only the body of a successful response, and a `JevError` carries
+no header. TypeSafe's official SDKs keep it on their errors, as `request_id` in Python and
+`requestId` in JavaScript, "the `x-typesafe-request-id` response header, or `None` if absent"
+(SDK references, read 2026-09-25). It is what a caller would give TypeSafe's support about one
+call.
+
+The ADR decides, in the Scala 3 module first:
+
+- where the id of a successful reply goes: `Reply`, and so `JevEvent.Replied`, fits ADR-0025;
+- where the id of a failed call goes: on the `JevError` values that come from a response, or in
+  a `JevEvent`;
+- how it crosses `Transport`, which today returns a body and nothing else, without breaking a
+  caller's own `Transport`;
+- whether a gateway's reply, which may not carry it (T13), gives `None`.
+
+**Done when:** the ADR is accepted; both modules keep the id where it decides, tested against the
+local server with and without the header; the guides' chapter on events and errors mentions it;
+the definition of done holds.
