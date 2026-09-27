@@ -7,7 +7,8 @@ sealed abstract class JevError extends Product with Serializable {
 
   /** True when sending the same request again may succeed. */
   def isRetryable: Boolean = this match {
-    case JevError.RateLimited(_) | JevError.Overloaded | JevError.ServerError(_, _) | JevError.Network(_) => true
+    case JevError.Network(failure, _) => failure != NetworkFailure.Certificate
+    case JevError.RateLimited(_) | JevError.Overloaded | JevError.ServerError(_, _) => true
     case JevError.InvalidRequest(_) | JevError.InvalidConfig(_) | JevError.Unauthorized | JevError.Rejected(_) |
         JevError.Unexpected(_, _) | JevError.Decoding(_) =>
       false
@@ -19,8 +20,9 @@ object JevError {
   /** The request was not sent: it has the listed problems. */
   final case class InvalidRequest(problems: List[Problem]) extends JevError
 
-  /** The request was not sent: the config has a value that HTTP cannot carry, such as an API key
-    * with a newline or a timeout of zero. The message says which, and never shows the key.
+  /** The request was not sent: the config has a value that would make the JDK throw, such as an
+    * API key with a newline, a timeout of zero or a retry jitter above 1. The message says which,
+    * and never shows the key.
     */
   final case class InvalidConfig(message: String) extends JevError
 
@@ -48,11 +50,35 @@ object JevError {
     */
   final case class Unexpected(status: Int, message: String) extends JevError
 
-  /** No HTTP response at all: a timeout, or a refused connection. */
-  final case class Network(message: String) extends JevError
+  /** No HTTP response at all. `failure` says why: a timeout, no connection, a certificate that
+    * TLS refused, or another failure, such as a connection closed before the whole response.
+    */
+  final case class Network(failure: NetworkFailure, message: String) extends JevError
 
   /** The response could not be read. */
   final case class Decoding(message: String) extends JevError
+}
+
+/** Why a request got no HTTP response: the kind of a [[JevError.Network]]. */
+sealed abstract class NetworkFailure extends Product with Serializable
+
+object NetworkFailure {
+
+  /** No response within `JevConfig.timeout`, or no connection within it, or within the connect
+    * timeout of your own `HttpClient` when that is shorter.
+    */
+  case object Timeout extends NetworkFailure
+
+  /** No connection: the server refused it, or the name of its host was not found. */
+  case object Connect extends NetworkFailure
+
+  /** TLS refused the server's certificate: it is not trusted, has expired, or is for another
+    * host. Sending the request again does not help, so it is not retried.
+    */
+  case object Certificate extends NetworkFailure
+
+  /** Any other failure, such as a connection that closed before the whole response arrived. */
+  case object Other extends NetworkFailure
 }
 
 /** A problem found in a request before it is sent. */

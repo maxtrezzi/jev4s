@@ -29,10 +29,23 @@ object Decisions {
     }
   // end: confidence
 
-  // snippet: normalized
-  /** The score on a scale from 0 to 1, whatever the number of levels. */
-  def normalized(answer: ScoreAnswer[_]): Double = answer.score / (answer.probabilities.size - 1)
-  // end: normalized
+  // snippet: noul-confidence
+  def checkCharge(duplicate: NoulAnswer): String =
+    duplicate.ifConfident(0.8) match {
+      case Some(true)  => "refund the second charge"
+      case Some(false) => "explain the charges"
+      case None        => "a person checks the order"
+    }
+  // end: noul-confidence
+
+  // snippet: most-likely
+  def reply(feeling: ScoreAnswer[Feeling]): String =
+    feeling.mostLikely match { // one case for each level, and no `case _`
+      case Feeling.Calm    => "a short answer"
+      case Feeling.Annoyed => "an apology, then the answer"
+      case Feeling.Angry   => "a call from a person"
+    }
+  // end: most-likely
 
   // snippet: decisions
   val team     = Choice.of[Team]("Which team should handle `message`?").as("team")
@@ -47,8 +60,8 @@ object Decisions {
 
     client.ask(Tickets.cannotLogIn, team, urgent, severity, feeling) match {
       case Right((t, u, s, f)) =>
-        val priority = 0.7 * normalized(s) + 0.3 * normalized(f)
-        println(f"${route(t)}, answer ${whenToAnswer(u)}, priority $priority%.2f")
+        val priority = 0.7 * s.normalized + 0.3 * f.normalized
+        println(f"${route(t)}, answer ${whenToAnswer(u)}, priority $priority%.2f, ${reply(f)}")
       case Left(error) => println(s"Jev did not answer: $error")
     }
   }

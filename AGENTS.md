@@ -6,24 +6,28 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, M8 and T1 to T17 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, M8 and T1 to T28 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
 `derives JevScale` in Scala 3 or a `JevScale` written by hand in 2.13, and its answer names the
-`mostLikely` level (ADR-0034). A reply without its input tokens still answers, with
+`mostLikely` level (ADR-0034) and the score on a scale from 0 to 1, `normalized` (ADR-0047). A Noul's answer has `ifConfident`, "yes" or "no" when its probability is high enough (ADR-0050). In 2.13, `JevChoice.named` and `JevScale.named` list case objects
+once, named after them (ADR-0043); `Choice.keys` builds a Choice over runtime keys in both. A reply without its input tokens still answers, with
 `Reply.inputTokens` as `None` (ADR-0035). The 2.13 module compiles with Scala 2.13.16, the Scala
 of Spark 4.0 (ADR-0036). Each module also has its client, `JevClient`:
 named tuples in Scala 3; in 2.13, typed keys answered as a tuple, 1 to 10 per call (ADR-0037);
 `askMap` in both for questions built at runtime; over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpClient` (ADR-0038), or over any `Transport`, and reports replies, retries and each HTTP response with its request id as
-`JevEvent`s (ADR-0040). The library has no rate limiter; the tutorials show a pacer (ADR-0039). The API key is an `ApiKey` (ADR-0027), and a config that `java.net.http` would refuse, such as a key with a newline, is `JevError.InvalidConfig`, never an exception (ADR-0042). Live tests and examples are in `live/`,
+`JevEvent`s (ADR-0040). The library has no rate limiter; the tutorials show a pacer (ADR-0039). Each module has a test
+kit, `jev4s-testkit` in `testkit/`, whose client answers with typed values (ADR-0048). The API key is an `ApiKey` (ADR-0027), and a config that `java.net.http` would refuse, such as a key with a newline, is `JevError.InvalidConfig`, never an exception (ADR-0042), as is a `RetryPolicy` whose wait could be negative (ADR-0045). A request with no response is `JevError.Network` with its `NetworkFailure`, and a certificate that TLS refused is not retried (ADR-0049). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
-version, all quoting the examples in `live/` (ADR-0032); the concepts guide also shows how to reach Jev
+version, all quoting the examples in `live/` (ADR-0032), and the compile errors that the README and the
+Scala 3 tutorial show are checked by a test (ADR-0044); the concepts guide also shows how to reach Jev
 through OpenRouter or Vercel AI Gateway. An Apache Spark example of the 2.13 module is in `live/spark`
-(`scala213Spark`, ADR-0041), with its guide `docs/guide/spark.md`. Everything done is on `dev`, where CI
-runs it on JDK 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
+(`scala213Spark`, ADR-0041), with one client per executor JVM (ADR-0046), and its guide
+`docs/guide/spark.md`. Everything done is on `dev`, where CI
+runs it on JDK 17, 21 and 25, the Spark example on 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
 The repository is **private** for now.
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
@@ -103,14 +107,18 @@ sbt 1.13, two modules with no shared code
 `-Werror`, so a warning is a failed build.
 
 ```bash
-sbt test                                              # both modules
+sbt test                                              # both modules and their test kits
 sbt scala3/test                                       # one module
 sbt "scala3/testOnly *ValidatorSuite"                 # one suite
 sbt clean coverage test coverageReport                # coverage; fails below 100%
 sbt "project scala3" clean stryker                    # mutation testing, one module
 sbt "project scala213" "set allowUnsafeScalaLibUpgrade := true" clean stryker   # the 2.13 module
+sbt "project scala3Testkit" clean stryker             # a test kit (ADR-0048); the 2.13 one also sets
+                                                      # allowUnsafeScalaLibUpgrade on scala213 and scala213Testkit
 python3 build/check-mutants.py scala3                 # fails on any undetected mutant
+python3 build/check-mutants.py testkit/scala3         # the same, for a test kit
 python3 build/check-docs.py                           # ADR index, status lines, links, quoted examples
+python3 build/check-scaladoc.py                       # Scala 3 Scaladoc with no warning but its own
 python3 build/check-docs.py --write-snippets          # copy each quoted example into its document
 sbt scalafmtAll scalafmtSbt scala3Live/scalafmtAll scala213Live/scalafmtAll scala213Spark/scalafmtAll   # format; CI checks all
 python3 build/capture-golden.py                       # golden/ plan only; --run makes paid calls
@@ -122,10 +130,18 @@ sbt scala213Spark/test                                # the Spark example on loc
 sbt "scala213Spark/runMain spark.SparkTriage"         # the Spark example, three paid calls
 ```
 
+The Spark tests need JDK 17 or 21: Spark 4.0 does not start on 25.
+
 **The code in the README and in `docs/guide/` is quoted from `live/` (ADR-0032).** Edit the
 example, between its `// snippet: <name>` and `// end: <name>` lines, then run
 `--write-snippets`; never edit a quoted code block by hand. The docs check fails on a block that
 differs from its example.
+
+**A block after `<!-- compile-errors: <suite> -->` lists code that must not compile (ADR-0044).**
+Each entry has a case in that suite, `documented("<code>", compileErrors("<code>"))`, with the
+code written in both literals: never pass it through an `inline` method, which can change the
+compiler's message. Change an entry and its case together; the suite checks the message, the docs
+check that the case exists.
 
 **Mutation testing is two steps, and the second is the check (ADR-0016).** Stryker4s cannot be
 set to fail on a single survivor; `build/check-mutants.py` reads its JSON report and does.
@@ -138,11 +154,12 @@ only. Never set it in `build.sbt`: the check is what keeps the published module 
 instruments the classes, and a `publishLocal` from an instrumented build ships the
 instrumentation.
 
-CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each module on JDK 17
-and 21 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`), the Spark example's tests in the 2.13 job, runs coverage and Stryker4s with the mutant
-check per module, and runs the docs check. Mutation testing runs on
-every pull request ([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md));
-never point it at a project that calls the real API.
+CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each module on JDK 17,
+21 and 25 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`),
+the Spark example's tests in the 2.13 job, runs coverage and Stryker4s with the mutant check per
+module, and runs the docs check and, for Scala 3, the Scaladoc check. Mutation testing runs on every pull request
+([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md)); never point it at a
+project that calls the real API.
 
 ## Load-bearing constraints
 

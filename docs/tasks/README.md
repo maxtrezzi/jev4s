@@ -47,9 +47,21 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T15](tasks.md#t15--every-header-of-a-real-reply) | Every header of a real reply | Done |
 | [T16](tasks.md#t16--the-request-id-of-each-reply) | The request id of each reply | Done |
 | [T17](tasks.md#t17--a-review-before-the-first-release) | A review before the first release | Done |
+| [T18](tasks.md#t18--library-fixes-and-213-options-and-levels-without-repeated-names) | Library fixes, and 2.13 options and levels without repeated names | Done |
+| [T19](tasks.md#t19--documentation-and-examples-spark-4-the-scala-3-compiler-and-real-outputs) | Documentation and examples: Spark 4, the Scala 3 compiler, and real outputs | Done |
+| [T20](tasks.md#t20--a-scores-answer-carries-its-normalized-score) | A Score's answer carries its normalized score | Done |
+| [T21](tasks.md#t21--a-test-kit-that-answers-with-typed-values) | A test kit that answers with typed values | Done |
+| [T22](tasks.md#t22--a-network-error-that-says-what-failed) | A network error that says what failed | Done |
+| [T23](tasks.md#t23--a-threshold-on-a-nouls-answer) | A threshold on a Noul's answer | Done |
+| [T24](tasks.md#t24--jdk-25-tested-and-declared) | JDK 25, tested and declared | Done |
+| [T25](tasks.md#t25--a-security-policy-and-issue-forms) | A security policy and issue forms | Done |
+| [T26](tasks.md#t26--scaladoc-warnings-fail-the-build) | Scaladoc warnings fail the build | Done |
+| [T27](tasks.md#t27--fixes-from-the-review-of-t18-to-t26) | Fixes from the review of T18 to T26 | Done |
+| [T28](tasks.md#t28--fixes-from-a-second-review-of-t18-to-t27) | Fixes from a second review of T18 to T27 | Done |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
 | [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |
+| [D4](open-decisions.md#d4--a-test-helper-that-answers-with-typed-values) | A test helper that answers with typed values | Done |
 
 ## Conventions
 

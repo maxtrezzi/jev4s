@@ -206,7 +206,7 @@ above:
   or "half on level 0 and half on level 2". Read the probabilities and the confidence too.
 - A scale with 3 levels goes from 0 to 2, and a scale with 5 levels from 0 to 4. To compare or
   combine two Scores, first divide each score by its highest level number: then both go from 0
-  to 1.
+  to 1. jev4s gives this number as `normalized`.
 
 Jev judges **each level on its own**: it does not see the level numbers or the levels next to
 it. So a level must describe a situation, such as "Broken, but a workaround exists", and not a
@@ -251,7 +251,8 @@ that one single answer is right.
 A Choice or a Score also has a **confidence**, from 0 to 1. It is computed from the
 probabilities: when they are all on one option or level, the confidence is high; when they are
 spread over several, it is low. A Noul has no confidence, because its one number already says
-everything.
+everything: its `ifConfident` reads that number, and gives the more likely answer, "yes" or "no",
+when its probability is high enough.
 
 Low confidence is useful information. On a Choice, it often means that no option is clearly
 better than the others. On a Score, it often means that the levels overlap, that the question
@@ -369,9 +370,9 @@ are free. A request with one short question costs a few hundred input tokens.
 - 64,000 tokens for one request: the state and all the questions together;
 - 32,000 tokens for the state and the longest question;
 - 1,200 requests per minute and 250,000 input tokens per second for each account, read on
-  2026-09-24. TypeSafe says that these limits can change without notice, and that they are
-  higher on custom and enterprise plans. Above them, the API answers "429 Too Many Requests".
-  The tutorials show how to send many requests under the limit: [Scala 3](scala3.md#13-many-requests),
+  2026-09-24. TypeSafe says that these limits can change without notice, and that they are higher on
+  custom and enterprise plans. Above them, the API answers "429 Too Many Requests". The tutorials
+  show how to send many requests under the limit: [Scala 3](scala3.md#13-many-requests),
   [Scala 2.13](scala213.md#13-many-requests).
 
 ## 9. How jev4s talks to Jev
@@ -386,29 +387,45 @@ This part is about jev4s, not about Jev. It is the same in both Scala versions.
 | The state | A `String`, a `ujson.Value`, or your type with a `given ToState` | The same, with an `implicit ToState` |
 | A question | `Noul`, `Score[L]`, `Choice[C]` | `Noul`, `Score[L]`, `Choice[C]` |
 | Its name | A name in a named tuple: `(urgent = Noul(...))` | A key: `Noul(...).as("urgent")` |
-| The options of a Choice | `enum Team derives JevChoice` | An `implicit JevChoice[Team]` |
-| The levels of a Score | Text, or `enum Mood derives JevScale` | Text, or an `implicit JevScale[Mood]` |
+| The options of a Choice | `enum Team derives JevChoice` | `implicit val choices: JevChoice[Team] = JevChoice.named(...)` |
+| The levels of a Score | Text, or `enum Mood derives JevScale` | Text, or `implicit val levels: JevScale[Mood] = JevScale.named(...)` |
 | The answers | A named tuple: `r.urgent` | A tuple, in the order of the keys: `case Right((t, u))` |
 | A probability | `Probability`, from 0 to 1 | `Probability`, from 0 to 1 |
 | Questions built at runtime | `client.askMap(state, Map(...))` | `client.askMap(state, Map(...))` |
+| A client for tests, from jev4s-testkit | `JevTestkit.answering(questions)((urgent = true))` | `JevTestkit.answering(urgent.is(true))` |
 
 The answer types are the same in both versions:
 
 | Question | Answer | Fields |
 |---|---|---|
-| `Noul` | `NoulAnswer` | `probability`, and `isYes` for a probability of 0.5 or more |
-| `Score[L]` | `ScoreAnswer[L]` | `score`, `mostLikely` (an `L`), `confidence`, `probabilities` keyed by `L`: a value of your type, or each level as you wrote it |
+| `Noul` | `NoulAnswer` | `probability`, `isYes` for a probability of 0.5 or more, and `ifConfident` for the more likely answer when it is likely enough |
+| `Score[L]` | `ScoreAnswer[L]` | `score`, `normalized` (from 0 to 1), `mostLikely` (an `L`), `confidence`, `probabilities` keyed by `L`: a value of your type, or each level as you wrote it |
 | `Choice[C]` | `ChoiceAnswer[C]` | `choice` (a `C`), `confidence`, `probabilities` keyed by `C`, and `ifConfident` |
 
 ### Checks before sending
 
-jev4s checks a request before it sends it, and returns **every** problem at once, as
-`JevError.InvalidRequest(problems)`. It finds a request with no questions, an empty or repeated
-name, a Score with fewer than 2 or more than 10 levels or with a repeated level, and a Choice with
-no options, more than 255 options, or a repeated key. It also finds two levels, or two options,
-with the same value of your type: the answer could not tell them apart. A request with problems costs nothing,
-because it is not sent. In Scala 3, a Score over an enum with fewer than 2 or more than 10 cases
-does not even compile.
+jev4s finds a mistake as early as it can. Some mistakes are compile errors, so the program does
+not build. The others are found before the request is sent: `ask` returns **every** problem at
+once, as `JevError.InvalidRequest(problems)`, and a request with problems costs nothing, because
+it is not sent.
+
+| Mistake | Scala 3 | Scala 2.13 |
+|---|---|---|
+| A name that you did not ask, or an answer read as another type | compile error | compile error |
+| A state with no `ToState` | compile error | compile error |
+| No questions, or a value that is not a question | compile error | compile error |
+| The same name twice | compile error | before sending |
+| A probability outside [0, 1] in your code, such as `Probability(1.5)` | compile error | `Probability.from` returns `None` |
+| A Score over your type with fewer than 2 or more than 10 levels | compile error, for an enum that derives `JevScale` | before sending |
+| A Score with fewer than 2 or more than 10 levels, or a level used twice | before sending | before sending |
+| A Choice with no options or more than 255, or a key used twice | before sending | before sending |
+| Two levels, or two options, with the same value of your type | before sending | before sending |
+| An empty name, or any of the above in `askMap` | before sending | before sending |
+| A config that cannot work, such as a key with a newline or a retry jitter above 1 | `InvalidConfig`, before sending | `InvalidConfig`, before sending |
+
+Two values with the same value of your type are a problem because the answer could not tell them
+apart. The [Scala 3 tutorial](scala3.md#4-three-questions-three-types) shows the compiler's
+messages.
 
 ### Errors
 
@@ -418,13 +435,13 @@ if sending the same request again can help.
 | Error | What it means | Retried |
 |---|---|---|
 | `InvalidRequest(problems)` | jev4s found problems before sending, for example 11 levels in a Score | no |
-| `InvalidConfig(message)` | the config has a value that HTTP cannot carry, for example an API key with a newline | no |
+| `InvalidConfig(message)` | the config has a value that cannot work, for example an API key with a newline, which HTTP cannot carry, or a retry jitter above 1 | no |
 | `Unauthorized` | HTTP 401: the API key is missing or wrong | no |
 | `Rejected(message)` | HTTP 400 or 422: Jev refused the request, for example for an unknown model | no |
 | `RateLimited(retryAfter)` | HTTP 429: too many requests | yes |
 | `Overloaded` | HTTP 529: Jev is busy | yes |
 | `ServerError(status, message)` | HTTP 408 or another 5xx | yes |
-| `Network(message)` | no response: a timeout, or no connection | yes |
+| `Network(failure, message)` | no response. `failure` says why: `Timeout`, `Connect` (no connection), `Certificate` (TLS refused the server's certificate) or `Other`, such as a connection closed early | yes, except `Certificate` |
 | `Unexpected(status, message)` | any other status, for example 404 for a wrong base URL | no |
 | `Decoding(message)` | the response could not be read | no |
 
@@ -458,9 +475,9 @@ Send them to your logger or your metrics.
 an `ApiKey`, which always prints as `<hidden>`, so it does not appear in a log by mistake. The
 base URL must use `https`. Plain `http` works only for `localhost`, because the key would
 travel unencrypted. `fromEnv` checks this; a `JevConfig` that you build yourself is not checked,
-so give it an `https` base URL. A value that HTTP cannot carry, such as a key with the newline
-at the end of a file, or a timeout of zero, does not throw: each call returns
-`JevError.InvalidConfig`, and the message never shows the key.
+so give it an `https` base URL. A value that cannot work, such as a key with the newline at the
+end of a file, or a timeout of zero, does not throw: each call returns `JevError.InvalidConfig`,
+and the message never shows the key.
 
 ## 10. Through a gateway
 
@@ -502,6 +519,7 @@ In Scala 3:
 val vercel: Option[JevConfig] =
   sys.env
     .get("AI_GATEWAY_API_KEY")
+    .map(_.trim) // a key read from a file often ends with a newline
     .map(key => JevConfig(ApiKey(key), "typesafe-ai/jev", URI.create("https://ai-gateway.vercel.sh/typesafe")))
 ```
 
@@ -512,6 +530,7 @@ In Scala 2.13:
 val vercel: Option[JevConfig] =
   sys.env
     .get("AI_GATEWAY_API_KEY")
+    .map(_.trim) // a key read from a file often ends with a newline
     .map(key => JevConfig(new ApiKey(key), "typesafe-ai/jev", URI.create("https://ai-gateway.vercel.sh/typesafe")))
 ```
 
@@ -528,3 +547,10 @@ val vercel: Option[JevConfig] =
 - **An error can come from the gateway.** jev4s reads the status as usual, so `isRetryable` still
   works. When the body is not in TypeSafe's shape, the message is the body itself, cut to 200
   characters.
+
+**Cloudflare Workers AI** also serves Jev, but in another shape: a request goes to
+`POST /client/v4/accounts/{account_id}/ai/run`, with `"model": "typesafe/jev"`, and the state and
+the questions inside `input`
+([Cloudflare's model page](https://developers.cloudflare.com/ai/models/typesafe/jev/), read on
+2026-09-25). A base URL cannot reach it. A `Transport` of your own could change the shape, but it
+cannot read the key of a `JevConfig`, so it would need the key from somewhere else.

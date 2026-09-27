@@ -37,6 +37,7 @@ class CodecSuite extends munit.FunSuite {
         List[Answer](
           ScoreAnswer[ujson.Value](
             0.5,
+            0.5,
             "Low",
             p(0.5),
             Map[ujson.Value, Probability](ujson.Str("Low") -> p(0.5), ujson.Str("High") -> p(0.5))
@@ -107,6 +108,19 @@ class CodecSuite extends munit.FunSuite {
     assertEquals(mostLikely("""{"0": 0.5, "1": 0.0, "2": 0.5}"""), Right(List[Any](ujson.Str("Low"))))
     assertEquals(mostLikely("""{"2": 0.4, "1": 0.4, "0": 0.2}"""), Right(List[Any](ujson.Str("Mid"))))
     assertEquals(mostLikely("""{"2": 0.9}"""), Right(List[Any](ujson.Str("High"))))
+  }
+
+  test("normalized divides the score by the highest level of the question") {
+    def normalized(levels: Int, score: Double) =
+      Codec
+        .decode(
+          reply(s"""{"type": "score", "score": $score, "confidence": 0.5, "probabilities": {"0": 1.0}}"""),
+          List[(String, Question[_])]("q" -> Score("How?", List.tabulate[ujson.Value](levels)(i => s"level $i")))
+        )
+        .map(_.answers.collect { case a: ScoreAnswer[_] => a.normalized })
+    assertEquals(normalized(5, 3.0), Right(List(0.75)))
+    assertEquals(normalized(2, 0.4), Right(List(0.4)))
+    assertEquals(normalized(3, 2.0), Right(List(1.0)))
   }
 
   test("a Score with no probabilities") {

@@ -1,0 +1,29 @@
+name: An idea
+description: Something jev4s could do, or do better.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before you write it, look in [docs/adr](https://github.com/maxtrezzi/jev4s/tree/dev/docs/adr):
+        it holds every design decision, with the options that were rejected and why.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you want to do, and why jev4s makes it hard today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How the code of a user would look, in Scala 3, in Scala 2.13, or both.
+      render: scala
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options: [Scala 3, Scala 2.13, both]
+    validations:
+      required: true

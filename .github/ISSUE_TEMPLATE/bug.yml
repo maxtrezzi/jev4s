@@ -1,0 +1,38 @@
+name: Something does not work
+description: jev4s does something that its documentation says it should not do.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste your API key**, in the code or in the output. For a security problem, do
+        not open an issue: see SECURITY.md.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: jev4s, Scala and JDK.
+      placeholder: jev4s 0.1.0, Scala 3.9.0, JDK 21
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Code
+      description: The smallest code that shows the problem. A test with `jev4s-testkit` is best, because it needs no API key.
+      render: scala
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+      description: The error, the output or the compiler's message, in full.
+    validations:
+      required: true
+  - type: input
+    id: request-id
+    attributes:
+      label: Request id
+      description: If the problem is in a reply of Jev, the request id from `JevEvent.Responded`.
+      placeholder: req_...

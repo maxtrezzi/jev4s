@@ -7,15 +7,12 @@ import io.github.maxtrezzi.jev4s._
   */
 object Example {
 
-  sealed abstract class Dept extends Product with Serializable
-  object Dept {
-    case object Billing   extends Dept
-    case object Technical extends Dept
-    case object Sales     extends Dept
-    implicit val choices: JevChoice[Dept] =
-      JevChoice.fromOptions(
-        List(ChoiceOption(Billing, "billing"), ChoiceOption(Technical, "technical"), ChoiceOption(Sales, "sales"))
-      )
+  sealed abstract class Team extends Product with Serializable
+  object Team {
+    case object Billing   extends Team
+    case object Technical extends Team
+    case object Sales     extends Team
+    implicit val choices: JevChoice[Team] = JevChoice.named(Billing, Technical, Sales)
   }
 
   def main(args: Array[String]): Unit =
@@ -38,10 +35,10 @@ object Example {
           }
         )
         val ticket = "Help! My payouts have been failing for 3 days and I have a launch tomorrow."
-        val dept   = Choice.of[Dept]("Which team should handle this?").as("dept")
+        val team   = Choice.of[Team]("Which team should handle this?").as("team")
         val urgent = Noul("Does this convey urgency?").as("urgent")
-        client.ask(ticket, dept, urgent) match {
-          case Right((d, u))                     => println(s"route to ${d.choice}, urgent: ${u.isYes}")
+        client.ask(ticket, team, urgent) match {
+          case Right((t, u))                     => println(s"route to ${t.choice}, urgent: ${u.isYes}")
           case Left(JevError.Unauthorized)       => println("401: the API key is wrong: check TYPESAFE_API_KEY")
           case Left(JevError.Rejected(message))  => println(s"422: Jev refused the request: $message")
           case Left(JevError.RateLimited(after)) =>

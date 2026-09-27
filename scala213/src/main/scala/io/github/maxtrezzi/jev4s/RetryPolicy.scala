@@ -8,10 +8,14 @@ import scala.concurrent.duration._
   * The defaults are those of TypeSafe's official SDKs: 2 retries, a delay of 0.5 s doubled up to
   * 5 s with up to 25% taken off at random, and the server's `Retry-After` honoured up to 60 s.
   *
-  * `maxElapsed` limits the time a call spends retrying, 30 s by default, which the SDKs do not
-  * limit: a retry whose wait would end later than `maxElapsed` after the first attempt is not
-  * made, and the last error is returned. The last attempt can still take up to the config's
-  * `timeout` on top of it.
+  * `maxElapsed` limits the time a call spends retrying, 30 s by default, as in the Python SDK
+  * (the JavaScript SDK has no such limit): a retry whose wait would end later than `maxElapsed`
+  * after the first attempt is not made, and the last error is returned. The last attempt can
+  * still take up to the config's `timeout` on top of it.
+  *
+  * `backoffInitial` and `backoffMax` must be zero or more, and `jitter` between 0 and 1, as the
+  * Python SDK requires. [[JdkTransport]] checks this before it sends: with other values, each call
+  * returns [[JevError.InvalidConfig]].
   */
 final case class RetryPolicy(
     maxRetries: Int = 2,

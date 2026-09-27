@@ -346,8 +346,24 @@ Scala 3 or 2.13.
 
 **Status:** Not started
 
-- Maven Central (for example with sbt-ci-release): `jev4s_3` and `jev4s_2.13`.
+- Maven Central (for example with sbt-ci-release): `jev4s_3` and `jev4s_2.13`, and their test
+  kits `jev4s-testkit_3` and `jev4s-testkit_2.13`, at the same version (ADR-0048).
 - CHANGELOG; `0.x` versions while the Jev API is in early access.
+- `build.sbt`: `scmInfo`, `developers`, and `versionScheme := Some("early-semver")` (T17).
+- A jar that uses only JDK 17's API, whatever JDK builds the release: `-release 17`, or a
+  release job on JDK 17.
+- A release workflow from a tag on `main`
+  ([ADR-0013](../adr/0013-one-branch-per-task-work-lands-on-dev.md)). The tool is to be checked
+  when the work starts: sbt-ci-release, or sbt's own publishing to the Central Portal.
+- A check of binary compatibility after `0.1.0` (MiMa, and TASTy-MiMa for Scala 3): whether and
+  how is a decision for an ADR.
+- The README and the guides move from `0.1.0-SNAPSHOT` and `sbt publishLocal` to the published
+  version, with the coordinates of the test kits.
+- A review of `dev` as it will be released, as T17 and T27 did.
+- For the owner: the namespace `io.github.maxtrezzi` on the Central Portal, the signing key and
+  the secrets of the release workflow; the repository public, with protection on `dev` and
+  `main` (ADR-0013) and private vulnerability reporting on (`SECURITY.md`, T25); the remote
+  branches already merged.
 
 **Done when:** `libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"` works in a
 new project, Scala 3 or 2.13.

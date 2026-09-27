@@ -15,7 +15,7 @@ val items = List("hiking boots", "running shoes", "team subscription")
 
 @main def runtime(): Unit =
   val questions = checks.map((name, text) => name -> Noul(text)) +
-    ("item" -> Choice[String]("Which item is `message` about?")(using JevChoice.keys(items*)))
+    ("item" -> Choice.keys("Which item is `message` about?", items*))
   client.askMap(doubleCharge, questions) match
     case Right(answers) =>
       answers.toList

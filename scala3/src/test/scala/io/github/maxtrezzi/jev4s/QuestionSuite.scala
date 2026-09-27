@@ -17,6 +17,13 @@ class QuestionSuite extends munit.FunSuite:
   test("JevChoice.keys uses each key as its own value"):
     assertEquals(JevChoice.keys("a", "b").options, List(ChoiceOption("a", "a"), ChoiceOption("b", "b")))
 
+  test("Choice.keys asks over keys known at runtime, each key its own value"):
+    val items = List("a", "b")
+    assertEquals(
+      Choice.keys("Which item?", items*),
+      Question.Choice[String]("Which item?", List(ChoiceOption("a", "a"), ChoiceOption("b", "b"))),
+    )
+
   test("a Score keeps its levels in order"):
     assertEquals(
       Score("How angry?", "Calm", "Angry"),

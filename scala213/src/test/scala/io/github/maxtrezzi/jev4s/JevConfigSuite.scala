@@ -95,4 +95,15 @@ class JevConfigSuite extends munit.FunSuite {
       assertEquals(own.sent.get, 1)
     } finally server.close()
   }
+
+  test("a client built with an HttpClient whose connect timeout is too long for a Scala duration answers") {
+    val server = new LocalServer(LocalServer.Reply(200, Golden.file("noul/response.json")))
+    try {
+      val millennium = java.time.Duration.ofDays(365L * 1000)
+      val own        = java.net.http.HttpClient.newBuilder().connectTimeout(millennium).build()
+      val client     =
+        JevClient.create(JevConfig(new ApiKey("k"), "jev-1.13.0", server.baseUrl), httpClient = Some(own))
+      assert(client.ask("text", Noul("Urgent?").as("is_urgent")).isRight)
+    } finally server.close()
+  }
 }

@@ -4,10 +4,13 @@ import java.net.{InetSocketAddress, URI}
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.jdk.CollectionConverters._
+
 import com.sun.net.httpserver.HttpServer
 import org.apache.spark.sql.SparkSession
 
 import io.github.maxtrezzi.jev4s._
+import io.github.maxtrezzi.jev4s.testkit._
 
 /** The example of the guide on Spark in local mode, two executor threads, with a fake transport
   * or a local server. No API key, no cost.
@@ -38,6 +41,16 @@ class SparkTriageSuite extends munit.FunSuite {
         Triaged("t2", Some(false), Some(0.2), None),
         Triaged("t3", None, None, Some("Unauthorized"))
       )
+    )
+  }
+
+  spark.test("a client of the test kit, built on the executors, answers each row") { spark =>
+    import spark.implicits._
+    val tickets = Seq(Ticket("t1", "locked out"), Ticket("t2", "invoice colour")).toDS()
+    val client  = () => JevTestkit.answering(SparkTriage.urgent.is(true))
+    assertEquals(
+      SparkTriage.triage(tickets, partitions = 2, perSecond = 100, client).collect().sortBy(_.id).toList,
+      List(Triaged("t1", Some(true), Some(1.0), None), Triaged("t2", Some(true), Some(1.0), None))
     )
   }
 
@@ -107,6 +120,20 @@ class SparkTriageSuite extends munit.FunSuite {
     }
   }
 
+  /** The selector threads of the JDK's HTTP clients: one for each `HttpClient` that is alive. */
+  private def httpClients(): Set[String] =
+    Thread.getAllStackTraces.keySet.asScala.map(_.getName).filter(_.matches("HttpClient-\\d+-SelectorManager")).toSet
+
+  spark.test("one client for each executor JVM: one HTTP client, however many tasks run") { spark =>
+    limitedTo(1000) { url =>
+      SparkTriageSuite.url = url
+      val before  = httpClients()
+      val results = SparkTriage.triage(tickets(spark), partitions = 12, perSecond = 1e6, () => SparkTriageSuite.client)
+      assertEquals(results.collect().flatMap(_.error).toList, Nil)
+      assertEquals((httpClients() -- before).size, 1)
+    }
+  }
+
   spark.test("two partitions share a rate of 8 per second, and stay under a limit of 10") { spark =>
     limitedTo(10) { url =>
       val start   = System.nanoTime()
@@ -122,6 +149,13 @@ class SparkTriageSuite extends munit.FunSuite {
 /** Outside the suite: a function that Spark sends to the executors must not capture the suite. */
 object SparkTriageSuite {
   val calls = new AtomicInteger()
+
+  /** The local server of the test that uses [[client]]; set before the client is built. */
+  @volatile var url: URI = _
+
+  /** One client for each JVM, as in the example: an `object` exists once in each JVM. */
+  lazy val client: JevClient =
+    JevClient.create(JevConfig(new ApiKey("test"), "jev-1.13.0", url, retry = RetryPolicy.none))
 
   def reply(noul: Double): String =
     s"""{"model": "jev-1.13.0", "answers": {"urgent": {"type": "noul", "noul": $noul}}}"""

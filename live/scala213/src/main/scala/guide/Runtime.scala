@@ -17,7 +17,7 @@ object Runtime {
 
   def main(args: Array[String]): Unit = {
     val questions: Map[String, Question[_]] = checks.map { case (name, text) => name -> Noul(text) } +
-      ("item" -> Choice.of[String]("Which item is `message` about?")(JevChoice.keys(items: _*)))
+      ("item" -> Choice.keys("Which item is `message` about?", items: _*))
     client.askMap(Tickets.doubleCharge, questions) match {
       case Right(answers) =>
         answers.toList.sortBy(_._1).foreach { case (name, answer) =>

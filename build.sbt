@@ -13,6 +13,17 @@ val ujson = "com.lihaoyi" %% "ujson" % "4.4.3"
 // Real Jev JSON, read by the tests of both modules: the one thing the modules share.
 val goldenFiles = Test / unmanagedResourceDirectories += (LocalRootProject / baseDirectory).value / "golden"
 
+// ADR-0044: the documents whose compile errors the Scala 3 tests check, on the test classpath as
+// `documents/README.md` and `documents/scala3.md`: golden/ has a README.md of its own.
+val documentedErrors = Test / resourceGenerators += Def.task {
+  val root = (LocalRootProject / baseDirectory).value
+  Seq("README.md", "docs/guide/scala3.md").map { path =>
+    val copy = (Test / resourceManaged).value / "documents" / file(path).getName
+    IO.copyFile(root / path, copy)
+    copy
+  }
+}.taskValue
+
 // ADR-0008: below 100% statement or branch coverage the build fails.
 val fullCoverage = Seq(
   coverageMinimumStmtTotal   := 100,
@@ -27,6 +38,7 @@ lazy val scala3 = project
     scalacOptions ++= Seq("-deprecation", "-feature", "-Werror", "-Wunused:all", "-language:strictEquality"),
     libraryDependencies ++= Seq(ujson, munit),
     goldenFiles,
+    documentedErrors,
     fullCoverage,
   )
 
@@ -36,6 +48,32 @@ lazy val scala213 = project
     scalaVersion := "2.13.16", // ADR-0036
     scalacOptions ++= Seq("-deprecation", "-feature", "-Werror", "-Xlint"),
     libraryDependencies ++= Seq(ujson, munit),
+    goldenFiles,
+    fullCoverage,
+  )
+
+// ADR-0048: a test kit for each module, published as jev4s-testkit next to jev4s. Each one
+// depends on its module and nothing else, and is held to the same coverage and mutants.
+lazy val scala3Testkit = project
+  .in(file("testkit/scala3"))
+  .dependsOn(scala3)
+  .settings(
+    name         := "jev4s-testkit",
+    scalaVersion := (scala3 / scalaVersion).value,
+    scalacOptions ++= (scala3 / scalacOptions).value,
+    libraryDependencies += munit,
+    goldenFiles,
+    fullCoverage,
+  )
+
+lazy val scala213Testkit = project
+  .in(file("testkit/scala213"))
+  .dependsOn(scala213)
+  .settings(
+    name         := "jev4s-testkit",
+    scalaVersion := (scala213 / scalaVersion).value,
+    scalacOptions ++= (scala213 / scalacOptions).value,
+    libraryDependencies += munit,
     goldenFiles,
     fullCoverage,
   )
@@ -50,7 +88,7 @@ lazy val scala213 = project
 // and run in CI: `sbt "scala3Live/testOnly guide.*"`.
 lazy val scala3Live = project
   .in(file("live/scala3"))
-  .dependsOn(scala3)
+  .dependsOn(scala3, scala3Testkit % Test) // chapter 12 of the tutorial tests with the test kit
   .settings(
     scalaVersion := (scala3 / scalaVersion).value,
     scalacOptions ++= (scala3 / scalacOptions).value,
@@ -61,7 +99,7 @@ lazy val scala3Live = project
 
 lazy val scala213Live = project
   .in(file("live/scala213"))
-  .dependsOn(scala213)
+  .dependsOn(scala213, scala213Testkit % Test) // chapter 12 of the tutorial tests with the test kit
   .settings(
     scalaVersion := (scala213 / scalaVersion).value,
     scalacOptions ++= (scala213 / scalacOptions).value,
@@ -72,14 +110,14 @@ lazy val scala213Live = project
 
 lazy val root = project
   .in(file("."))
-  .aggregate(scala3, scala213)
+  .aggregate(scala3, scala213, scala3Testkit, scala213Testkit)
   .settings(publish / skip := true)
 
 // M8: an Apache Spark example of the 2.13 module, in a project of its own so that Spark's
 // dependencies stay out of scala213Live. Spark is Provided: a cluster brings its own.
 lazy val scala213Spark = project
   .in(file("live/spark"))
-  .dependsOn(scala213Live) // the Pacer of the guide, and so the scala213 module
+  .dependsOn(scala213Live, scala213Testkit % Test) // the Pacer of the guide, and so the scala213 module
   .settings(
     scalaVersion := (scala213 / scalaVersion).value,
     scalacOptions ++= (scala213 / scalacOptions).value,

@@ -65,6 +65,11 @@ object Choice:
   def apply[C](instructions: ujson.Value)(using choices: JevChoice[C]): Choice[C] =
     Question.Choice(instructions, choices.options)
 
+  /** A Choice over keys known only at runtime: `Choice.keys("Which item?", items*)`. Each key is
+    * also the value that the answer gives back.
+    */
+  def keys(instructions: ujson.Value, keys: String*): Choice[String] = apply(instructions)(using JevChoice.keys(keys*))
+
 /** One option of a Choice: your value, the key Jev sees, and an optional description. */
 final case class ChoiceOption[C](value: C, key: String, description: Option[ujson.Value] = None)
 

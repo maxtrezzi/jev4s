@@ -98,7 +98,7 @@ private[jev4s] object Codec {
         .filter(probabilities.contains)
         .maxByOption(probabilities)
         .toRight(s"'$name': no probabilities")
-    } yield ScoreAnswer(score, mostLikely, confidence, probabilities)
+    } yield ScoreAnswer(score, score / (values.size - 1), mostLikely, confidence, probabilities)
   }
 
   private def decodeChoice[C](name: String, question: Choice[C], json: ujson.Value): Either[String, Answer] = {

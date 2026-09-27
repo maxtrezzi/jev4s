@@ -8,8 +8,9 @@ enum JevError derives CanEqual:
   /** The request was not sent: it has the listed problems. */
   case InvalidRequest(problems: List[Problem])
 
-  /** The request was not sent: the config has a value that HTTP cannot carry, such as an API key
-    * with a newline or a timeout of zero. The message says which, and never shows the key.
+  /** The request was not sent: the config has a value that would make the JDK throw, such as an
+    * API key with a newline, a timeout of zero or a retry jitter above 1. The message says which,
+    * and never shows the key.
     */
   case InvalidConfig(message: String)
 
@@ -37,17 +38,39 @@ enum JevError derives CanEqual:
     */
   case Unexpected(status: Int, message: String)
 
-  /** No HTTP response at all: a timeout, or a refused connection. */
-  case Network(message: String)
+  /** No HTTP response at all. `failure` says why: a timeout, no connection, a certificate that
+    * TLS refused, or another failure, such as a connection closed before the whole response.
+    */
+  case Network(failure: NetworkFailure, message: String)
 
   /** The response could not be read. */
   case Decoding(message: String)
 
   /** True when sending the same request again may succeed. */
   def isRetryable: Boolean = this match
-    case RateLimited(_) | Overloaded | ServerError(_, _) | Network(_)                                       => true
+    case Network(failure, _)                             => failure != NetworkFailure.Certificate
+    case RateLimited(_) | Overloaded | ServerError(_, _) => true
     case InvalidRequest(_) | InvalidConfig(_) | Unauthorized | Rejected(_) | Unexpected(_, _) | Decoding(_) =>
       false
+
+/** Why a request got no HTTP response: the kind of a [[JevError.Network]]. */
+enum NetworkFailure derives CanEqual:
+
+  /** No response within `JevConfig.timeout`, or no connection within it, or within the connect
+    * timeout of your own `HttpClient` when that is shorter.
+    */
+  case Timeout
+
+  /** No connection: the server refused it, or the name of its host was not found. */
+  case Connect
+
+  /** TLS refused the server's certificate: it is not trusted, has expired, or is for another
+    * host. Sending the request again does not help, so it is not retried.
+    */
+  case Certificate
+
+  /** Any other failure, such as a connection that closed before the whole response arrived. */
+  case Other
 
 /** A problem found in a request before it is sent. */
 enum Problem derives CanEqual:

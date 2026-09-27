@@ -91,6 +91,7 @@ class GoldenSuite extends munit.FunSuite:
     val levels = recorded("questions")("risk")("criteria").arr.toList
     val answer = ScoreAnswer(
       json("score").num,
+      json("score").num / (levels.size - 1),
       levels(mostLikelyIndex(json)),
       probability(json("confidence")),
       json("probabilities").obj.map((k, v) => levels(k.toInt) -> probability(v)).toMap,
@@ -105,6 +106,7 @@ class GoldenSuite extends munit.FunSuite:
     val levels   = Frustration.values.toList
     val expected = ScoreAnswer(
       json("score").num,
+      json("score").num / (levels.size - 1),
       levels(mostLikelyIndex(json)),
       probability(json("confidence")),
       json("probabilities").obj.map((k, v) => levels(k.toInt) -> probability(v)).toMap,
@@ -131,6 +133,7 @@ class GoldenSuite extends munit.FunSuite:
     val levels   = List[ujson.Value]("Calm", "Frustrated", "Very angry")
     val expected = ScoreAnswer(
       json("score").num,
+      json("score").num / (levels.size - 1),
       levels(mostLikelyIndex(json)),
       probability(json("confidence")),
       json("probabilities").obj.map((k, v) => levels(k.toInt) -> probability(v)).toMap,

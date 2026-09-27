@@ -4,6 +4,8 @@ Thank you for looking. jev4s is a small library with strong opinions, so the mos
 to do before you write code is **open an issue**. A short conversation costs ten minutes; a
 large pull request that does not fit the design costs both of us much more.
 
+A security problem is different: do not open an issue, and follow [`SECURITY.md`](SECURITY.md).
+
 ## Before you propose a feature
 
 Read [`docs/adr/`](docs/adr/README.md). It holds every design decision, with the options that
@@ -22,7 +24,9 @@ the discussion starts from the reasons already written there.
   CI fails on code that is not formatted.
 - **Both modules get the change.** jev4s has a Scala 3 module and a Scala 2.13 module, with no
   shared code ([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)). The Scala 3
-  module goes first; the 2.13 module follows in its own style.
+  module goes first; the 2.13 module follows in its own style. Each module has a test kit,
+  `jev4s-testkit`, in `testkit/`, which follows the same rules
+  ([ADR-0048](docs/adr/0048-a-test-kit-answers-with-typed-values.md)).
 - **Tests must cover every statement and branch, and survive mutation testing**
   ([ADR-0008](docs/adr/0008-full-coverage-and-mutation-testing.md)). If a mutant survives
   and no test can kill it, explain why in
