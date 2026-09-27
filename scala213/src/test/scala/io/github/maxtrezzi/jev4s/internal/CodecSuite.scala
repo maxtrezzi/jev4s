@@ -107,26 +107,36 @@ class CodecSuite extends munit.FunSuite {
     assertEquals(mostLikely("""{"0": 0.2, "1": 0.3, "2": 0.5}"""), Right(List[Any](ujson.Str("High"))))
     assertEquals(mostLikely("""{"0": 0.5, "1": 0.0, "2": 0.5}"""), Right(List[Any](ujson.Str("Low"))))
     assertEquals(mostLikely("""{"2": 0.4, "1": 0.4, "0": 0.2}"""), Right(List[Any](ujson.Str("Mid"))))
-    assertEquals(mostLikely("""{"2": 0.9}"""), Right(List[Any](ujson.Str("High"))))
   }
 
   test("normalized divides the score by the highest level of the question") {
-    def normalized(levels: Int, score: Double) =
+    def normalized(levels: Int, score: Double) = {
+      val probabilities = List.tabulate(levels)(i => s""""$i": ${if (i == 0) 1.0 else 0.0}""").mkString("{", ", ", "}")
       Codec
         .decode(
-          reply(s"""{"type": "score", "score": $score, "confidence": 0.5, "probabilities": {"0": 1.0}}"""),
+          reply(s"""{"type": "score", "score": $score, "confidence": 0.5, "probabilities": $probabilities}"""),
           List[(String, Question[_])]("q" -> Score("How?", List.tabulate[ujson.Value](levels)(i => s"level $i")))
         )
         .map(_.answers.collect { case a: ScoreAnswer[_] => a.normalized })
+    }
     assertEquals(normalized(5, 3.0), Right(List(0.75)))
     assertEquals(normalized(2, 0.4), Right(List(0.4)))
     assertEquals(normalized(3, 2.0), Right(List(1.0)))
   }
 
-  test("a Score with no probabilities") {
+  test("a reply that leaves out a level or an option: the first one missing, in the question's order") {
+    val base = """{"type": "score", "score": 0.5, "confidence": 0.5, "probabilities": """
+    assertEquals(error(reply(base + "{}}"), score), "'q': no probability for the level 'Low'")
+    assertEquals(error(reply(base + """{"1": 1.0}}"""), score), "'q': no probability for the level 'Low'")
+    assertEquals(error(reply(base + """{"0": 1.0}}"""), score), "'q': no probability for the level 'High'")
+    val json: List[(String, Question[_])] = List("q" -> Score("How?", List(ujson.Obj("level" -> "low"), "High")))
     assertEquals(
-      error(reply("""{"type": "score", "score": 0.5, "confidence": 0.5, "probabilities": {}}"""), score),
-      "'q': no probabilities"
+      error(reply(base + """{"1": 1.0}}"""), json),
+      """'q': no probability for the level '{"level":"low"}'"""
+    )
+    assertEquals(
+      error(reply("""{"type": "choice", "choice": "a", "confidence": 1, "probabilities": {"a": 1.0}}"""), choice),
+      "'q': no probability for the option 'b'"
     )
   }
 

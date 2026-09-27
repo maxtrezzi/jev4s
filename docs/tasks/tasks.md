@@ -1419,3 +1419,66 @@ can go stale.
 - A "Credits" section keeps what does not go stale: the named tuples and the typed keys came
   first in scala-jev-sdk and zio-typesafe-ai.
 - The docs check passes.
+
+### T30 — A review before the release
+
+**Status:** Done 2026-09-27 — [ADR-0053](../adr/0053-an-answer-has-a-probability-for-every-level-and-option.md)
+
+**Branch:** `task/t30-release-review`
+
+M7 asks for a review of `dev` as it will be released, as T17 and T27 did: the code of both
+modules and both test kits, the artifacts as they would be published, the documents a user reads
+first, and the history, before the repository becomes public.
+
+**Done when:** each point found is fixed, or the owner decided to leave it; the definition of
+done holds in both modules and both test kits.
+
+#### Found
+
+Checked on 2026-09-27, on `dev` at 15f0468, JDK 25, no call to the real API:
+
+- **The tree is the one CI passed on pull request #23**: 100% statement and branch coverage and
+  every mutant detected in the four projects. Locally, `scala3` 170 tests, `scala213` 142, 11 and
+  12 in the test kits, 6 and 6 in the guides, 6 in the Spark example on JDK 21.
+- **The history holds no secret.** A mirror clone, with the `refs/pull/*/head` that GitHub
+  publishes with the unsquashed commits of the deleted branches, has 65 commits; their diffs hold
+  no API key, token, private key, session link or `Claude-Session` trailer (one match, the
+  sentence of `AGENTS.md` that forbids it), and the only email addresses are GitHub's and
+  Anthropic's `noreply`. The replies in `golden/` carry `x-typesafe-request-id`s, which name no
+  account.
+- **The jars hold classes, TASTy and the manifest**, nothing from the tests or `golden/`.
+- **Signing works as the release workflow does it**: with a throwaway key in a temporary
+  `GNUPGHOME`, exported with `--armor | base64`, imported with `gpg --batch --import`, and
+  `PGP_PASSPHRASE` set, `publishSigned` at `0.1.0` stages 16 signatures, which `gpg --verify`
+  finds good. `sonaRelease` was not run.
+- **Both modules and both test kits, read end to end, match point for point.** Nothing throws
+  but what is documented: an exception from `onEvent`, the interruption of the thread, and a
+  mistake in a test given to a test kit. A `NaN` or an infinity in the state is written as the
+  string `"NaN"` or `"Infinity"` by ujson, and does not throw.
+
+Found, and fixed on this branch, as the owner asked (2026-09-27):
+
+1. **A reply could leave a level or an option out of `probabilities`**, and the Scala 3 Scaladoc
+   reads the map with `apply` (`probabilities(Mood.Angry)`), which then throws
+   `NoSuchElementException`. The nine replies in `golden/` always give every level and option,
+   so the API as measured never did it. ADR-0053: the codec returns `JevError.Decoding` for the
+   first level or option missing, and the test kits throw `IllegalArgumentException` for a whole
+   answer that leaves one out. The tutorials' third test of chapter 12 gave such an answer, in
+   both modules: it now gives `Team.Technical` a probability of 0, and the tutorials say why.
+2. **The jars had no `LICENSE` or `NOTICE`.** Each jar and sources jar of the four published
+   projects now has both in `META-INF/`.
+3. **`CONTRIBUTING.md` did not say that a patch keeps the API** (ADR-0052), nor to add a line to
+   the CHANGELOG. It says both now.
+
+For the release pull request, not defects: 15 lines still say `0.1.0-SNAPSHOT`, "not on Maven
+Central" or `publishLocal` (5 in the README, 4 in each tutorial, 2 in the Spark guide, among
+them the test kits' coordinates in chapter 12); the "Report a vulnerability" button of
+`SECURITY.md` works once the repository is public and private vulnerability reporting is on.
+
+- Measured after the fixes, JDK 25: `scala3` 170 tests, `scala213` 142, 12 in `scala3Testkit`
+  and 13 in `scala213Testkit`, 6 and 6 in the guides, 6 in the Spark example on JDK 21. 100%
+  statement and branch coverage in the four projects. Every mutant detected: 237 of 254 in
+  `scala3` (12 ignored and 5 that do not compile, as before), 242 of 243 in `scala213`
+  (1 ignored), 28 of 28 and 31 of 31 in the test kits. The formatting, docs, Scaladoc and
+  compatibility checks pass.
+

@@ -795,7 +795,7 @@ class RouterSuite extends munit.FunSuite:
     val unsure = ChoiceAnswer(
       Team.Billing,
       Probability(0.6),
-      Map(Team.Billing -> Probability(0.6), Team.Sales -> Probability(0.4)),
+      Map(Team.Billing -> Probability(0.6), Team.Technical -> Probability(0.0), Team.Sales -> Probability(0.4)),
     )
     val client = JevTestkit.answering(triage)((team = unsure, urgent = true, feeling = Feeling.Angry))
     assertEquals(Router(client).route(doubleCharge), "a person, because Jev is not sure of the team")
@@ -818,7 +818,8 @@ retries.
 The client does not look at what your code asks: a question under another name gets a
 `JevError.Decoding` error, as a real reply without its answer would. An answer that is not one of
 its question's options or levels throws `IllegalArgumentException` when you build the client: it
-is a mistake in the test.
+is a mistake in the test. So does a whole answer whose `probabilities` leave out an option or a
+level: a reply from Jev gives each one a probability, even when it is 0.
 
 Under the test kit is `JevClient.withTransport`, which you can use yourself. A `Transport` is one
 function: it takes the body of the request and returns the body of the reply, or a `JevError`.

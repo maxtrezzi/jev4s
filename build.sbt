@@ -45,6 +45,15 @@ val fullCoverage = Seq(
   coverageFailOnMinimum      := true,
 )
 
+// The licence and its notice inside each published jar and sources jar, so that a jar copied on its
+// own still carries them: Apache 2.0 asks whoever redistributes it to pass both on.
+val licenseFiles = Seq(Compile / packageBin, Compile / packageSrc).map { jar =>
+  jar / mappings ++= {
+    val root = (LocalRootProject / baseDirectory).value
+    Seq(root / "LICENSE" -> "META-INF/LICENSE", root / "NOTICE" -> "META-INF/NOTICE")
+  }
+}
+
 // ADR-0052: the releases whose API this version keeps. Under early-semver a patch version keeps
 // the API of every earlier patch of its minor version, so 0.1.2 is checked against 0.1.0 and
 // 0.1.1; a new minor version in 0.x may break it, so 0.2.0 is checked against nothing.
@@ -93,6 +102,7 @@ lazy val scala3 = project
     goldenFiles,
     documentedErrors,
     fullCoverage,
+    licenseFiles,
     binaryCompatibility,
     tastyCompatibility,
   )
@@ -105,6 +115,7 @@ lazy val scala213 = project
     libraryDependencies ++= Seq(ujson, munit),
     goldenFiles,
     fullCoverage,
+    licenseFiles,
     binaryCompatibility,
   )
 
@@ -120,6 +131,7 @@ lazy val scala3Testkit = project
     libraryDependencies += munit,
     goldenFiles,
     fullCoverage,
+    licenseFiles,
     binaryCompatibility,
   )
 
@@ -133,6 +145,7 @@ lazy val scala213Testkit = project
     libraryDependencies += munit,
     goldenFiles,
     fullCoverage,
+    licenseFiles,
     binaryCompatibility,
   )
 

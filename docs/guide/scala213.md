@@ -828,7 +828,12 @@ class RouterSuite extends munit.FunSuite {
 
   test("a team that Jev is not sure of goes to a person") {
     val p      = (d: Double) => Probability.from(d).get
-    val unsure = ChoiceAnswer[Team](Team.Billing, p(0.6), Map(Team.Billing -> p(0.6), Team.Sales -> p(0.4)))
+    val unsure =
+      ChoiceAnswer[Team](
+        Team.Billing,
+        p(0.6),
+        Map(Team.Billing -> p(0.6), Team.Technical -> p(0.0), Team.Sales -> p(0.4))
+      )
     val client = JevTestkit.answering(team.is(unsure), urgent.is(true), feeling.is(Feeling.Angry))
     assertEquals(new Router(client).route(Tickets.doubleCharge), "a person, because Jev is not sure of the team")
   }
@@ -853,7 +858,9 @@ call would after its retries.
 The client does not look at what your code asks: a key with another name gets a
 `JevError.Decoding` error, as a real reply without its answer would. An answer that is not one of
 its question's options or levels, or two answers for keys with the same name, throw
-`IllegalArgumentException` when you build the client: it is a mistake in the test.
+`IllegalArgumentException` when you build the client: it is a mistake in the test. So does a
+whole answer whose `probabilities` leave out an option or a level: a reply from Jev gives each one
+a probability, even when it is 0.
 
 Under the test kit is `JevClient.withTransport`, which you can use yourself. A `Transport` is one
 function: it takes the body of the request and returns the body of the reply, or a `JevError`.
