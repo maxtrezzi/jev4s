@@ -104,3 +104,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0048](0048-a-test-kit-answers-with-typed-values.md) | A test kit answers with typed values | Accepted |
 | [0049](0049-a-network-error-says-what-failed.md) | A network error says what failed | Accepted |
 | [0050](0050-a-noul-answer-is-confident-on-either-side.md) | A Noul answer is confident on either side | Accepted |
+| [0051](0051-publish-with-sbt-from-a-tag-on-main.md) | Publish with sbt's own Central Portal support, from a tag on `main` | Accepted |

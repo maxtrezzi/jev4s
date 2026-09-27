@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, M8 and T1 to T28 are done; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, M8 and T1 to T29 are done, and M7 is in progress; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -27,7 +27,9 @@ Scala 3 tutorial show are checked by a test (ADR-0044); the concepts guide also 
 through OpenRouter or Vercel AI Gateway. An Apache Spark example of the 2.13 module is in `live/spark`
 (`scala213Spark`, ADR-0041), with one client per executor JVM (ADR-0046), and its guide
 `docs/guide/spark.md`. Everything done is on `dev`, where CI
-runs it on JDK 17, 21 and 25, the Spark example on 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033).
+runs it on JDK 17, 21 and 25, the Spark example on 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033), to Maven Central with sbt's own
+Central Portal support, from a tag on `main`, at the version written in `build.sbt` (ADR-0051);
+its jars use JDK 17's API.
 The repository is **private** for now.
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
@@ -149,6 +151,12 @@ Stryker4s runs per module (`project scala3`, `project scala213`) and reads `stry
 the root. Its test runner is built with scala-library 2.13.18, and sbt stops a 2.13.16 build that
 sees a newer library (SIP-51), so the 2.13 run sets `allowUnsafeScalaLibUpgrade` for that run
 only. Never set it in `build.sbt`: the check is what keeps the published module on 2.13.16.
+
+**A release follows ADR-0051.** The version is `ThisBuild / version` in `build.sbt`, a
+`-SNAPSHOT` on `dev`: the release pull request sets it and the CHANGELOG, and a tag
+`v<version>` on the squashed commit on `main` starts `.github/workflows/release.yml`. Pushing a
+tag is the owner's, like any push. Never add sbt-dynver or sbt-ci-release, and never drop the
+`-release` options: the published jar is built by one JDK, not by CI's matrix.
 
 **Run `sbt clean` after a coverage run** before anything else that compiles: coverage
 instruments the classes, and a `publishLocal` from an instrumented build ships the

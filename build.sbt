@@ -2,8 +2,22 @@
 // `%% "jev4s"` resolves to jev4s_3 or jev4s_2.13 from the user's own Scala version.
 
 ThisBuild / organization := "io.github.maxtrezzi"
+ThisBuild / version      := "0.1.0-SNAPSHOT"
+ThisBuild / description  := "An unofficial Scala client for Jev, the typed-decision model of TypeSafe AI."
 ThisBuild / licenses     := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
 ThisBuild / homepage     := Some(url("https://github.com/maxtrezzi/jev4s"))
+ThisBuild / scmInfo      := Some(
+  ScmInfo(url("https://github.com/maxtrezzi/jev4s"), "scm:git:https://github.com/maxtrezzi/jev4s.git")
+)
+ThisBuild / developers := List(
+  Developer("maxtrezzi", "maxtrezzi", "", url("https://github.com/maxtrezzi"))
+)
+// 0.x while the Jev API is in early access: a change of the minor version may break the API.
+ThisBuild / versionScheme := Some("early-semver")
+
+// Maven Central through the Central Portal, with sbt's own publishing: `publishSigned` stages
+// the signed artifacts in localStaging, and `sonaRelease` uploads and releases them.
+ThisBuild / publishTo := localStaging.value
 
 val munit = "org.scalameta" %% "munit" % "1.3.6" % Test
 
@@ -35,7 +49,14 @@ lazy val scala3 = project
   .settings(
     name         := "jev4s",
     scalaVersion := "3.9.0", // ADR-0017
-    scalacOptions ++= Seq("-deprecation", "-feature", "-Werror", "-Wunused:all", "-language:strictEquality"),
+    scalacOptions ++= Seq(
+      "-deprecation",
+      "-feature",
+      "-Werror",
+      "-Wunused:all",
+      "-language:strictEquality",
+      "-java-output-version:17", // JDK 17's API and bytecode, whatever JDK builds the release
+    ),
     libraryDependencies ++= Seq(ujson, munit),
     goldenFiles,
     documentedErrors,
@@ -46,7 +67,7 @@ lazy val scala213 = project
   .settings(
     name         := "jev4s",
     scalaVersion := "2.13.16", // ADR-0036
-    scalacOptions ++= Seq("-deprecation", "-feature", "-Werror", "-Xlint"),
+    scalacOptions ++= Seq("-deprecation", "-feature", "-Werror", "-Xlint", "-release:17"),
     libraryDependencies ++= Seq(ujson, munit),
     goldenFiles,
     fullCoverage,
