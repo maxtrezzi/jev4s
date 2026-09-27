@@ -58,6 +58,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T26](tasks.md#t26--scaladoc-warnings-fail-the-build) | Scaladoc warnings fail the build | Done |
 | [T27](tasks.md#t27--fixes-from-the-review-of-t18-to-t26) | Fixes from the review of T18 to T26 | Done |
 | [T28](tasks.md#t28--fixes-from-a-second-review-of-t18-to-t27) | Fixes from a second review of T18 to T27 | Done |
+| [T29](tasks.md#t29--the-readme-leads-with-direct-style) | The README leads with direct style | Done |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
 | [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |
