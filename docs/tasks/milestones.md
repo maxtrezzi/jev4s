@@ -344,7 +344,9 @@ Scala 3 or 2.13.
 
 ### M7 — Publishing
 
-**Status:** Not started
+**Status:** In progress — [ADR-0051](../adr/0051-publish-with-sbt-from-a-tag-on-main.md)
+
+**Branch:** `milestone/m7-publishing`
 
 - Maven Central (for example with sbt-ci-release): `jev4s_3` and `jev4s_2.13`, and their test
   kits `jev4s-testkit_3` and `jev4s-testkit_2.13`, at the same version (ADR-0048).
@@ -367,6 +369,38 @@ Scala 3 or 2.13.
 
 **Done when:** `libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"` works in a
 new project, Scala 3 or 2.13.
+
+#### Built
+
+- **Publishing with sbt's own Central Portal support and sbt-pgp 2.3.2**, chosen by the owner
+  over sbt-ci-release (ADR-0051). `ThisBuild / publishTo` is `localStaging`; the version is
+  `ThisBuild / version`, `0.1.0-SNAPSHOT`, and `versionScheme` is `early-semver`.
+- **The pom**: `description`, `scmInfo` and `developers` next to the licence and the homepage.
+  The developer is `maxtrezzi` with the GitHub URL and no email, as in modelrack4j's pom; sbt
+  leaves the empty email out.
+- **JDK 17's API and bytecode**: `-java-output-version:17` in `scala3`, `-release:17` in
+  `scala213`, inherited by the test kits and the live projects. The classes are version 61, and a
+  call to `java.util.List.reversed()` (JDK 21) fails to compile in both modules on JDK 25.
+- **`.github/workflows/release.yml`**, on a tag `v<major>.<minor>.<patch>`, on JDK 17: stops unless
+  the tagged commit is on `main` and every published project has the tag's version, runs the
+  tests, imports the key from `PGP_SECRET`, and runs `publishSigned sonaRelease`. actionlint
+  finds no problem.
+- **`CHANGELOG.md`**, with the first release under "Unreleased".
+
+#### Found
+
+- **A publish at `0.1.0` stages the four artifacts**, each with its pom, jar, sources and
+  javadoc jar, in `target/sona-staging` (`set ThisBuild / version := "0.1.0"`, then `publish`,
+  unsigned). The test kits' poms depend on the module at the same version.
+- **The namespace is verified already**: modelrack4j 0.2.0 is on Maven Central under
+  `io.github.maxtrezzi`. search.maven.org did not list it on 2026-09-27; `repo1.maven.org` does.
+- **The version check of the workflow**, run locally: `print ThisBuild / version` prints each
+  aggregated project's version; with the build at `0.1.0-SNAPSHOT`, the tag `v0.1.0` is refused.
+
+Left: MiMa and TASTy-MiMa, a decision for the owner; the README and the guides at the published
+version, with the test kits' coordinates; the review of `dev` as released; the owner's steps
+(secrets, the repository public, protection on `dev` and `main`, private vulnerability
+reporting). The remote branches already merged were deleted on 2026-09-27.
 
 ### M8 — Optional
 
