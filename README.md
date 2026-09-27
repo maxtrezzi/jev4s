@@ -7,11 +7,15 @@ probabilities. jev4s keeps those types in Scala, so the compiler knows what each
 > **Unofficial and independent.** jev4s is not affiliated with, endorsed by, or part of
 > TypeSafe AI.
 
+- **Direct style, in both Scala versions.** `client.ask` is a plain method call: it returns
+  when Jev has answered, with the answers or the error as a value, `Either[JevError, A]`. There
+  is no effect system, no `Future` and no `F[_]` to learn. On JDK 21, many calls can wait at
+  once on virtual threads ([how](docs/guide/scala3.md#13-many-requests)); with cats-effect or
+  ZIO, wrap a call in `IO.blocking` or `ZIO.attemptBlocking`.
 - **Scala 3: the compiler checks your questions and your answers.** A name you did not ask, an
   answer read as the wrong type, a probability above 1: each one is a compile error
   ([below](#what-the-compiler-refuses)).
-- **Scala 2.13: the only Scala client for Jev that runs on Spark 4**, on 2026-09-25
-  ([the others](#other-scala-clients)). Ask Jev about each row of a `Dataset`
+- **Scala 2.13: built for Spark 4.** Ask Jev about each row of a `Dataset`
   ([below](#on-spark-4)).
 
 ## Scala 3
@@ -73,7 +77,8 @@ Send to Billing. Duplicate charge: true. Feeling: Angry (1.8 of 2).
 The state is your own `Ticket`: jev4s turns it into JSON with the `ToState` of (2), and each
 question names the field it is about. The questions are a named tuple, and the answers are a
 named tuple with the same names. Each answer has the type of its question: `r.team.choice` is a
-`Team`, and `r.feeling.mostLikely`, the level with the highest probability, is a `Feeling`.
+`Team`, and `r.feeling.mostLikely`, the level with the highest probability, is a `Feeling`. The
+call in (5) returns an `Either`, and a `match` reads it: nothing to run, await or unwrap.
 
 ### What the compiler refuses
 
@@ -261,46 +266,11 @@ coordinates, so sbt picks the right one: `jev4s_3` or `jev4s_2.13`.
 work plan is in [`docs/tasks/`](docs/tasks/README.md), and every design decision, with the
 options that were rejected, is in [`docs/adr/`](docs/adr/README.md).
 
-## Other Scala clients
+## Credits
 
-Other community clients for Jev, checked on 2026-09-25. Each one is good, and for some projects
-the better choice.
-
-**[scala-jev-sdk](https://github.com/ticofab/scala-jev-sdk)**, by ticofab. Scala 3.3 LTS,
-released on Maven Central, with sttp and upickle as its dependencies. It does not choose an
-effect system for you: you give it an sttp backend, and it speaks `Future`, blocking `Identity`,
-cats-effect, ZIO, Monix or Pekko. A question is a value, and you read its answer with that same
-value. It removed its Scala 2.13 build on 2026-09-19. **Choose it** when your project already
-has an sttp backend or an effect system.
-
-**[typesafe-ai-scala-sdk](https://github.com/aoprisan/typesafe-ai-scala-sdk)**, by aoprisan,
-`io.github.aoprisan` %% `typesafe-sdk-scala`: 0.5.0 on Maven Central. Scala 3.3 LTS and no
-runtime dependency. Each call is blocking, a `CompletableFuture` or a `Future`, with `Either`
-variants, and there are modules for Cats Effect, fs2, Monix and Ox. It derives questions from a
-case class, and records real replies to replay them in tests. **Choose it** when you want a
-released version today, or when you are on Scala 3.3 to 3.8.
-
-**[zio-typesafe-ai](https://github.com/jamesward/zio-typesafe-ai)**, by jamesward. Scala 3 on
-ZIO and ZIO HTTP. It asks with a named tuple and answers with a named tuple of the same shape,
-it keeps every probability inside [0, 1] in the type, and its criteria refuse fewer than 2 or
-more than 10 levels and more than 255 options when you build them. It also has a loop, in which
-Jev picks the next action of a state machine of yours. **Choose it** when your program is
-written in ZIO.
-
-**[hexis](https://github.com/early-effect/hexis)**, by early-effect. Scala 3 on ZIO, for the JVM,
-Scala.js and Scala Native. It is not on Maven Central. **Choose it** when you need Jev in the
-browser or in a native program.
-
-**What jev4s does differently.** It is the only one with a Scala 2.13 module, so the only one that
-runs on Spark 4. Its Scala 3 module turns the typical mistakes into compile errors, and the list
-above is checked by a test. Direct style, with no effect system: every error is a value, and a
-request with problems is not sent.
-
-Neither the named tuples nor the typed keys are our idea: scala-jev-sdk and zio-typesafe-ai had
-them first. jev4s is a study and portfolio project
-([ADR-0001](docs/adr/0001-a-study-and-portfolio-project.md)), and what it adds is in the
-execution — two native modules, full coverage with every mutant detected, and documentation
-whose examples and compile errors are checked by CI.
+The named tuples of the Scala 3 module and the typed keys of the 2.13 module are not our idea:
+[scala-jev-sdk](https://github.com/ticofab/scala-jev-sdk) and
+[zio-typesafe-ai](https://github.com/jamesward/zio-typesafe-ai) had them first.
 
 ## License
 

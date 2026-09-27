@@ -1392,3 +1392,30 @@ both modules.
   as before), 240 of 241 in `scala213` (1 ignored). The formatting check, the docs check and the
   Scaladoc check pass. The test kits' mutants, the Spark tests, `LiveSuite` and CI on JDK 21 and
   17 were not run: T28 changes neither the kits nor the Spark example.
+
+### T29 — The README leads with direct style
+
+**Status:** Done 2026-09-27
+
+**Branch:** `docs/readme-direct-style`
+
+Direct style (ADR-0002) is a property of both modules, but the README named it only in its
+comparison with other clients, near the end. That comparison, "Other Scala clients", described
+four projects that change every few days, and the claim at the top, "the only Scala client for
+Jev that runs on Spark 4, on 2026-09-25", depended on it.
+
+**Done when:** the README opens with direct style, and holds no fact about another project that
+can go stale.
+
+**Outcome.**
+
+- The first point of the README is direct style: `client.ask` returns when Jev has answered,
+  with an `Either[JevError, A]`, with no effect system, `Future` or `F[_]`; many calls wait on
+  virtual threads on JDK 21 (a link to chapter 13 of the Scala 3 tutorial), and cats-effect or
+  ZIO wrap a call in `IO.blocking` or `ZIO.attemptBlocking`. After the Scala 3 example, one
+  sentence says that the call returns an `Either` that a `match` reads.
+- "Other Scala clients" and "What jev4s does differently" are gone. The 2.13 point at the top
+  says "built for Spark 4", with no comparison.
+- A "Credits" section keeps what does not go stale: the named tuples and the typed keys came
+  first in scala-jev-sdk and zio-typesafe-ai.
+- The docs check passes.
