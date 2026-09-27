@@ -386,13 +386,21 @@ new project, Scala 3 or 2.13.
   the tagged commit is on `main` and every published project has the tag's version, runs the
   tests, imports the key from `PGP_SECRET`, and runs `publishSigned sonaRelease`. actionlint
   finds no problem.
-- **`CHANGELOG.md`**, with the first release under "Unreleased".
+- **`CHANGELOG.md`**, with the first release under "Unreleased"; the release pull request
+  names it `0.1.0`.
 - **Compatibility checks**, option C of the four offered to the owner (ADR-0052):
   sbt-mima-plugin 1.2.1 on the four published projects, sbt-tasty-mima 1.4.0 on `jev4s_3` with
   the core 1.4.1, tasty-query 1.9.0 and `java.net.http` on its JDK classpath.
   `compatibleReleases` in `build.sbt` derives the releases to compare with from the version:
   `x.y.0` to `x.y.(z-1)`. CI runs them in the test job on JDK 21, and the release workflow
   before signing.
+- **The release pull request** sets `ThisBuild / version` to `0.1.0`, names the CHANGELOG's
+  section `0.1.0`, and moves the README and the three guides from `0.1.0-SNAPSHOT` and
+  `sbt publishLocal` to `0.1.0` on Maven Central: 15 lines, as T30 counted, and the test kits'
+  coordinates in the README. The README's status says that `0.x` versions can break the API in
+  a minor version, and points to the CHANGELOG.
+- **The review of `dev` as released** is T30: one fix to the codec (ADR-0053), the licence in the
+  jars, and two rules in `CONTRIBUTING.md`.
 
 #### Found
 
@@ -433,10 +441,11 @@ new project, Scala 3 or 2.13.
 - **MiMa fails when it has nothing to compare**, which is every `x.y.0`: `mimaFailOnNoPrevious`
   is off.
 
-Left: the README and the guides at the published
-version, with the test kits' coordinates; the review of `dev` as released; the owner's steps
-(secrets, the repository public, protection on `dev` and `main`, private vulnerability
-reporting). The remote branches already merged were deleted on 2026-09-27.
+Left: the owner's steps (the four secrets of the release workflow, the repository public,
+protection on `dev` and `main`, private vulnerability reporting); the squashed pull request from
+`dev` to `main` whose subject is `0.1.0`, and the tag `v0.1.0` on its commit (ADR-0051); after the
+release, `dev` at `0.1.1-SNAPSHOT`; a new project that resolves `0.1.0`, Scala 3 and 2.13, which
+is the "done when". The remote branches already merged were deleted on 2026-09-27.
 
 ### M8 — Optional
 

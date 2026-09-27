@@ -37,12 +37,10 @@ and 4.2. The example uses Spark 4.0.4, the only version it is tested on:
 // build.sbt
 scalaVersion := "2.13.16"
 libraryDependencies ++= Seq(
-  "io.github.maxtrezzi" %% "jev4s"     % "0.1.0-SNAPSHOT",
+  "io.github.maxtrezzi" %% "jev4s"     % "0.1.0",
   "org.apache.spark"    %% "spark-sql" % "4.0.4" % Provided // the cluster brings its own Spark
 )
 ```
-
-jev4s is not on Maven Central yet: clone this repository and run `sbt publishLocal` in it.
 
 Run Spark on **JDK 17 or 21**. Spark 4.0 does not start on JDK 25, although jev4s works on it.
 

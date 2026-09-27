@@ -23,7 +23,7 @@ probabilities. jev4s keeps those types in Scala, so the compiler knows what each
 ```scala
 // build.sbt
 scalaVersion := "3.9.0"
-libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0-SNAPSHOT"
+libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"
 ```
 
 <!-- snippet: live/scala3/src/main/scala/Triage.scala#readme -->
@@ -111,7 +111,7 @@ row of a `Dataset`, with the answer or the error in the row.
 // build.sbt
 scalaVersion := "2.13.16"
 libraryDependencies ++= Seq(
-  "io.github.maxtrezzi" %% "jev4s"     % "0.1.0-SNAPSHOT",
+  "io.github.maxtrezzi" %% "jev4s"     % "0.1.0",
   "org.apache.spark"    %% "spark-sql" % "4.0.4" % Provided
 )
 ```
@@ -147,7 +147,7 @@ The [Spark guide](docs/guide/spark.md) explains each line, and how to test the j
 ```scala
 // build.sbt
 scalaVersion := "2.13.16"
-libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0-SNAPSHOT"
+libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"
 ```
 
 The same example in Scala 2.13, in two parts; the `Ticket` of (1) and its `ToState` (2) are in
@@ -211,9 +211,8 @@ The [Scala 2.13 tutorial](docs/guide/scala213.md) explains each step.
    gateway, such as OpenRouter: [the concepts guide](docs/guide/concepts.md#10-through-a-gateway)
    shows how. Put the key in the environment variable `TYPESAFE_API_KEY`, the variable that the
    official SDKs read.
-2. **Build the library.** It is not on Maven Central yet. Clone this repository and run
-   `sbt publishLocal`: this puts `0.1.0-SNAPSHOT` in your local repository, where your project
-   finds it.
+2. **Add jev4s to your project.** It is on Maven Central: put the lines for your Scala version,
+   above, in your `build.sbt`.
 3. **Run the example.** Put the Scala 3 example in a file of your project, such as
    `src/main/scala/Triage.scala`, and run `sbt run`. It makes one call to Jev, which costs a few
    hundred input tokens.
@@ -254,7 +253,8 @@ and you can run each one from this repository, for example `sbt "scala3Live/runM
 - **Tests without the network.** `jev4s-testkit` gives your tests a client that answers with
   typed values, `(team = Team.Billing, urgent = true)`, checked by the compiler: chapter 12 of the
   tutorials, [Scala 3](docs/guide/scala3.md#12-testing-your-code) and
-  [Scala 2.13](docs/guide/scala213.md#12-testing-your-code).
+  [Scala 2.13](docs/guide/scala213.md#12-testing-your-code). Add it to your tests with
+  `libraryDependencies += "io.github.maxtrezzi" %% "jev4s-testkit" % "0.1.0" % Test`.
 
 jev4s has one module for each Scala version, and each one is written in the style of its own
 version ([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)). Both use the same
@@ -262,8 +262,10 @@ coordinates, so sbt picks the right one: `jev4s_3` or `jev4s_2.13`.
 
 ## Status
 
-**In development.** Both modules work against the real API, but nothing is published yet. The
-work plan is in [`docs/tasks/`](docs/tasks/README.md), and every design decision, with the
+**Early.** Version 0.1.0 is the first release. The versions stay at `0.x` while the Jev API is
+in early access: a new minor version, such as `0.2.0`, can break your code, and a new patch
+version cannot. The [CHANGELOG](CHANGELOG.md) lists the changes of each version. The work plan is
+in [`docs/tasks/`](docs/tasks/README.md), and every design decision, with the
 options that were rejected, is in [`docs/adr/`](docs/adr/README.md).
 
 ## Credits
