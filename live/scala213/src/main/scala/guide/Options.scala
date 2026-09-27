@@ -3,19 +3,14 @@ package guide
 import io.github.maxtrezzi.jev4s._
 
 // snippet: described
-sealed abstract class Request extends Product with Serializable
+sealed abstract class Request(val description: String) extends Product with Serializable with Described
 object Request {
-  case object Refund      extends Request
-  case object Exchange    extends Request
-  case object Information extends Request
-  case object Other       extends Request
+  case object Refund      extends Request("The customer wants their money back")
+  case object Exchange    extends Request("The customer wants a different size or colour")
+  case object Information extends Request("The customer only asks a question")
+  case object Other       extends Request("None of the options above")
 
-  implicit val choices: JevChoice[Request] = JevChoice(
-    ChoiceOption(Refund, "refund", Some("The customer wants their money back")),
-    ChoiceOption(Exchange, "exchange", Some("The customer wants a different size or colour")),
-    ChoiceOption(Information, "information", Some("The customer only asks a question")),
-    ChoiceOption(Other, "other", Some("None of the options above"))
-  )
+  implicit val choices: JevChoice[Request] = JevChoice.named(Refund, Exchange, Information, Other)
 }
 // end: described
 

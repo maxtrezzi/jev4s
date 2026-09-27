@@ -17,6 +17,11 @@ Each check guards against a mistake that is easy to make and hard to see:
      guides quote the examples in `live/`, which CI compiles: a block that follows the line
      `<!-- snippet: live/scala3/src/main/scala/guide/Client.scala#first -->` must be the lines
      between `// snippet: first` and `// end: first` in that file, without their common indent.
+  7. A documented compile error has no test. A block that follows the line
+     `<!-- compile-errors: scala3/src/test/scala/ReadmeErrorsSuite.scala -->` lists lines that must
+     not compile, each ending with `// error: <message>` (ADR-0044). The suite checks each message
+     against the compiler; this check makes sure that each entry has its case in the suite: a
+     `documented("<code>", compileErrors("<code>"))` call, with the same code in both literals.
 
 Run: python3 build/check-docs.py                    (exit 0 clean, 1 with findings)
      python3 build/check-docs.py --write-snippets   (first copy every quoted example into its block)
@@ -256,14 +261,89 @@ def check_snippets(problems, tracked, write):
     return count
 
 
+ERRORS_REF = re.compile(r"^<!-- compile-errors: (\S+) -->$")
+ERROR_ENTRY = re.compile(r"^(.*?)\s*// error: (.*)$")
+# `documented("<code>", compileErrors("<code>"))`, each literal "..." or """...""", with the
+# trailing comma that scalafmt adds to a call on several lines: one case of a suite. The two
+# literals must be the same code.
+LITERAL = r'(?:"""(.*?)"""|"((?:[^"\\\n]|\\.)*)")'
+DOCUMENTED = re.compile(rf"documented\(\s*{LITERAL}\s*,\s*compileErrors\(\s*{LITERAL}\s*\)\s*,?\s*\)", re.S)
+
+
+def error_entries(block):
+    """The code of each entry of a block: its first line without the `// error:` comment, and the
+    indented lines after it that have no marker."""
+    entries = []
+    for line in block:
+        m = ERROR_ENTRY.match(line)
+        if m:
+            entries.append(m.group(1))
+        elif entries and line.startswith(" ") and line.strip():
+            entries[-1] += "\n" + line.rstrip()
+    return entries
+
+
+def documented_codes(path, problems):
+    """The code of each case of a suite, when its two literals agree."""
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    unescape = lambda s: re.sub(r"\\(.)", lambda m: {"n": "\n", "t": "\t"}.get(m.group(1), m.group(1)), s)
+    value = lambda raw, escaped: raw if raw is not None else unescape(escaped)
+    codes = set()
+    for m in DOCUMENTED.finditer(text):
+        code, compiled = value(m.group(1), m.group(2)), value(m.group(3), m.group(4))
+        if code == compiled:
+            codes.add(code)
+        else:
+            problems.append(f"{path}: documented({code!r}, ...) compiles other code: {compiled!r}")
+    return codes
+
+
+def check_compile_errors(problems, tracked):
+    """Each documented compile error against the cases of its suite."""
+    count = 0
+    for path in sorted(f for f in tracked if f.endswith(".md")):
+        with open(path, encoding="utf-8") as fh:
+            lines = fh.read().split("\n")
+        for i, line in enumerate(lines):
+            m = ERRORS_REF.match(line.strip())
+            if not m:
+                continue
+            suite = m.group(1)
+            if suite not in tracked:
+                problems.append(f"{path}: its compile errors name {suite}, which is not tracked")
+                continue
+            if i + 1 >= len(lines) or not lines[i + 1].startswith("```"):
+                problems.append(f"{path}: the line after the compile errors of {suite} is not a code fence")
+                continue
+            block = []
+            for body in lines[i + 2 :]:
+                if body.startswith("```"):
+                    break
+                block.append(body)
+            entries = error_entries(block)
+            if not entries:
+                problems.append(f"{path}: the block of {suite} has no line with `// error:`")
+            codes = documented_codes(suite, problems)
+            for code in entries:
+                count += 1
+                if code not in codes:
+                    problems.append(f"{path}: the compile error {code!r} has no documented(...) case in {suite}")
+    return count
+
+
 def main():
     problems = []
     tracked = tracked_files()
     snippet_count = check_snippets(problems, tracked, "--write-snippets" in sys.argv[1:])
+    error_count = check_compile_errors(problems, tracked)
     adr_count = check_adrs(problems)
     doc_count = check_links(problems, tracked)
 
-    print(f"checked {adr_count} ADRs, {doc_count} tracked markdown files and {snippet_count} quoted examples")
+    print(
+        f"checked {adr_count} ADRs, {doc_count} tracked markdown files, {snippet_count} quoted examples "
+        f"and {error_count} documented compile errors"
+    )
     if problems:
         print(f"\n{len(problems)} problem(s):\n")
         for p in problems:

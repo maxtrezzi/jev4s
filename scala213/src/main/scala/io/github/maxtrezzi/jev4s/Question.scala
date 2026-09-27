@@ -72,6 +72,22 @@ trait JevScale[L] {
 
 object JevScale {
 
+  /** Levels named after your case objects, from low to high in the order you give them:
+    * `JevScale.named(Calm, Annoyed, Angry)`. Each level's text is the name of its case object, or
+    * its description when it extends [[Described]].
+    *
+    * `L` can be a sealed trait or a sealed class, with or without `Product`: each case object is
+    * a `Product`. List every case: nothing checks that one is missing. Each value's name is its
+    * `productPrefix`, so two instances of one case class share a name, and the request fails with
+    * [[Problem.DuplicateLevel]].
+    */
+  def named[L](levels: (L with Product)*): JevScale[L] =
+    fromLevels(
+      levels.toList.map(level =>
+        ScaleLevel[L](level, JevChoice.describe(level).getOrElse(ujson.Str(level.productPrefix)))
+      )
+    )
+
   /** Levels written by hand, from low to high. */
   def apply[L](levels: ScaleLevel[L]*): JevScale[L] = fromLevels(levels.toList)
 
@@ -89,10 +105,22 @@ object Choice {
   /** A Choice whose options come from the implicit `JevChoice[C]`. */
   def of[C](instructions: ujson.Value)(implicit choices: JevChoice[C]): Choice[C] =
     Choice(instructions, choices.options)
+
+  /** A Choice over keys known only at runtime: `Choice.keys("Which item?", items: _*)`. Each key
+    * is also the value that the answer gives back.
+    */
+  def keys(instructions: ujson.Value, keys: String*): Choice[String] = of(instructions)(JevChoice.keys(keys: _*))
 }
 
 /** One option of a Choice: your value, the key Jev sees, and an optional description. */
 final case class ChoiceOption[C](value: C, key: String, description: Option[ujson.Value] = None)
+
+/** Mix into a case object to give its option of a Choice, or its level of a Score, a description
+  * that Jev reads. [[JevChoice.named]] and [[JevScale.named]] use it.
+  */
+trait Described {
+  def description: String
+}
 
 /** The options of a Choice over `C`. */
 @implicitNotFound("no options for Choice[${C}]: define an implicit JevChoice[${C}]")
@@ -101,6 +129,33 @@ trait JevChoice[C] {
 }
 
 object JevChoice {
+
+  /** Options named after your case objects, in the order you give them:
+    * `JevChoice.named(Billing, TechnicalSupport)`. Each key is the name of its case object in
+    * snake_case (`TechnicalSupport` → `technical_support`), and its description comes from
+    * [[Described]] when the case object extends it.
+    *
+    * `C` can be a sealed trait or a sealed class, with or without `Product`: each case object is
+    * a `Product`. List every case: nothing checks that one is missing. Each value's name is its
+    * `productPrefix`, so two instances of one case class share a key, and the request fails with
+    * [[Problem.DuplicateOptionKey]].
+    */
+  def named[C](options: (C with Product)*): JevChoice[C] =
+    fromOptions(
+      options.toList.map(option => ChoiceOption[C](option, snakeCase(option.productPrefix), describe(option)))
+    )
+
+  /** `TechnicalSupport` → `technical_support`, `HTTPError` → `http_error`, `Tier2` → `tier2`. */
+  private[jev4s] def snakeCase(name: String): String =
+    name
+      .replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2")
+      .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
+      .toLowerCase(java.util.Locale.ROOT)
+
+  private[jev4s] def describe(value: Any): Option[ujson.Value] = value match {
+    case d: Described => Some(ujson.Str(d.description))
+    case _            => None
+  }
 
   /** Options written by hand. */
   def apply[C](options: ChoiceOption[C]*): JevChoice[C] = fromOptions(options.toList)

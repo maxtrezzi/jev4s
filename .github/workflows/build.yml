@@ -28,14 +28,14 @@ jobs:
         run: sbt -batch scalafmtCheckAll scalafmtSbtCheck scala3Live/scalafmtCheckAll scala213Live/scalafmtCheckAll scala213Spark/scalafmtCheckAll
 
   test:
-    # The modules share no code (ADR-0009): each is tested on its own, on both supported JDKs.
+    # The modules share no code (ADR-0009): each is tested on its own, on each supported JDK.
     name: test ${{ matrix.module }} on JDK ${{ matrix.java }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         module: [scala3, scala213]
-        java: ['17', '21']
+        java: ['17', '21', '25']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -49,9 +49,18 @@ jobs:
       # Scaladoc is built too: a comment it cannot read fails publishLocal, and no test sees it.
       - name: Test, build the Scaladoc, compile the live project, and run the guides' tests
         run: sbt -batch "project ${{ matrix.module }}" test doc "${{ matrix.module }}Live/testOnly guide.*"
+      # The test kit of the module (ADR-0048), published next to it.
+      - name: Test the test kit and build its Scaladoc
+        run: sbt -batch ${{ matrix.module }}Testkit/test ${{ matrix.module }}Testkit/doc
+      # Scala 3's Scaladoc does not take -Werror, so a link it cannot resolve is only a warning.
+      # The 2.13 Scaladoc takes it, and fails above.
+      - name: No Scaladoc warning
+        if: matrix.module == 'scala3' && matrix.java == '21'
+        run: python3 build/check-scaladoc.py
       # The Spark example (M8) runs Spark in local mode against a fake transport or a local server.
+      # Spark 4.0 does not start on JDK 25, so it runs on 17 and 21 only.
       - name: Test the Spark example
-        if: matrix.module == 'scala213'
+        if: matrix.module == 'scala213' && matrix.java != '25'
         run: sbt -batch scala213Spark/test
 
   coverage:
@@ -72,6 +81,8 @@ jobs:
       - uses: sbt/setup-sbt@v1
       - name: Test with coverage
         run: sbt -batch "project ${{ matrix.module }}" clean coverage test coverageReport
+      - name: Test the test kit with coverage
+        run: sbt -batch "project ${{ matrix.module }}Testkit" clean coverage test coverageReport
       - name: Keep the coverage report
         if: always()
         uses: actions/upload-artifact@v7
@@ -105,12 +116,18 @@ jobs:
       # mutant Stryker4s ignored without a @SuppressWarnings (ADR-0016, ADR-0024).
       - name: No undetected mutant
         run: python3 build/check-mutants.py ${{ matrix.module }}
+      - name: Mutation testing of the test kit
+        run: sbt -batch "project ${{ matrix.module }}Testkit" "set scala213 / allowUnsafeScalaLibUpgrade := true" "set scala213Testkit / allowUnsafeScalaLibUpgrade := true" clean stryker
+      - name: No undetected mutant in the test kit
+        run: python3 build/check-mutants.py testkit/${{ matrix.module }}
       - name: Keep the mutation report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: mutation-${{ matrix.module }}
-          path: ${{ matrix.module }}/target/stryker4s-report/
+          path: |
+            ${{ matrix.module }}/target/stryker4s-report/
+            testkit/${{ matrix.module }}/target/stryker4s-report/
           if-no-files-found: ignore
 
   docs:

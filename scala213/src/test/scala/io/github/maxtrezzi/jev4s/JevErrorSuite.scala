@@ -8,7 +8,13 @@ class JevErrorSuite extends munit.FunSuite {
     assert(JevError.RateLimited(Some(2.seconds)).isRetryable)
     assert(JevError.Overloaded.isRetryable)
     assert(JevError.ServerError(503, "unavailable").isRetryable)
-    assert(JevError.Network("timeout").isRetryable)
+    assert(JevError.Network(NetworkFailure.Timeout, "no response within 30 seconds").isRetryable)
+    assert(JevError.Network(NetworkFailure.Connect, "no connection to api.typesafe.ai").isRetryable)
+    assert(JevError.Network(NetworkFailure.Other, "EOF reached while reading").isRetryable)
+  }
+
+  test("a certificate that TLS refused is not retryable: the next attempt gets the same certificate") {
+    assert(!JevError.Network(NetworkFailure.Certificate, "PKIX path building failed").isRetryable)
   }
 
   test("invalid, unauthorized, rejected and undecodable requests are not retryable") {

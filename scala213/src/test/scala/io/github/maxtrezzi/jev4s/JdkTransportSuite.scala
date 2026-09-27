@@ -159,18 +159,116 @@ class JdkTransportSuite extends munit.FunSuite {
   test("a refused connection is a network error, and is retried") {
     val closed  = JevConfig(new ApiKey("k"), "m", LocalServer.closedUrl(), timeout = 2.seconds)
     val sleeper = new Recorder
-    new JdkTransport(closed, sleeper, () => 0.0).send("{}") match {
-      case Left(JevError.Network(message)) =>
-        assert(!message.startsWith("no response within"), message)
-        assertEquals(sleeper.delays.size, 2)
-      case other => fail(s"expected a network error, got $other")
+    assertEquals(
+      new JdkTransport(closed, sleeper, () => 0.0).send("{}"),
+      Left(JevError.Network(NetworkFailure.Connect, "no connection to 127.0.0.1"))
+    )
+    assertEquals(sleeper.delays.size, 2)
+  }
+
+  /** `top`, caused by each of `causes` in turn: the chains that `java.net.http` throws. */
+  private def chain(top: java.io.IOException, causes: Throwable*): java.io.IOException = {
+    causes.foldLeft[Throwable](top)((outer, cause) => outer.initCause(cause).getCause)
+    top
+  }
+
+  test("each failure with no response is the kind of network error that the JDK's exception says") {
+    import java.io.{EOFException, IOException}
+    import java.net.ConnectException
+    import java.net.http.{HttpConnectTimeoutException, HttpTimeoutException}
+    import java.nio.channels.{ClosedChannelException, UnresolvedAddressException}
+    import java.security.cert.CertificateException
+    import javax.net.ssl.SSLHandshakeException
+    val endpoint                              = java.net.URI.create("https://api.typesafe.ai/v1/systemone")
+    def error(e: IOException)                 = JdkTransport.networkError(e, endpoint, 30.seconds, 5.seconds)
+    def network(f: NetworkFailure, m: String) = JevError.Network(f, m)
+    val pkix                                  = "(certificate_unknown) PKIX path building failed"
+    assertEquals(
+      error(new HttpTimeoutException("request timed out")),
+      network(NetworkFailure.Timeout, "no response within 30 seconds")
+    )
+    assertEquals(
+      error(new HttpConnectTimeoutException("HTTP connect timed out")),
+      network(NetworkFailure.Timeout, "no connection within 5 seconds")
+    )
+    assertEquals(
+      error(chain(new ConnectException(), new ConnectException(), new UnresolvedAddressException())),
+      network(NetworkFailure.Connect, "the host api.typesafe.ai was not found")
+    )
+    assertEquals(
+      error(chain(new ConnectException(), new ConnectException(), new ClosedChannelException())),
+      network(NetworkFailure.Connect, "no connection to api.typesafe.ai")
+    )
+    assertEquals(
+      error(chain(new SSLHandshakeException(pkix), new SSLHandshakeException(pkix), new CertificateException(pkix))),
+      network(NetworkFailure.Certificate, pkix)
+    )
+    assertEquals(
+      error(chain(new SSLHandshakeException("Remote host terminated the handshake"))),
+      network(NetworkFailure.Other, "Remote host terminated the handshake")
+    )
+    assertEquals(
+      error(
+        chain(
+          new IOException("HTTP/1.1 header parser received no bytes"),
+          new EOFException("EOF reached while reading")
+        )
+      ),
+      network(NetworkFailure.Other, "HTTP/1.1 header parser received no bytes")
+    )
+    assertEquals(error(new IOException()), network(NetworkFailure.Other, "java.io.IOException"))
+  }
+
+  test("a chain of causes that loops is read to an end") {
+    val (first, second) = (new java.net.ConnectException(), new java.net.ConnectException())
+    first.initCause(second)
+    second.initCause(first)
+    val endpoint = java.net.URI.create("https://api.typesafe.ai/v1/systemone")
+    assertEquals(
+      JdkTransport.networkError(first, endpoint, 30.seconds, 30.seconds),
+      JevError.Network(NetworkFailure.Connect, "no connection to api.typesafe.ai")
+    )
+  }
+
+  test("a connection may take the request's timeout, or the shorter connect timeout of your own client") {
+    def own(connect: Option[Int]) = {
+      val builder = java.net.http.HttpClient.newBuilder()
+      Some(connect.fold(builder)(s => builder.connectTimeout(java.time.Duration.ofSeconds(s.toLong))).build())
     }
+    assertEquals(JdkTransport.connectLimit(30.seconds, None), 30.seconds)
+    assertEquals(JdkTransport.connectLimit(30.seconds, own(None)), 30.seconds)
+    assertEquals(JdkTransport.connectLimit(30.seconds, own(Some(2))), 2.seconds)
+    assertEquals(JdkTransport.connectLimit(30.seconds, own(Some(60))), 30.seconds)
+    assertEquals(JdkTransport.connectLimit(30000.millis, own(Some(30))).toString, "30000 milliseconds")
+  }
+
+  test("a connect timeout too long for a Scala duration leaves the request's timeout") {
+    val forever = java.time.temporal.ChronoUnit.FOREVER.getDuration
+    val own     = java.net.http.HttpClient.newBuilder().connectTimeout(forever).build()
+    assertEquals(JdkTransport.connectLimit(30.seconds, Some(own)), 30.seconds)
+  }
+
+  test("no connection within the connect timeout of your own client is a timeout that says so") {
+    // A socket that accepts and never answers: the TLS handshake of an https request waits.
+    val silent = new java.net.ServerSocket(0, 50, java.net.InetAddress.getByName("127.0.0.1"))
+    try {
+      val url    = java.net.URI.create(s"https://127.0.0.1:${silent.getLocalPort}")
+      val own    = java.net.http.HttpClient.newBuilder().connectTimeout(java.time.Duration.ofMillis(200)).build()
+      val config = JevConfig(new ApiKey("k"), "m", url, timeout = 5.seconds, retry = RetryPolicy.none)
+      assertEquals(
+        new JdkTransport(config, httpClient = Some(own)).send("{}"),
+        Left(JevError.Network(NetworkFailure.Timeout, "no connection within 200 milliseconds"))
+      )
+    } finally silent.close()
   }
 
   test("no response within the timeout is a network error") {
     withServer(Hang) { server =>
       val quick = config(server, RetryPolicy.none).copy(timeout = 200.millis)
-      assertEquals(new JdkTransport(quick).send("{}"), Left(JevError.Network("no response within 200 milliseconds")))
+      assertEquals(
+        new JdkTransport(quick).send("{}"),
+        Left(JevError.Network(NetworkFailure.Timeout, "no response within 200 milliseconds"))
+      )
     }
   }
 
@@ -189,7 +287,7 @@ class JdkTransportSuite extends munit.FunSuite {
       val own   = new CountingHttpClient()
       assertEquals(
         new JdkTransport(quick, httpClient = Some(own)).send("{}"),
-        Left(JevError.Network("no response within 200 milliseconds"))
+        Left(JevError.Network(NetworkFailure.Timeout, "no response within 200 milliseconds"))
       )
       assertEquals(own.sent.get, 1)
     }
@@ -238,6 +336,39 @@ class JdkTransportSuite extends munit.FunSuite {
         List("the API key has a character that an HTTP header cannot carry, such as a newline"),
         c.toInt
       )
+  }
+
+  test("a retry policy whose wait could be negative is an error, with the default sleeper, and nothing is sent") {
+    withServer(Reply(503, ""), Reply(503, ""), Reply(503, "")) { server =>
+      for (
+        (retry, problem) <- List(
+          RetryPolicy(jitter = 2.0)                 -> "the retry's jitter must be between 0 and 1: 2.0",
+          RetryPolicy(backoffInitial = (-1).second) -> "the retry's backoffInitial must be zero or more: -1 seconds",
+          RetryPolicy(backoffMax = (-1).second)     -> "the retry's backoffMax must be zero or more: -1 seconds"
+        )
+      ) assertEquals(new JdkTransport(config(server, retry)).send("{}"), Left(JevError.InvalidConfig(problem)))
+      assertEquals(server.requests.size, 0)
+    }
+  }
+
+  test("a retry policy has backoffs of zero or more and a jitter between 0 and 1") {
+    def problems(retry: RetryPolicy) = JdkTransport.problems(JevConfig(new ApiKey("k"), "m", retry = retry))
+    for (retry <- List(RetryPolicy(), RetryPolicy(backoffInitial = Duration.Zero, backoffMax = Duration.Zero)))
+      assertEquals(problems(retry), Nil)
+    for (jitter <- List(0.0, 1.0)) assertEquals(problems(RetryPolicy(jitter = jitter)), Nil, jitter)
+    for (jitter <- List(-0.1, 1.1, Double.NaN))
+      assertEquals(
+        problems(RetryPolicy(jitter = jitter)),
+        List(s"the retry's jitter must be between 0 and 1: $jitter"),
+        jitter
+      )
+    assertEquals(
+      problems(RetryPolicy(backoffInitial = (-1).nanosecond, backoffMax = (-1).nanosecond)),
+      List(
+        "the retry's backoffInitial must be zero or more: -1 nanoseconds",
+        "the retry's backoffMax must be zero or more: -1 nanoseconds"
+      )
+    )
   }
 
   test("the default sleeper and random source are used when none is given") {

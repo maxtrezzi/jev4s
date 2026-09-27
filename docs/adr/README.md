@@ -76,8 +76,8 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0020](0020-code-stryker4s-cannot-mutate-is-mutated-by-hand.md) | Code Stryker4s cannot mutate is excluded, and its mutants are applied by hand | Accepted — static mutants widened by ADR-0024 |
 | [0021](0021-what-the-codec-keeps-from-a-jev-reply.md) | What the codec keeps from a Jev reply | Accepted — instructions and criteria amended by ADR-0031; shape of ScoreAnswer amended by ADR-0034; required fields amended by ADR-0035 |
 | [0022](0022-the-scala-3-client-api.md) | The Scala 3 client API, with compile-time checks and no inline code | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025 |
-| [0023](0023-the-scala-2-13-client-api.md) | The Scala 2.13 client API: typed keys over the Scala 3 client's pieces | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; question match amended by ADR-0028; answers and `askMap` amended by ADR-0037 |
-| [0024](0024-http-retries-and-configuration.md) | HTTP over java.net.http, the official SDKs' retries, and configuration from the environment | Accepted — 400 mapping amended by ADR-0026; API key and base URL amended by ADR-0027; server error message amended by ADR-0029; retry budget amended by ADR-0030; the caller's HTTP client amended by ADR-0038 |
+| [0023](0023-the-scala-2-13-client-api.md) | The Scala 2.13 client API: typed keys over the Scala 3 client's pieces | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; question match amended by ADR-0028; answers and `askMap` amended by ADR-0037; choice options amended by ADR-0043 |
+| [0024](0024-http-retries-and-configuration.md) | HTTP over java.net.http, the official SDKs' retries, and configuration from the environment | Accepted — 400 mapping amended by ADR-0026; API key and base URL amended by ADR-0027; server error message amended by ADR-0029; retry budget amended by ADR-0030; the caller's HTTP client amended by ADR-0038; network errors amended by ADR-0049 |
 | [0025](0025-client-events-through-onevent.md) | Client events through `onEvent`, replacing `onReply` | Accepted — content of Replied amended by ADR-0035; events amended by ADR-0040 |
 | [0026](0026-http-400-is-a-rejected-request.md) | HTTP 400 is a rejected request, and other statuses carry a readable message | Accepted — raw body length amended by ADR-0029 |
 | [0027](0027-the-api-key-is-a-type-and-travels-over-tls.md) | The API key is a type of its own, and travels only over TLS | Accepted |
@@ -85,14 +85,22 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0029](0029-every-http-error-carries-a-short-message.md) | Every HTTP error carries a short, readable message | Accepted |
 | [0030](0030-a-call-retries-for-at-most-maxelapsed.md) | A call retries for at most `maxElapsed` | Accepted |
 | [0031](0031-instructions-and-criteria-are-ujson-values.md) | Instructions and criteria are `ujson.Value`s | Accepted |
-| [0032](0032-documentation-quotes-compiled-examples.md) | The README and the guides quote compiled examples | Accepted |
+| [0032](0032-documentation-quotes-compiled-examples.md) | The README and the guides quote compiled examples | Accepted — documented compile errors widened by ADR-0044 |
 | [0033](0033-publish-as-jev4s-and-rename-on-request.md) | Publish as jev4s, after asking TypeSafe AI and without waiting for an answer | Accepted |
-| [0034](0034-a-score-typed-by-the-callers-enum.md) | A Score typed by the caller's enum | Accepted |
+| [0034](0034-a-score-typed-by-the-callers-enum.md) | A Score typed by the caller's enum | Accepted — 2.13 levels amended by ADR-0043; shape of ScoreAnswer amended by ADR-0047 |
 | [0035](0035-a-reply-without-input-tokens-still-answers.md) | A reply without input tokens still answers | Accepted |
 | [0036](0036-the-2-13-module-compiles-with-spark-4s-scala.md) | The 2.13 module compiles with the Scala of the oldest Spark 4 | Accepted |
 | [0037](0037-the-2-13-client-answers-with-a-typed-tuple.md) | The 2.13 client answers with a typed tuple | Accepted |
 | [0038](0038-the-caller-may-pass-its-own-http-client.md) | The caller may pass its own HTTP client | Accepted |
 | [0039](0039-the-library-does-not-limit-the-request-rate.md) | The library does not limit the request rate | Accepted |
 | [0040](0040-the-request-id-of-each-response-is-an-event.md) | The request id of each response is an event | Accepted |
-| [0041](0041-the-spark-example-builds-its-client-on-the-executors.md) | The Spark example builds its client on the executors | Accepted |
-| [0042](0042-a-config-java-net-http-refuses-is-an-error.md) | A config that `java.net.http` refuses is an error, not an exception | Accepted |
+| [0041](0041-the-spark-example-builds-its-client-on-the-executors.md) | The Spark example builds its client on the executors | Accepted — client per partition amended by ADR-0046 |
+| [0042](0042-a-config-java-net-http-refuses-is-an-error.md) | A config that `java.net.http` refuses is an error, not an exception | Accepted — the checks widened by ADR-0045 |
+| [0043](0043-2-13-options-and-levels-named-after-their-case-objects.md) | 2.13 options and levels named after their case objects | Accepted |
+| [0044](0044-documented-compile-errors-are-checked-by-a-test.md) | Documented compile errors are checked by a test | Accepted |
+| [0045](0045-a-retry-policy-whose-wait-can-be-negative-is-an-error.md) | A retry policy whose wait can be negative is an error | Accepted |
+| [0046](0046-the-spark-example-holds-one-client-per-executor-jvm.md) | The Spark example holds one client per executor JVM | Accepted |
+| [0047](0047-a-score-answer-carries-its-normalized-score.md) | A Score's answer carries its normalized score | Accepted |
+| [0048](0048-a-test-kit-answers-with-typed-values.md) | A test kit answers with typed values | Accepted |
+| [0049](0049-a-network-error-says-what-failed.md) | A network error says what failed | Accepted |
+| [0050](0050-a-noul-answer-is-confident-on-either-side.md) | A Noul answer is confident on either side | Accepted |

@@ -6,12 +6,15 @@ object Errors {
 
   // snippet: explain
   def explain(error: JevError): String = error match {
-    case JevError.InvalidRequest(problems) => problems.map(_.message).mkString("; ")
-    case JevError.Unauthorized             => "check TYPESAFE_API_KEY"
-    case JevError.Rejected(message)        => s"Jev refused the request: $message"
-    case JevError.RateLimited(after)       => s"too many requests; wait ${after.fold("a little")(_.toString)}"
-    case other if other.isRetryable        => s"try again later: $other"
-    case other                             => s"a defect to report: $other"
+    case JevError.InvalidRequest(problems)    => problems.map(_.message).mkString("; ")
+    case JevError.InvalidConfig(message)      => s"fix the config: $message"
+    case JevError.Unauthorized                => "check TYPESAFE_API_KEY"
+    case JevError.Rejected(message)           => s"Jev refused the request: $message"
+    case JevError.RateLimited(after)          => s"too many requests; wait ${after.fold("a little")(_.toString)}"
+    case JevError.Unexpected(status, message) => s"HTTP $status, check the base URL and the key: $message"
+    case JevError.Network(NetworkFailure.Certificate, message) => s"check the base URL, or your proxy: $message"
+    case other if other.isRetryable                            => s"try again later: $other"
+    case other                                                 => s"a defect to report: $other"
   }
   // end: explain
 

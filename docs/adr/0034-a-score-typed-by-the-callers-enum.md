@@ -1,6 +1,6 @@
 # ADR-0034: A Score typed by the caller's enum
 
-- **Status:** Accepted
+- **Status:** Accepted — 2.13 levels amended by ADR-0043; shape of ScoreAnswer amended by ADR-0047
 - **Date:** 2026-09-23
 - **Supersedes:** —
 - **Amends:** ADR-0021

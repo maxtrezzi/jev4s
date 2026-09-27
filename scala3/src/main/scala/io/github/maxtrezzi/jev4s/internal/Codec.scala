@@ -91,7 +91,7 @@ private[jev4s] object Codec:
             .filter(probabilities.contains)
             .maxByOption(probabilities)
             .toRight(s"'$name': no probabilities")
-        yield ScoreAnswer(score, mostLikely, confidence, probabilities)
+        yield ScoreAnswer(score, score / (levels.size - 1), mostLikely, confidence, probabilities)
       case Question.Choice(_, options) =>
         val byKey = options.map(o => o.key -> o.value).toMap
         for

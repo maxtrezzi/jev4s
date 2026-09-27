@@ -1,6 +1,6 @@
 # ADR-0041: The Spark example builds its client on the executors
 
-- **Status:** Accepted
+- **Status:** Accepted — client per partition amended by ADR-0046
 - **Date:** 2026-09-25
 - **Supersedes:** —
 - **Amends:** —

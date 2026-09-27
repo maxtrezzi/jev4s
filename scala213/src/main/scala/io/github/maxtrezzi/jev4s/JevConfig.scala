@@ -8,8 +8,9 @@ import scala.util.Try
   *
   * Only [[JevConfig.fromEnv]] checks that the base URL is `https`. A config that you build
   * yourself, with `JevConfig(...)` or `copy`, is not checked for it: give it an `https` base URL,
-  * or the API key travels unencrypted. A value that HTTP cannot carry, such as a key with a
-  * newline or a timeout of zero, does not throw: each call returns [[JevError.InvalidConfig]].
+  * or the API key travels unencrypted. A value that the JDK would refuse, such as a key with a
+  * newline, a timeout of zero or a [[RetryPolicy]] with a negative backoff, does not throw: each
+  * call returns [[JevError.InvalidConfig]].
   */
 final case class JevConfig(
     apiKey: ApiKey,

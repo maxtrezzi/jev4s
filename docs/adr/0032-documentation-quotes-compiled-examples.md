@@ -1,6 +1,6 @@
 # ADR-0032: The README and the guides quote compiled examples
 
-- **Status:** Accepted
+- **Status:** Accepted — documented compile errors widened by ADR-0044
 - **Date:** 2026-09-22
 - **Supersedes:** —
 - **Amends:** —

@@ -8,6 +8,13 @@ final case class NoulAnswer(probability: Probability) extends Answer {
 
   /** True when "yes" is at least as likely as "no". */
   def isYes: Boolean = probability >= 0.5
+
+  /** The more likely answer, `true` for "yes" and `false` for "no", if its probability is at
+    * least `min`. With `ifConfident(0.8)`, a probability of 0.9 gives `Some(true)`, 0.1 gives
+    * `Some(false)`, and 0.6 gives `None`: Jev is not sure enough either way.
+    */
+  def ifConfident(min: Double): Option[Boolean] =
+    Option.when(probability.value.max(1 - probability.value) >= min)(isYes)
 }
 
 /** The answer to a [[Score]]: a weighted position on the scale, which may fall between two
@@ -19,9 +26,13 @@ final case class NoulAnswer(probability: Probability) extends Answer {
   * When two levels have the same highest probability, `mostLikely` is the lower one. It is not the
   * level nearest to `score`: with probabilities 0.5, 0, 0.5, the score is 1 and the middle level
   * has no chance at all.
+  *
+  * `normalized` is the score on a scale from 0 to 1: the score divided by the highest level of the
+  * question, so that Scores with different numbers of levels can be compared and combined.
   */
 final case class ScoreAnswer[L](
     score: Double,
+    normalized: Double,
     mostLikely: L,
     confidence: Probability,
     probabilities: Map[L, Probability]

@@ -9,8 +9,7 @@ object Team {
   case object Technical extends Team
   case object Sales     extends Team
 
-  implicit val choices: JevChoice[Team] =
-    JevChoice(ChoiceOption(Billing, "billing"), ChoiceOption(Technical, "technical"), ChoiceOption(Sales, "sales"))
+  implicit val choices: JevChoice[Team] = JevChoice.named(Billing, Technical, Sales)
 }
 // end: team
 
@@ -21,8 +20,7 @@ object Feeling {
   case object Annoyed extends Feeling
   case object Angry   extends Feeling
 
-  implicit val levels: JevScale[Feeling] =
-    JevScale(ScaleLevel(Calm, "Calm"), ScaleLevel(Annoyed, "Annoyed"), ScaleLevel(Angry, "Angry"))
+  implicit val levels: JevScale[Feeling] = JevScale.named(Calm, Annoyed, Angry) // from low to high
 }
 // end: feeling
 

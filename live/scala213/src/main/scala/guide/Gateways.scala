@@ -13,6 +13,7 @@ object Gateways {
   val vercel: Option[JevConfig] =
     sys.env
       .get("AI_GATEWAY_API_KEY")
+      .map(_.trim) // a key read from a file often ends with a newline
       .map(key => JevConfig(new ApiKey(key), "typesafe-ai/jev", URI.create("https://ai-gateway.vercel.sh/typesafe")))
   // end: vercel
 }

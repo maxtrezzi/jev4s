@@ -16,13 +16,13 @@ class LiveSuite extends munit.FunSuite:
     val result = client.ask(
       ticket,
       (
-        dept = Choice[Dept]("Which team should handle this?"),
+        team = Choice[Team]("Which team should handle this?"),
         urgent = Noul("Does this convey urgency?"),
         mood = Score("How frustrated is the customer?", "Calm", "Frustrated", "Very angry"),
       ),
     )
     val r = result.fold(e => fail(e.toString), identity)
-    assert(Dept.values.contains(r.dept.choice))
+    assert(Team.values.contains(r.team.choice))
     assert(r.mood.score >= 0 && r.mood.score <= 2, r.mood.toString)
     assertEquals(r.mood.probabilities.keySet, Set[ujson.Value]("Calm", "Frustrated", "Very angry"))
     assert(r.mood.probabilities.forall((_, p) => p <= r.mood.probabilities(r.mood.mostLikely)), r.mood.toString)

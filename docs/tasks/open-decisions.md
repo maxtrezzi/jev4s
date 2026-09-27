@@ -72,3 +72,28 @@ a run takes in each module; decide then.
 **Measured in M1:** about 11 s of wall time per module on the development machine, sbt start-up
 included, for 54 mutants each. The CI workflow of M1 runs it in each module job on every pull
 request, as ADR-0008 says by default. The owner decides whether that stays.
+
+### D4 — A test helper that answers with typed values
+
+**Status:** Done 2026-09-25 — [ADR-0048](../adr/0048-a-test-kit-answers-with-typed-values.md)
+
+Chapter 12 of both tutorials tests the caller's code over `JevClient.withTransport`, with a reply
+written in the API's JSON (`guide.RouterSuite`), while the concepts guide says "With jev4s you
+never write this JSON". A fake that answers with typed values — the answers of a named tuple in
+Scala 3, of the keys in 2.13 — would keep a caller's tests in Scala, and in the types of its
+questions.
+
+The client decodes JSON from a `Transport`, so a helper either encodes typed answers back into the
+API's JSON, which needs an encoder of answers next to the `Codec`'s decoder, or answers without a
+transport. `typesafe-sdk-scala` records and replays real replies instead (its README, read
+2026-09-25). The options seen so far:
+
+- a helper in each published module, that turns typed answers into a reply;
+- a separate test artifact, `jev4s-testkit`, which M7 would publish too;
+- no helper: the chapter uses the files in `golden/` as its fixtures, and says so.
+
+Closes with an ADR; the work it decides becomes a task.
+
+**Decided by the owner on 2026-09-25: a separate artifact, `jev4s-testkit`**, built at once as
+T21 ([ADR-0048](../adr/0048-a-test-kit-answers-with-typed-values.md)).
+

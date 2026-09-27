@@ -28,8 +28,10 @@ few hundred input tokens.
 
 ## 1. Set up a project
 
-You need JDK 17 or later and **Scala 3.9 or later**. jev4s is not on Maven Central yet: clone
-this repository and run `sbt publishLocal` in it. Then, in your project:
+You need **Scala 3.9 or later**, and JDK 17 or later: CI tests jev4s on JDK 17, 21 and 25.
+Use JDK 21 or later if you can: a call that waits costs little on a virtual thread, and
+[chapter 13](#13-many-requests) uses them. jev4s is not on Maven Central yet: clone this
+repository and run `sbt publishLocal` in it. Then, in your project:
 
 ```scala
 // build.sbt
@@ -77,7 +79,7 @@ so build it once, when the program starts, and use it everywhere. Then ask a que
 A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
-Urgent: true, with a probability of 0.91
+Urgent: true, with a probability of 0.92
 ```
 
 The numbers can change a little from one run to the next: the outputs in this tutorial are
@@ -158,8 +160,7 @@ val cannotLogIn = Ticket(
 )
 ```
 
-Now `ask` takes a `Ticket` directly, and the compiler finds its `ToState`. Without one, the call
-does not compile, and the message says what to write:
+Now `ask` takes a `Ticket` directly, and the compiler finds its `ToState`:
 
 <!-- snippet: live/scala3/src/main/scala/guide/Shop.scala#state -->
 ```scala
@@ -174,6 +175,15 @@ A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Duplicate charge: true
+```
+
+A state with no `ToState` is a compile error, and the message says what to write. Here and in
+the rest of this tutorial, the comment after a line shows the compiler's message, without the
+package names; a test checks each one:
+
+<!-- compile-errors: scala3/src/test/scala/Scala3GuideErrorsSuite.scala -->
+```scala
+client.ask(42, (urgent = Noul("Is the message urgent?"))) // error: no ToState[Int]: give one, for example `given ToState[Int] = s => ujson.Obj(...)`, or pass a String or a ujson.Value
 ```
 
 You can also pass JSON that you build on the spot, as a `ujson.Value`, with no type of your own:
@@ -218,8 +228,8 @@ enum Feeling derives JevScale, CanEqual:
 
 `derives JevScale` makes the levels: Jev reads the name of each case, `Calm`, `Annoyed` and
 `Angry`, and the order of the cases is the order of the scale. Declare the lowest level first:
-no check can see an enum in the wrong order. An enum with fewer than 2 or more than 10 cases
-does not compile.
+no check can see an enum in the wrong order. An enum with fewer than 2 or more than 10 cases is
+a compile error: see the list at the end of this chapter.
 
 Put the three questions in one named tuple. You can keep it in a `val` and use it many times:
 
@@ -232,8 +242,8 @@ val triage = (
 )
 ```
 
-Here `Calm` is level 0 and `Angry` is level 2. Now ask all three about a ticket, in one call. Jev answers them in parallel, so three questions take
-about the same time as one:
+Here `Calm` is level 0 and `Angry` is level 2. Now ask all three about a ticket, in one call. Jev
+answers them in parallel, so three questions take about the same time as one:
 
 <!-- snippet: live/scala3/src/main/scala/guide/Questions.scala#ask -->
 ```scala
@@ -251,7 +261,7 @@ about the same time as one:
 A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
-Billing, urgent: false, feeling: 1.46, angry: 0.46
+Billing, urgent: false, feeling: 1.47, angry: 0.48
 ```
 
 Each answer has the type of its question, and the types in this example are only there to show
@@ -259,8 +269,8 @@ it: you do not need to write them.
 
 | Question | Answer | What you read |
 |---|---|---|
-| `Noul` | `NoulAnswer` | `probability`, `isYes` |
-| `Score[Feeling]` | `ScoreAnswer[Feeling]` | `score`, `mostLikely` (a `Feeling`), `confidence`, `probabilities` |
+| `Noul` | `NoulAnswer` | `probability`, `isYes`, `ifConfident` |
+| `Score[Feeling]` | `ScoreAnswer[Feeling]` | `score`, `normalized` (from 0 to 1), `mostLikely` (a `Feeling`), `confidence`, `probabilities` |
 | `Choice[Team]` | `ChoiceAnswer[Team]` | `choice` (a `Team`), `confidence`, `probabilities`, `ifConfident` |
 
 `r.feeling.score` is a `Double` from 0 to 2, and it can fall between two levels, such as 1.3.
@@ -274,19 +284,23 @@ You can also give the levels as text, with no enum:
 `probabilities("Angry")`. A misspelt level compiles, and fails only when the code runs; with an
 enum, the compiler finds it.
 
-The compiler checks the whole call. These mistakes do not compile:
+The compiler checks the whole call. Each of these lines, against the `triage` above, is a compile
+error:
 
-| Mistake | What the compiler says |
-|---|---|
-| A name that you did not ask: `r.urgnet` | `value urgnet is not a member of ...` |
-| The wrong answer type: `r.urgent` used as a `ScoreAnswer[Feeling]` | `Found: ...NoulAnswer`, `Required: ...ScoreAnswer[...Feeling]` |
-| A text key on a Score over an enum: `probabilities("Angry")` | `Found: ("Angry" : String)`, `Required: ...Feeling` |
-| A value that is not a question: `(urgent = Noul("U?"), count = 3)` | `every value in the named tuple must be a question: Noul, Score or Choice.` |
-| A tuple without names: `(Noul("U?"), Noul("V?"))` | `the questions must be a named tuple, such as (urgent = Noul("Is it urgent?")).` |
-| A Choice over a type with no options | `no options for Choice[...]: define a given JevChoice[...]` |
-| A Score with no levels: `Score("How?")` | `a Score needs its levels: give them, as in Score("How?", "Calm", "Angry"), or name an enum that derives JevScale, as in Score[Mood]("How?")` |
-| An enum with 1 case, or 11, that derives `JevScale` | `a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases.` |
-| A state with no `ToState` | `no ToState[...]: give one, for example ...` |
+<!-- compile-errors: scala3/src/test/scala/Scala3GuideErrorsSuite.scala -->
+```scala
+r.urgnet                                         // error: value urgnet is not a member of (team : ChoiceAnswer[Team], …
+val feeling: ScoreAnswer[Feeling] = r.urgent     // error: Found: NoulAnswer Required: ScoreAnswer[Feeling]
+r.feeling.probabilities("Angry")                 // error: Found: ("Angry" : String) Required: Feeling
+client.ask(doubleCharge, (urgent = Noul("Urgent?"), count = 3)) // error: every value in the named tuple must be a question: Noul, Score or Choice
+client.ask(doubleCharge, (Noul("Urgent?"), Noul("Angry?")))     // error: the questions must be a named tuple, such as (urgent = Noul("Is it urgent?"))
+Choice[java.time.DayOfWeek]("Which day?")        // error: no options for Choice[java.time.DayOfWeek]: define a given JevChoice[java.time.DayOfWeek]
+Score("How does the customer feel?")             // error: a Score needs its levels: give them, as in Score("How?", "Calm", "Angry"), …
+enum Mood derives JevScale:                      // error: a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases
+  case Fine
+enum Mood derives JevScale:                      // error: a Score needs 2 to 10 levels: …
+  case A, B, C, D, E, F, G, H, I, J, K
+```
 
 ## 5. The options of a Choice
 
@@ -379,10 +393,16 @@ def whenToAnswer(urgent: NoulAnswer): String =
   else "in the normal queue"
 ```
 
-`Probability(0.9)` is checked by the compiler: `Probability(1.5)` does not compile, and the
-error says `a Probability must be between 0 and 1`. Write the number with a decimal point:
-`Probability(1.0)`, not `Probability(1)`. For a number that you know only at runtime, such as a
-limit read from a file, use `Probability.from(x)`, which returns an `Option`.
+`Probability(0.9)` is checked by the compiler. Write the number with a decimal point:
+
+<!-- compile-errors: scala3/src/test/scala/Scala3GuideErrorsSuite.scala -->
+```scala
+Probability(1.5) // error: a Probability must be between 0 and 1
+Probability(1)   // error: Found: (1 : Int) Required: Double & Singleton
+```
+
+For a number that you know only at runtime, such as a limit read from a file, use
+`Probability.from(x)`, which returns an `Option`.
 
 A Choice and a Score have a `confidence`: how sure Jev is of the whole answer. `ifConfident`
 returns the choice only when the confidence is high enough:
@@ -395,14 +415,35 @@ def route(team: ChoiceAnswer[Team]): String =
     case None       => "a person chooses the team"
 ```
 
-To combine Scores, bring each one to a scale from 0 to 1 first. A Score with 3 levels goes from
-0 to 2, and one with 5 levels from 0 to 4. A small extension method does it for any Score:
+A Noul has `ifConfident` too. It gives the more likely answer, `true` for "yes" and `false` for
+"no", when the probability of that answer is high enough, and `None` when Jev is not sure either
+way:
 
-<!-- snippet: live/scala3/src/main/scala/guide/Decisions.scala#normalized -->
+<!-- snippet: live/scala3/src/main/scala/guide/Decisions.scala#noul-confidence -->
 ```scala
-/** The score on a scale from 0 to 1, whatever the number of levels. */
-extension (answer: ScoreAnswer[?]) def normalized: Double = answer.score / (answer.probabilities.size - 1)
+def checkCharge(duplicate: NoulAnswer): String =
+  duplicate.ifConfident(Probability(0.8)) match
+    case Some(true)  => "refund the second charge"
+    case Some(false) => "explain the charges"
+    case None        => "a person checks the order"
 ```
+
+When your code needs one level, match on `mostLikely`, the level with the highest probability.
+With one case for each level of the enum, and no `case _`, a level that you add to the enum later
+is a warning at every match that does not handle it:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Decisions.scala#most-likely -->
+```scala
+def reply(feeling: ScoreAnswer[Feeling]): String =
+  feeling.mostLikely match // one case for each level, and no `case _`
+    case Feeling.Calm    => "a short answer"
+    case Feeling.Annoyed => "an apology, then the answer"
+    case Feeling.Angry   => "a call from a person"
+```
+
+To combine Scores, bring each one to a scale from 0 to 1 first. A Score with 3 levels goes from
+0 to 2, and one with 5 levels from 0 to 4. `normalized` is the score divided by the highest
+level of its question, so it always goes from 0 to 1.
 
 Now the code can decide. The weights, 0.7 and 0.3, are yours: when the result does not match
 what your team would decide, change them in the code.
@@ -421,7 +462,7 @@ what your team would decide, change them in the code.
   client.ask(cannotLogIn, questions) match
     case Right(r) =>
       val priority = 0.7 * r.severity.normalized + 0.3 * r.feeling.normalized
-      println(f"${route(r.team)}, answer ${whenToAnswer(r.urgent)}, priority $priority%.2f")
+      println(f"${route(r.team)}, answer ${whenToAnswer(r.urgent)}, priority $priority%.2f, ${reply(r.feeling)}")
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
@@ -429,7 +470,7 @@ A run on 2026-09-25, with `jev-1.13.0`, printed:
 
 ```text
 Refund at once: Right(true), Right(false)
-send to Technical, answer a person decides, priority 0.90
+send to Technical, answer a person decides, priority 0.90, an apology, then the answer
 ```
 
 ## 7. Questions with structure
@@ -512,7 +553,7 @@ val items = List("hiking boots", "running shoes", "team subscription")
 
 @main def runtime(): Unit =
   val questions = checks.map((name, text) => name -> Noul(text)) +
-    ("item" -> Choice[String]("Which item is `message` about?")(using JevChoice.keys(items*)))
+    ("item" -> Choice.keys("Which item is `message` about?", items*))
   client.askMap(doubleCharge, questions) match
     case Right(answers) =>
       answers.toList
@@ -538,8 +579,8 @@ The answers are a `Map[String, Answer]`, with the same names. The compiler does 
 question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer[?]` or a
 `ChoiceAnswer[?]`. Match on it, with one case for each.
 
-`JevChoice.keys(...)` makes options from strings: each key is also the value, so the choice is a
-`String`. Use it for options that you know only at runtime.
+`Choice.keys(...)` makes a Choice whose options are strings: each key is also the value, so the
+choice is a `String`. Use it for options that you know only at runtime.
 
 ## 9. When something goes wrong
 
@@ -550,17 +591,25 @@ guide](concepts.md#errors) lists them all. Match on the ones your code handles i
 <!-- snippet: live/scala3/src/main/scala/guide/Errors.scala#explain -->
 ```scala
 def explain(error: JevError): String = error match
-  case JevError.InvalidRequest(problems) => problems.map(_.message).mkString("; ")
-  case JevError.Unauthorized             => "check TYPESAFE_API_KEY"
-  case JevError.Rejected(message)        => s"Jev refused the request: $message"
-  case JevError.RateLimited(after)       => s"too many requests; wait ${after.fold("a little")(_.toString)}"
-  case other if other.isRetryable        => s"try again later: $other"
-  case other                             => s"a defect to report: $other"
+  case JevError.InvalidRequest(problems)    => problems.map(_.message).mkString("; ")
+  case JevError.InvalidConfig(message)      => s"fix the config: $message"
+  case JevError.Unauthorized                => "check TYPESAFE_API_KEY"
+  case JevError.Rejected(message)           => s"Jev refused the request: $message"
+  case JevError.RateLimited(after)          => s"too many requests; wait ${after.fold("a little")(_.toString)}"
+  case JevError.Unexpected(status, message) => s"HTTP $status, check the base URL and the key: $message"
+  case JevError.Network(NetworkFailure.Certificate, message) => s"check the base URL, or your proxy: $message"
+  case other if other.isRetryable                            => s"try again later: $other"
+  case other                                                 => s"a defect to report: $other"
 ```
 
-`isRetryable` is true when sending the same request again may work, such as after a network
-error. The client has already retried these errors before it returns them (see
-[Configuration](#10-configuration)).
+`isRetryable` is true when sending the same request again may work, such as after a timeout.
+The client has already retried these errors before it returns them (see
+[Configuration](#10-configuration)). What is left is a problem that the next attempt would meet
+again: a config or a base URL to fix, or a defect.
+
+A `Network` error says what failed: its `failure` is `Timeout`, `Connect` (no connection),
+`Certificate` or `Other`. Only `Certificate` is not retried: TLS refused the server's
+certificate, which happens with a wrong base URL, or behind a company proxy that intercepts TLS.
 
 jev4s checks a request before it sends it. A request with problems is not sent, so it costs
 nothing, and you get all the problems at once:
@@ -583,7 +632,8 @@ This prints `Left(score 'feeling' needs 2 to 10 levels, got 1; score 'risk' uses
 more than once)`.
 
 A Score over an enum that derives `JevScale` has its number of levels checked by the compiler
-instead: an enum of 1 case does not compile.
+instead: an enum of 1 case is a compile error, as [chapter 4](#4-three-questions-three-types)
+shows.
 
 ## 10. Configuration
 
@@ -620,17 +670,29 @@ def fromVault(secret: String): JevConfig = JevConfig(ApiKey(secret), model = "je
 ```
 
 A config that you build is not checked for `https`, so give it an `https` base URL. A value that
-HTTP cannot carry, such as a secret with a newline at the end, does not throw: each call returns
-`JevError.InvalidConfig`, whose message never shows the key.
+cannot work, such as a secret with a newline at the end, which HTTP cannot carry, or a
+`RetryPolicy` with a jitter above 1, does not throw: each call returns `JevError.InvalidConfig`,
+whose message never shows the key.
 
-`ask` blocks the calling thread until the answer arrives. To make several calls at the same
-time, call `ask` from several threads; on JDK 21 or later, virtual threads are a cheap way to do
-it. One client serves all the threads. [Chapter 13](#13-many-requests) shows how to stay under the limit
-of your account.
+`ask` blocks the calling thread until the answer arrives. To make several calls at the same time,
+call `ask` from several threads; on JDK 21 or later, virtual threads are a cheap way to do it. One
+client serves all the threads. [Chapter 13](#13-many-requests) shows how to stay under the limit of
+your account.
 
 `JevClient(config)` builds its own `java.net.http.HttpClient`. To use one of yours, for example
-with a proxy or your own executor, pass `httpClient = Some(yours)`. It keeps its own connect
-timeout, `timeout` still limits each request, and jev4s never closes it: you do.
+with a proxy or your own executor, pass `httpClient`:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Settings.scala#http-client -->
+```scala
+/** A client over an HTTP client of yours: here, one that goes through your company's proxy. */
+def throughProxy(config: JevConfig, proxy: InetSocketAddress): JevClient =
+  val http = HttpClient.newBuilder().proxy(ProxySelector.of(proxy)).build()
+  JevClient(config, httpClient = Some(http))
+```
+
+Your client keeps its own connect timeout, and `timeout` still limits each request. jev4s never
+closes it: you do, after the last call. On JDK 21 or later, an `HttpClient` has a `close` method;
+on JDK 17, it stops when nothing uses it any more.
 
 ## 11. Logs and metrics
 
@@ -698,47 +760,73 @@ Your own code should not build the client. Let it take a `JevClient` as a parame
 final class Router(client: JevClient):
   def route(ticket: Ticket): String =
     client.ask(ticket, triage) match
-      case Right(r) if r.urgent.isYes => s"${r.team.choice}, today"
-      case Right(r)                   => s"${r.team.choice}"
-      case Left(error)                => s"a person, because Jev did not answer: $error"
+      case Right(r) =>
+        r.team.ifConfident(Probability(0.8)) match
+          case Some(team) if r.urgent.isYes => s"$team, today"
+          case Some(team)                   => s"$team"
+          case None                         => "a person, because Jev is not sure of the team"
+      case Left(error) => s"a person, because Jev did not answer: $error"
 ```
 
-In a test, build the client with `JevClient.withTransport`. A `Transport` is one function: it
-takes the body of the request and returns the body of the reply, or a `JevError`. A fake one
-returns what the test needs, and no network is used:
+In a test, give it a client from **jev4s-testkit**: a client that answers with the values you
+give, and never uses the network. Add it to the tests of your project:
+
+```scala
+// build.sbt
+libraryDependencies += "io.github.maxtrezzi" %% "jev4s-testkit" % "0.1.0-SNAPSHOT" % Test
+```
 
 <!-- snippet: live/scala3/src/test/scala/guide/RouterSuite.scala#test -->
 ```scala
+import io.github.maxtrezzi.jev4s.*
+import io.github.maxtrezzi.jev4s.testkit.JevTestkit
+
 class RouterSuite extends munit.FunSuite:
 
-  /** A reply in the format of the API, for the questions of `triage`. */
-  val reply = """{
-    "model": "jev-1.13.0",
-    "answers": {
-      "team": {"type": "choice", "choice": "billing", "confidence": 0.9,
-               "probabilities": {"billing": 0.95, "technical": 0.03, "sales": 0.02}},
-      "urgent": {"type": "noul", "noul": 0.97},
-      "feeling": {"type": "score", "score": 1.2, "confidence": 0.7,
-                  "probabilities": {"0": 0.0, "1": 0.8, "2": 0.2}}
-    },
-    "usage": {"input_tokens": 300, "output_tokens": 40}
-  }"""
-
   test("an urgent billing ticket goes to Billing today"):
-    val client = JevClient.withTransport("jev-1.13.0", _ => Right(reply))
+    val client = JevTestkit.answering(triage)((team = Team.Billing, urgent = true, feeling = Feeling.Angry))
     assertEquals(Router(client).route(doubleCharge), "Billing, today")
 
+  test("a ticket that can wait goes to its team"):
+    val client = JevTestkit.answering(triage)((team = Team.Technical, urgent = false, feeling = Feeling.Calm))
+    assertEquals(Router(client).route(cannotLogIn), "Technical")
+
+  test("a team that Jev is not sure of goes to a person"):
+    val unsure = ChoiceAnswer(
+      Team.Billing,
+      Probability(0.6),
+      Map(Team.Billing -> Probability(0.6), Team.Sales -> Probability(0.4)),
+    )
+    val client = JevTestkit.answering(triage)((team = unsure, urgent = true, feeling = Feeling.Angry))
+    assertEquals(Router(client).route(doubleCharge), "a person, because Jev is not sure of the team")
+
   test("when Jev does not answer, a person decides"):
-    val client = JevClient.withTransport("jev-1.13.0", _ => Left(JevError.Overloaded))
+    val client = JevTestkit.failing(JevError.Overloaded)
     assertEquals(Router(client).route(doubleCharge), "a person, because Jev did not answer: Overloaded")
 ```
 
-The reply is in the format of the API, with one answer for each name in the questions. The
-concepts guide shows [real replies](concepts.md#3-three-kinds-of-question) that you can copy.
-A client over your own transport does not retry: the retries belong to the transport of
-`JevClient(config)`.
+`JevTestkit.answering` takes the questions and a named tuple of answers with the same names:
+`true` or `false` for a Noul, a case of your enum for a Choice or a Score. The compiler checks
+the names and the type of each answer, as it checks what `ask` returns. The client decodes them
+from a reply in the format of the API, so your code reads what it would read from Jev: all the
+probability on the option or the level you give, and a confidence of 1. For a Noul, you can also
+give a `Probability`. For another confidence, give a whole `ChoiceAnswer` or `ScoreAnswer`, as
+the third test does: its confidence of 0.6 is under the router's 0.8, so a person chooses the
+team. `JevTestkit.failing(error)` returns the error on every call, as a real call would after its
+retries.
 
-This test uses [munit](https://scalameta.org/munit/), but any test library works.
+The client does not look at what your code asks: a question under another name gets a
+`JevError.Decoding` error, as a real reply without its answer would. An answer that is not one of
+its question's options or levels throws `IllegalArgumentException` when you build the client: it
+is a mistake in the test.
+
+Under the test kit is `JevClient.withTransport`, which you can use yourself. A `Transport` is one
+function: it takes the body of the request and returns the body of the reply, or a `JevError`.
+The concepts guide shows [real replies](concepts.md#3-three-kinds-of-question). A client over a
+transport of your own does not retry: the retries belong to the transport of `JevClient(config)`.
+
+This test uses [munit](https://scalameta.org/munit/), but any test library works: the test kit
+depends on none.
 
 ## 13. Many requests
 
@@ -799,6 +887,10 @@ def urgentAll(
 How many threads? About the rate multiplied by the time of one call: at 15 calls per second and
 about 0.5 s per call, 8 threads. With fewer, you do not reach the rate; with more, the extra
 threads only wait for the pacer. One client serves all the threads.
+
+This example compiles on JDK 17. On JDK 21 or later, you can give each call a virtual thread
+instead, with `Executors.newVirtualThreadPerTaskExecutor()` in place of the fixed pool: a thread
+that waits for the pacer or for Jev then costs almost nothing. The pacer still sets the rate.
 
 Some calls can still fail with `RateLimited`, for example when another program uses the same
 account. The client already retried them, so do not send them again at once, in a loop. Keep

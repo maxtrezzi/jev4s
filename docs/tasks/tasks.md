@@ -722,3 +722,673 @@ Found in the documentation, and fixed on this branch:
 Left for M7, not defects: no CHANGELOG yet; `build.sbt` has no `scmInfo`, `developers` or
 `versionScheme`; the README and the guides say that jev4s is not on Maven Central and use
 `0.1.0-SNAPSHOT`.
+
+---
+
+The items below were planned on 2026-09-25, after a review of `dev` at `0b462c5` and of what
+changed outside the repository since T13. The same review re-ran the tests with coverage on a
+copy of `0b462c5`, on JDK 21, with no key: `scala3` 139 tests and `scala213` 123, 100% statement
+and branch coverage in both, as T17 recorded. Mutation testing was not re-run.
+
+### T18 — Library fixes, and 2.13 options and levels without repeated names
+
+**Status:** Done 2026-09-25 — [ADR-0043](../adr/0043-2-13-options-and-levels-named-after-their-case-objects.md), [ADR-0045](../adr/0045-a-retry-policy-whose-wait-can-be-negative-is-an-error.md)
+
+**Branch:** `task/t18-t28`, with T18 to T28, as the owner asked.
+
+Every change to the two published modules that the review planned, on one branch, so that the
+definition of done — coverage, mutants, both modules — runs once. T19, the documentation, uses
+what this task adds.
+
+**Fixes**
+
+1. **A `RetryPolicy` can make a call throw.** `delayFor` returns a negative delay when `jitter`
+   is above 1 or `backoffInitial` is negative, and `Sleeper.thread` passes it to `Thread.sleep`.
+   Measured on `0b462c5`, Scala 3, a local server answering 503: `RetryPolicy(jitter = 2.0)` and
+   `RetryPolicy(backoffInitial = FiniteDuration(-1, SECONDS))` make `JdkTransport.send` throw
+   `IllegalArgumentException: timeout value is negative`. `maxRetries = -1` returns the first
+   error, and `jitter = Double.NaN` retries with no wait: neither throws. This is the class of
+   defect ADR-0042 closed for `JevConfig`, whose check does not look at `retry`. The Python SDK
+   0.7.1 refuses the same values when its `RetryConfig` is built: a negative or non-finite
+   backoff, and a jitter outside [0, 1] (`_core/retry.py`, read 2026-09-25).
+   To settle: whether the check joins `JdkTransport.problems`, as `JevError.InvalidConfig`
+   (which amends ADR-0042, since the JDK method is `Thread.sleep`, not `java.net.http`), or
+   whether `delayFor` clamps the delay at zero.
+2. **The Scaladoc of `RetryPolicy` says the SDKs have no retry budget.** "`maxElapsed` limits the
+   time a call spends retrying, 30 s by default, which the SDKs do not limit", in both modules.
+   The Python SDK 0.7.1 has one, `timeout: float | None = 30.0`, "Total retry budget in seconds
+   per SDK call" (`_core/retry.py`, read 2026-09-25); the JavaScript SDK has none. ADR-0030
+   already says so. The Scaladoc should name the JavaScript SDK.
+
+**Ergonomics**
+
+3. **2.13 options and levels named after their case objects (ADR-0043).** Spark 4 runs Scala 2.13
+   only, so the users of the Spark example write the 2.13 module, and its ergonomics count as
+   much as those of Scala 3. In Scala 3 an enum `derives JevChoice` or `derives JevScale`; in
+   2.13 each case is written three times, in the README and in `live/scala213`:
+
+   ```scala
+   JevScale(ScaleLevel(Calm, "Calm"), ScaleLevel(Annoyed, "Annoyed"), ScaleLevel(Angry, "Angry"))
+   JevChoice(ChoiceOption(Billing, "billing"), ChoiceOption(Technical, "technical"), ChoiceOption(Sales, "sales"))
+   ```
+
+   A `case object` knows its own name, `productPrefix`, so the caller lists the cases once, in
+   the order of the scale:
+
+   ```scala
+   implicit val levels: JevScale[Feeling]  = JevScale.named(Calm, Annoyed, Angry)
+   implicit val choices: JevChoice[Team]   = JevChoice.named(Billing, Technical, Sales)
+   ```
+
+   Checked on 2026-09-25 in the 2.13 module's tests, compiled with 2.13.16 and `-Xlint -Werror`:
+   `productPrefix` gives `Calm` and `VeryAngry` for case objects nested in the companion object
+   of a sealed class. For a case class it gives the class name alone (`Other` for `Other(1)`), so
+   two instances share a text; the `Validator` already reports that as `DuplicateLevel` or
+   `DuplicateOptionKey`. The rules are Scala 3's: the key in snake_case (`TechnicalSupport` →
+   `technical_support`), the level text as the case's name, a description from `Described`.
+   Settled by the owner on 2026-09-25: the name is `named`; the bound is `L <: Product` (changed
+   by T28 to `(L with Product)*`, which accepts a sealed trait), not `toString` nor a type class;
+   a `Described` trait in the 2.13 module gives descriptions; the change has an ADR, because it
+   adds 2.13 API. This branch makes ADR-0043 `Accepted` and records
+   the amendment in ADR-0023 and ADR-0034.
+4. **A Choice over keys known only at runtime, in one call.** The tutorials' chapter 8 writes
+   `Choice[String]("…")(using JevChoice.keys(items*))` in Scala 3 and
+   `Choice.of[String]("…")(JevChoice.keys(items: _*))` in 2.13, the one awkward call of the
+   guides. `Choice.keys("Which item?", items*)`, returning a `Choice[String]`, says the same in
+   one call, in both modules, Scala 3 first. No ADR expected: it is `JevChoice.keys` in the shape
+   of the other constructors; if the implementation meets a real choice, write one.
+
+Out of scope, noted for later: a threshold on `NoulAnswer`, next to `ChoiceAnswer.ifConfident`
+(`typesafe-sdk-scala` has `isYes(0.8)`).
+
+**Done when:** each point is fixed, or the owner decided to leave it; `live/scala213` lists each
+case once; `named` and `Choice.keys` are tested, a case class included for `named`; the
+definition of done holds in both modules.
+
+**Outcome.** Done on the working tree of `task/t18-t28`, together with T19, at the owner's
+request.
+
+1. **Settled by the owner on 2026-09-25: the check joins `JdkTransport.problems`**, as
+   `JevError.InvalidConfig` ([ADR-0045](../adr/0045-a-retry-policy-whose-wait-can-be-negative-is-an-error.md),
+   which widens ADR-0042). `backoffInitial` and `backoffMax` must be zero or more, and `jitter`
+   between 0 and 1, both included, as in the Python SDK; `NaN` is refused. A negative
+   `backoffMax` throws too, and was not in the list above: `min(doubled, backoffMax)` is then
+   negative. Tests in both modules: each value against a local server answering 503, with the
+   default sleeper, returns `InvalidConfig` and sends nothing; and each boundary of each rule.
+   The Scaladoc of `RetryPolicy`, `JevConfig`, `JevError.InvalidConfig` and `JdkTransport` says
+   so.
+2. The Scaladoc of `RetryPolicy` names the Python SDK's 30 s budget and the JavaScript SDK's lack
+   of one, in both modules.
+3. `JevChoice.named`, `JevScale.named` and `Described` in the 2.13 module, as ADR-0043 decides;
+   the snake_case function is written again, with Scala 3's tests. The owner's decisions are
+   recorded in ADR-0043, now `Accepted`, which amends ADR-0023 and ADR-0034. Tested with case
+   objects, `Described` case objects, and a case class whose two instances share a name, which
+   the `Validator` reports as `DuplicateOptionKey` and `DuplicateLevel`. `live/scala213`, the
+   README and the 2.13 tutorial list each case once; chapter 5 of the tutorial gives its
+   descriptions with `Described`, as the Scala 3 tutorial does.
+4. `Choice.keys(instructions, keys*)` in both modules, a `Choice[String]`; chapter 8 of both
+   tutorials uses it. No ADR: it is `JevChoice.keys` in the shape of `Choice`.
+
+- Measured after the changes, JDK 25: `scala3` 142 tests, `scala213` 132; 100% statement and
+  branch coverage in both; Stryker4s detects every mutant, 224 of 236 in `scala3` (12 ignored,
+  5 compile errors) and 224 of 225 in `scala213` (1 ignored).
+
+### T19 — Documentation and examples: Spark 4, the Scala 3 compiler, and real outputs
+
+**Status:** Done 2026-09-25 — [ADR-0044](../adr/0044-documented-compile-errors-are-checked-by-a-test.md), [ADR-0046](../adr/0046-the-spark-example-holds-one-client-per-executor-jvm.md)
+
+**Branch:** `task/t18-t28`, with T18 to T28, as the owner asked.
+
+The owner asked on 2026-09-25 for a README that stresses two things, each with an example a
+reader takes in at a glance: the Spark compatibility of the 2.13 module, and the robustness of
+the Scala 3 module. The same review found gaps in the guides and the examples. All of it is on
+one branch, and its paid calls are one run at the end, approved once.
+
+**The README.** Today it opens with the Scala 3 example and then a 2.13 example of about 60
+lines. Spark appears only in a sentence of "Run it" and a row of "Learn more"; what the compiler
+refuses appears only in prose ("`Probability(1.5)` does not compile"). The new order:
+
+1. **Two claims, each linked to its section.** "Scala 3: the compiler checks your questions and
+   your answers." "Scala 2.13: the only Scala client for Jev that runs on Spark 4" (point 7).
+2. **The Scala 3 example**, as today, printing `mostLikely` next to `score`: the text under it
+   names `r.feeling.mostLikely`, and T7 added the field so that code does not round the score.
+3. **What the compiler refuses**: a block of lines against the example's questions, each with the
+   compiler's message, checked as ADR-0044 decides. Measured on 2026-09-25 on `0b462c5`, Scala
+   3.9.0, with the README's `Team`, `Feeling` and three questions:
+
+   | Line | The error, with `…` for what is left out |
+   |---|---|
+   | `r.priority` | `value priority is not a member of (team : ChoiceAnswer[Team], duplicate : NoulAnswer, feeling : …)` (fully qualified names) |
+   | `(r.team.choice: Feeling)` | `Found: … Team` / `Required: Feeling` |
+   | `r.feeling.probabilities("Calm")` | `Found: ("Calm" : String)` / `Required: Feeling` |
+   | `Probability(1.5)` | `a Probability must be between 0 and 1` |
+   | an enum of one case that `derives JevScale` | `a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases` |
+   | `client.ask(42, questions)` | ``no ToState[Int]: give one, for example `given ToState[Int] = s => ujson.Obj(...)`, or pass a String or a ujson.Value`` |
+   | `(team = …, count = 3)` as the questions | `every value in the named tuple must be a question: Noul, Score or Choice` |
+
+   Then one sentence for what no compiler can see: a request is checked before it is sent, with
+   every problem at once, and no call throws.
+4. **On Spark 4**: the core of the Spark example, about ten lines quoted from `live/spark` after
+   point 15, and three facts with their source: the published pom asks for `scala-library`
+   2.13.16, so the module runs on Spark 4.0, 4.1 and 4.2 (ADR-0036); each action on the result
+   calls Jev again, so write it or cache it once (measured in `docs/guide/spark.md`); the key is
+   read on the executors and never travels.
+5. **A 2.13 fragment** of a few lines — a key, `ask`, the tuple of answers — with `JevScale.named`
+   and `JevChoice.named` (T18), pointing to the 2.13 tutorial for the whole example. For a 2.13
+   reader the Spark section is the first example; the README loses about 50 lines.
+6. **Run it**: a new user reaches Jev through a gateway, because TypeSafe paused new sign-ups
+   on 2026-09-22 (its announcement on X; no reopening found on 2026-09-25), and accounts made
+   before keep working. Point to the concepts guide's chapter 10, and say where the pause is
+   announced rather than when it ends. Recommend JDK 21 and keep JDK 17 supported: the library's
+   own documents say it works better on 21 (a blocked call is cheap on a virtual thread, the
+   Scaladoc of `Sleeper.thread`, ADR-0002; only from 21 can a caller close the `HttpClient` it
+   passes, ADR-0038), nothing in the library needs 21, and the Spark example passes on both
+   (ADR-0041).
+7. **Other Scala clients**, brought up to date, checked on 2026-09-25:
+   - `typesafe-sdk-scala` by aoprisan (`io.github.aoprisan`), 0.4.0 on Maven Central since
+     2026-09-23: Scala 3.3 LTS, no runtime dependency, blocking, `CompletableFuture` and `Future`
+     calls with `Either` variants, Cats Effect, fs2, Monix and Ox modules, questions derived from a
+     case class, and recorded replies.
+   - `hexis` by early-effect: ZIO, cross-built for JVM, Scala.js and Scala Native; not on Maven
+     Central.
+   - scala-jev-sdk removed its Scala 2.13 cross-build on 2026-09-19, and zio-typesafe-ai has no
+     2.13 build: jev4s is the only client with a 2.13 module, and so the only one that runs on
+     Spark 4.
+   - "One dependency" no longer sets jev4s apart: `typesafe-sdk-scala` has none. The section
+     "What jev4s does differently" is rewritten around points 1, 3 and 4.
+
+   Each fact with its source and date, as the section does today.
+
+**The guides.**
+
+8. **The concepts guide's "Checks before sending"** becomes a table of what each module checks
+   at compile time and what it checks before sending.
+9. **The concepts guide's chapter 10** says that Cloudflare Workers AI serves Jev in another
+   shape: `POST /client/v4/accounts/{account_id}/ai/run`, with `"model": "typesafe/jev"` and the
+   state and questions inside `input` (Cloudflare's model page, read 2026-09-25). A base URL
+   cannot reach it; a `Transport` of the caller's could, but it cannot read the key of a
+   `JevConfig`, whose `ApiKey.value` is `private[jev4s]`.
+10. **`docs/guide/spark.md` opens with what makes jev4s fit Spark** — the Scala of Spark 4, a
+    client built on the executors, errors as rows — before its first chapter.
+11. **`mostLikely` in the tutorials.** No guide shows it; only `LiveSuite` reads it. Chapter 6
+    of each tutorial matches on it exhaustively, `r.feeling.mostLikely match { case Feeling.Calm
+    => …; case Feeling.Annoyed => …; case Feeling.Angry => … }`: a case added to the enum, or to
+    the 2.13 sealed class, then shows up at every match that does not handle it.
+12. **The caller's `HttpClient` gets a compiled example.** Chapter 10 of each tutorial names
+    `httpClient = Some(yours)` in prose only, and no example in `live/` passes one. The example
+    uses what JDK 17 has, an executor or a proxy, because CI compiles `live/` on 17; that a
+    caller closes it on 21 stays in prose.
+13. **The Scala 3 tutorial's compile errors become checked blocks (ADR-0044)**: it says "does not
+    compile" in prose four times. The tutorials' § 1 recommend JDK 21, as point 6.
+14. **`normalized` divides by the question's levels.** The extension in chapter 6 divides the
+    score by `probabilities.size - 1`, the levels in the answer. It gives the right number today:
+    the five Score and Choice answers in `golden/` carry every level and option, zero
+    probabilities included. The question is the source of the level count, and the guide
+    teaches this extension, so it should read it there.
+
+**The examples.**
+
+15. **One client per executor JVM in the Spark example.** `SparkTriage.triage` calls
+    `newClient()` once per partition (ADR-0041). Each call builds a `JdkTransport`, and so a
+    `java.net.http.HttpClient` with its own threads, which jev4s never closes; the Scaladoc of
+    `JevClient` warns against a new client per request for this reason. The usual Spark answer is
+    one client per executor JVM, a `lazy val` in an `object`. To settle, in an ADR that amends
+    ADR-0041: where the client lives, how the pacer's rate is still shared by the partitions that
+    run at once on one executor, and how the tests keep their fake transport and local server.
+    Measure, before and after, the threads that the HTTP clients hold on an executor after many
+    tasks.
+16. **The Vercel example trims the key.** `sys.env.get("AI_GATEWAY_API_KEY")` keeps a final
+    newline, which `fromEnv` trims for `TYPESAFE_API_KEY`. Since ADR-0042 it gives `InvalidConfig`
+    rather than an exception, but the example should work: `.map(_.trim)`, in both
+    `live/*/guide/Gateways.scala`.
+17. **`Example.scala` uses `Team`.** Its enum `Dept` is the last example outside the one domain
+    that T6 settled.
+
+**Real outputs.** At the end, one run against the real API with `jev-1.13.0` records every output
+that changed, and the four that are older than T7: chapters 2, 5, 6 and 7 of
+`docs/guide/scala213.md` still show the runs of 2026-09-22. Record which values moved, as T10 and
+T17 did. The owner's key and approval are needed: about fifteen calls of a few hundred input
+tokens each, under $0.001 in total at $0.042 per million.
+
+Settled by the owner on 2026-09-25: the block of point 3 is checked by a test (ADR-0044: each line
+is also a `compileErrors` case in a Scala 3 test suite that reads the document, and
+`build/check-docs.py` checks that every line of the block has its case), and this branch makes
+ADR-0044 `Accepted` and records the amendment in ADR-0032; the README keeps a 2.13 fragment, not a
+whole example. To settle: whether chapter 13 of the tutorials says what JDK 21 changes for its
+thread pool, or keeps only the JDK 17 example that ADR-0039 chose.
+
+**Done when:** the README opens on the two claims; the compile errors of the README and the Scala
+3 tutorial are checked as ADR-0044 says; the Spark section quotes `live/spark`; the Spark example
+holds one client per executor JVM, measured; no recorded output in the README or `docs/guide/`
+comes from a run before this task's; the docs check passes; the definition of done holds for
+every test this task adds.
+
+**Outcome.** Done on the working tree of `task/t18-t28`, together with T18, at the owner's
+request. The owner accepted ADR-0046 on 2026-09-25, and confirmed the shape of the cases of
+ADR-0044 and the rules of ADR-0045 described here.
+
+- **The README** opens on the two claims, each linked to its section. The Scala 3 example keeps
+  its questions in a `val` and prints `mostLikely` next to the score. "What the compiler
+  refuses" has seven checked lines. "On Spark 4" quotes ten lines of `live/spark` and gives the
+  three facts; the `scala-library` 2.13.16 of the pom was checked with `scala213/makePom`. The
+  2.13 section is two quoted parts, with `named`. "Run it" names the pause of sign-ups and the
+  gateways, and recommends JDK 21 with 17 supported. "Other Scala clients" was checked again on
+  2026-09-25: the repository of `typesafe-sdk-scala` is `aoprisan/typesafe-ai-scala-sdk`, and
+  0.5.0 reached Maven Central on 2026-09-25 at 08:05, after 0.4.0 on 2026-09-23;
+  `rocks.earlyeffect` on Maven Central has no `hexis`.
+- **ADR-0044, accepted by the owner's decision above, as built.** The block of documented errors
+  is checked by `ReadmeErrorsSuite` and `Scala3GuideErrorsSuite`, in the empty package of the
+  `scala3` tests, over `DocumentedErrorsSuite`; the documents reach the tests as
+  `documents/README.md` and `documents/scala3.md`, because `golden/README.md` has the same name.
+  Found while building it: **a literal passed through an `inline` method to `compileErrors` can
+  fail with another message.** `Score("How does the customer feel?")` gave an overload error
+  that way, and its `@implicitNotFound` text when `compileErrors` takes the literal directly.
+  So each case is `documented("<code>", compileErrors("<code>"))`, and `build/check-docs.py`
+  checks that both literals are the same code, and that every entry has its case. A wrong
+  message in the README fails the suite (checked by editing one). ADR-0032 is widened by
+  ADR-0044.
+- **The Scala 3 tutorial**: chapter 3 has a checked block for a state with no `ToState`;
+  chapter 4 turns its table into nine checked lines; chapter 6 checks `Probability(1.5)` and
+  `Probability(1)`, whose message is `Found: (1 : Int) Required: Double & Singleton`; chapters 4
+  and 9 point to the block for an enum of 1 or 11 cases. Both tutorials' § 1 recommend JDK 21.
+- **The concepts guide**: "Checks before sending" is a table of eleven mistakes, each with where
+  each module finds it. Measured for it: a name used twice in a named tuple is a compile error
+  in Scala 3 (`Duplicate tuple element name`), and so is an empty tuple of questions. Chapter
+  10 describes Cloudflare Workers AI, from
+  `https://developers.cloudflare.com/ai/models/typesafe/jev/`, read on 2026-09-25.
+- **`docs/guide/spark.md`** opens with the three reasons, and says why the client lives in an
+  `object`, with the numbers below.
+- **Chapter 6 of each tutorial** matches exhaustively on `mostLikely` (`reply`), and the helper
+  `normalized` took the question and divided by its levels. T20 replaced the helper with a field
+  of the answer.
+- **Chapter 10 of each tutorial** quotes `throughProxy`, a client over an `HttpClient` with a
+  proxy, which compiles on JDK 17. **Chapter 13** says that JDK 21 can give each call a
+  virtual thread, as the owner decided on 2026-09-25; the compiled example stays on JDK 17.
+- **One client per executor JVM** (point 15): `SparkTriage.client` is a `lazy val`, and `triage`
+  takes `client: () => JevClient`. Measured on JDK 21, Spark 4.0.4 in local mode, 48 tickets in
+  48 partitions against a local server, counting `HttpClient`s by the JDK's own ids: a client
+  per partition built 43 `HttpClient`s, whose 78 threads were alive after the job and gone
+  after a GC; the `object` built 1, with 6 threads. A test checks that 12 partitions over an
+  `object`'s client start one `HttpClient`. `main`'s function serializes: run without a key,
+  the executors fail with `TYPESAFE_API_KEY is not set`, not "Task not serializable". Written
+  up as [ADR-0046](../adr/0046-the-spark-example-holds-one-client-per-executor-jvm.md),
+  and accepted by the owner: it amends ADR-0041.
+- **The Vercel examples trim the key**, and **`Example.scala` uses `Team`** in both modules; the
+  Scala 3 one uses the `Team` of `Triage.scala`, since both are in the empty package.
+- Spark 4.0.4 does not start on JDK 25 (`UnsupportedOperationException: getSubject is not
+  supported`); its tests and the Spark run used JDK 21, as CI does.
+
+**Real outputs.** One run on 2026-09-25 against the real API with `jev-1.13.0`, approved by the
+owner, with the key of the local `.env`: every example whose output a document shows, 23 calls,
+all answered. Values that moved: the README's Scala 3 feeling 1.78 to 1.8 (the line now also
+prints `Angry`); the README's 2.13 feeling 1.8 to 1.81; the Scala 3 first question 0.91 to 0.92;
+Scala 3 `threeQuestions` feeling 1.46 to 1.47 and angry 0.46 to 0.48; the 2.13 first question
+0.92 to 0.91; 2.13 `ThreeQuestions` feeling 1.51 to 1.52 and angry 0.51 to 0.52. The rest printed
+the same values, and `decisions` now also prints `an apology, then the answer` in both modules.
+The JSON replies in the concepts guide are API replies quoted from `golden/`, not outputs of the
+examples, and were left as they are.
+
+- Measured after T19, JDK 25: `scala3` 161 tests, the 19 documented errors included, and
+  `scala213` 132; 100% statement and branch coverage in both; every mutant detected, the same
+  236 and 225 as at the end of T18. The guides' tests pass (4 and 4), and the Spark example's 5
+  on JDK 21.
+
+### T20 — A Score's answer carries its normalized score
+
+**Status:** Done 2026-09-25 — [ADR-0047](../adr/0047-a-score-answer-carries-its-normalized-score.md)
+
+**Branch:** `task/t18-t28`, with T18 and T19, as the owner asked.
+
+T19's helper `normalized` needed the question next to the answer: in 2.13 a key does not give
+back its `Score`, so chapter 6 made each key in the call only to pass the Score to the helper.
+The owner chose on 2026-09-25 to compute it in the library instead, in both modules, rather than
+a 2.13 key that keeps its Score.
+
+**Done when:** `ScoreAnswer.normalized` is decoded from the question's levels in both modules,
+tested with numbers of its own; the guides use it and teach no helper; the definition of done
+holds.
+
+**Outcome.** `ScoreAnswer(score, normalized, mostLikely, confidence, probabilities)` in both
+modules; the `Codec` divides the score by the question's levels minus one. `CodecSuite` checks
+3.0 of 5 levels as 0.75, 0.4 of 2 as 0.4 and 2.0 of 3 as 1.0, and the golden tests check it on
+the real replies. Chapter 6 of both tutorials reads `r.severity.normalized` and `s.normalized`;
+the 2.13 keys are made once again, as before T19. The recorded output of `decisions` stays: the
+run of T19 used the helper that already divided by the question's levels, and so printed the
+same priority.
+
+- Measured, JDK 25: `scala3` 162 tests, `scala213` 133; 100% statement and branch coverage in
+  both; every mutant detected, 236 in `scala3` and 225 in `scala213`, as before: Stryker4s has
+  no arithmetic mutator, so the new division adds none, and the tests with numbers of their own
+  are what checks it.
+
+### T21 — A test kit that answers with typed values
+
+**Status:** Done 2026-09-25 — [ADR-0048](../adr/0048-a-test-kit-answers-with-typed-values.md)
+
+**Branch:** `task/t18-t28`, with T18 to T20, as the owner asked.
+
+D4 closed on 2026-09-25 with the owner's choice of a separate artifact. The work: a test kit for
+each module, its tests, CI, and chapter 12 of both tutorials.
+
+**Done when:** each module has its kit, tested against the real replies of `golden/`, with full
+coverage and every mutant detected; CI runs them; chapter 12 of both tutorials tests with the kit.
+
+**Outcome.**
+
+- `testkit/scala3` and `testkit/scala213`, the sbt projects `scala3Testkit` and
+  `scala213Testkit`, name `jev4s-testkit`, aggregated by the root. Scala 3:
+  `JevTestkit.answering(triage)((team = Team.Billing, urgent = true, feeling = Feeling.Annoyed))`,
+  with a match type `FakeAnswer` from each question to what it accepts. 2.13:
+  `JevTestkit.answering(team.is(Team.Billing), urgent.is(true), feeling.is(Feeling.Annoyed))`, by
+  implicit classes on `Key`. Both have `failing(error)` and `defaultModel`.
+- Tested in each kit: the short forms, a whole answer whose `normalized` and `mostLikely` come
+  back from the question, the round trip of the real replies of `golden/mixed` and
+  `golden/structured` (JSON levels included), the model and the event, a question under another
+  name, each wrong answer that throws, and the types that do not compile.
+- Found while building it: the default model of the kit is observable only through `onEvent`,
+  and a client with no `onEvent` hides it, so Stryker4s would keep a mutant of its literal. The
+  kit exposes it as `JevTestkit.defaultModel`, which a test reads; the 2.13 `failing` and
+  `answering(answers*)` use it too. The Scala 3 kit compares levels with `equals`, because
+  `strictEquality` refuses `==` on `Any`; the 2.13 kit with `==`, because `-Xlint` refuses
+  `equals` on `Any`.
+- Measured, JDK 25: 11 tests in each kit; 100% statement and branch coverage; every mutant
+  detected, 24 in `scala3Testkit` and 25 in `scala213Testkit`. The 2.13 run of Stryker4s sets
+  `allowUnsafeScalaLibUpgrade` on `scala213Testkit` as well as on `scala213`, for that run only.
+- CI tests the kit and builds its Scaladoc in the test job, covers it in the coverage job, and
+  mutates it in the mutation job, of each module. `scala3Live` and `scala213Live` depend on their
+  kit in `Test`, and chapter 12 of both tutorials quotes a `RouterSuite` that uses it, with three
+  tests instead of two.
+
+
+---
+
+The items below come from a look at what the first release still lacks, on 2026-09-25. The
+owner asked for them on the same working tree as T18 to T21, before M7; what M7 itself needs was
+added to its entry.
+
+### T22 — A network error that says what failed
+
+**Status:** Done 2026-09-25 — [ADR-0049](../adr/0049-a-network-error-says-what-failed.md)
+
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
+
+T1 noted that `JevError.Network` drops the cause. With a message only, a timeout, a refused
+connection and a refused certificate look the same, and all are retried, a certificate that
+fails the same way each time included. Changing a public case costs no user anything before the
+first release.
+
+**Done when:** `Network` carries a kind that a caller can match on; a refused certificate is not
+retried; the mapping is tested on the chains that the JDK throws; the definition of done holds
+in both modules.
+
+**Outcome.**
+
+- `JevError.Network(failure: NetworkFailure, message)`, with `Timeout`, `Connect`,
+  `Certificate` and `Other`, in both modules; `isRetryable` is false for `Certificate`.
+  `JdkTransport.networkError` maps the exception, and writes its own message for a
+  `ConnectException`, whose JDK message is empty: `no connection to <host>`, or `the host <host>
+  was not found`.
+- Measured with the JDK's `HttpClient` on JDK 21.0.9 and 25.0.3, the same on both: the table in
+  ADR-0049. The owner chose a kind named `Tls`; the measurement narrowed it to `Certificate`. A
+  handshake that the server ends has no cause but its message, and on JDK 21 cannot be told
+  from a protocol that the two sides do not share, so only a `CertificateException` among the
+  causes marks a failure that the next attempt repeats.
+- Tested: each chain of the table through `networkError`, with a message or without; a refused
+  connection through the transport, retried twice, as `Connect` with its host; the two timeout
+  tests as `Timeout`; `isRetryable` for each kind.
+- The concepts guide's table of errors lists the kinds; the tutorials say "such as after a
+  timeout" where they said "such as after a network error", which is no longer always retried.
+
+### T23 — A threshold on a Noul's answer
+
+**Status:** Done 2026-09-25 — [ADR-0050](../adr/0050-a-noul-answer-is-confident-on-either-side.md)
+
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
+
+T18 noted a threshold on `NoulAnswer`, next to `ChoiceAnswer.ifConfident`.
+
+**Done when:** a Noul's answer gives "yes", "no" or "not sure" against a threshold, in both
+modules, tested at the boundaries; the tutorials show it.
+
+**Outcome.**
+
+- `NoulAnswer.ifConfident(min): Option[Boolean]`, a `Probability` in Scala 3 and a `Double` in
+  2.13: `Some(isYes)` when `max(p, 1 - p)` is at least `min`. The owner chose it over
+  `isYes(min)` on 2026-09-25.
+- Tested at 0.8 on both sides: 0.8 and 0.2 are confident, the nearest `Double` inside each is
+  not; 0.5 at 0.5 is `Some(true)`; 0.4 at 0.3 is `Some(false)`.
+- Chapter 6 of both tutorials shows it, `checkCharge` in `guide/Decisions.scala`, after the
+  Choice's `ifConfident`; the answer tables of the tutorials and of the concepts guide list it,
+  and the concepts guide says that a Noul's `ifConfident` reads its one probability.
+- Measured after T22 and T23, JDK 25: `scala3` 165 tests, `scala213` 136, 11 in each kit; the
+  same tests pass on JDK 21, and the Spark tests too. 100% statement and branch coverage in the
+  four projects; every mutant detected, 229 of 246 in `scala3` (12 ignored and 5 that do not
+  compile, as before) and 234 of 235 in `scala213` (1 ignored), 24 and 25 in the kits.
+
+### T24 — JDK 25, tested and declared
+
+**Status:** Done 2026-09-25
+
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
+
+JDK 25 is the long-term-support release after 21. The tests of this repository ran on it for
+T18 to T21, on this machine, but CI tested 17 and 21 only, and the README asked for 21 or 17.
+
+**Done when:** CI tests both modules on JDK 25, and the README and the guides say which JDKs
+jev4s supports.
+
+**Outcome.**
+
+- The test job of CI runs on JDK 17, 21 and 25, each module with its kit, its Scaladoc and the
+  guides' tests; the Spark example's tests skip 25, because Spark 4.0 does not start on it
+  (`UnsupportedOperationException: getSubject is not supported`, T19).
+- The README says that jev4s works on JDK 17, 21 and 25, and that the Spark example needs 17 or
+  21; both tutorials say that CI tests the three; the Spark guide says to run Spark on 17 or 21.
+- CI on JDK 25 has not run yet: it runs with the first push of this work.
+
+### T25 — A security policy and issue forms
+
+**Status:** Done 2026-09-25
+
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
+
+jev4s handles an API key, and the repository will be public. A reader who finds a problem with
+the key needs a private way to report it, and a bug report needs the versions and no key.
+
+**Done when:** `SECURITY.md` says how to report privately and what counts; the issue forms ask
+for what a report needs.
+
+**Outcome.**
+
+- `SECURITY.md`: reports through GitHub's private vulnerability reporting, never an issue and
+  never the key; fixes go into the latest `0.x`; what counts, with the promises of ADR-0027 and
+  ADR-0002; problems in the Jev API go to TypeSafe AI. `CONTRIBUTING.md` points to it.
+- `.github/ISSUE_TEMPLATE/`: `bug.yml` asks for the versions, the smallest code (a test with the
+  kit, which needs no key), the full error, and the request id from `JevEvent.Responded`;
+  `idea.yml` for the problem, the code a user would write, and the module; `config.yml` turns
+  off blank issues and links to a private advisory.
+- Private vulnerability reporting is a setting of the repository, and works only once it is
+  public: M7 lists it for the owner.
+
+### T26 — Scaladoc warnings fail the build
+
+**Status:** Done 2026-09-25
+
+**Branch:** `task/t18-t28`, with T18 to T25, as the owner asked.
+
+M1 noted that the Scala 3 Scaladoc prints `Flag -classpath set repeatedly`, a warning that
+mattered once M7 publishes the documentation jar. Scaladoc 3.9.0 prints it as `Option -classpath
+was updated`, in `scala3` and in `scala3Testkit`.
+
+**Done when:** the warning is gone, or it is understood and nothing else can hide behind it.
+
+**Outcome.**
+
+- **The warning is Scaladoc's own, and no option of the build removes it.** It appears in a new
+  sbt project with one file, on Scala 3.9.0 and 3.8.1, and with `scala-cli doc`, outside sbt.
+  sbt passes `-classpath` once (its debug log). The source of Scaladoc 3.9.0 explains it:
+  `ScaladocInternalTastyInspector.inspectorArgs` appends the classpath of the Scaladoc tool to
+  the one it was given and parses the arguments again, in a context where `-classpath` is
+  already set, so `Settings.setString` warns that the option changed. `-Wconf:msg=...:s` does not
+  filter it.
+- **Found while looking: a Scala 3 Scaladoc link that does not resolve was only a warning.**
+  Scaladoc 3 skips `-Werror` ("Skipping unused scalacOptions: -Werror"), so `[[Nope]]` printed
+  `Couldn't resolve a member for the given link query: Nope` and the documentation was built;
+  CI's `doc` step passed. The 2.13 Scaladoc takes `-Werror`, and the same link fails it,
+  checked in a new 2.13.16 project.
+- `build/check-scaladoc.py` deletes the documentation of `scala3` and `scala3Testkit`, builds
+  it, and fails on any warning but Scaladoc's own. Checked both ways: it passes on this tree,
+  and fails with the link above added to `Answer.scala`. CI runs it in the Scala 3 test job on
+  JDK 21. When a Scala release fixes Scaladoc, the accepted warning simply stops appearing.
+- No issue for it was found in scala/scala3 on 2026-09-25. Reporting it there, with the project
+  of one file, waits until after M7, as the owner decided.
+- actionlint 1.7.12 finds no problem in `.github/workflows/build.yml`, with this step and the
+  JDK 25 of T24, its shellcheck rule included (ShellCheck 0.11.0). Its pyflakes rule checks
+  only steps written in Python, and the workflow has none.
+
+### T27 — Fixes from the review of T18 to T26
+
+**Status:** Done 2026-09-25
+
+**Branch:** `task/t18-t28`, with T18 to T26, as the owner asked.
+
+A review of the code, the documentation and the examples that T18 to T26 changed, on the working
+tree, before M7.
+
+**Done when:** each point found is fixed, and the definition of done holds.
+
+#### Found, and fixed
+
+1. **The 2.13 test kit kept only the last of two answers under one name.**
+   `answering(urgent.is(true), urgent.is(false))` built a reply with `"urgent": 0`: ujson's
+   `Obj.from` keeps the last value of a repeated key, checked with ujson 4.4.3. A mistake in the
+   test passed in silence, where ADR-0048 wants it reported at once; the Scala 3 kit cannot have
+   it, because a named tuple has no repeated name. The 2.13 kit now throws
+   `IllegalArgumentException("'urgent' has more than one answer")`, also for two different
+   questions under one name.
+2. **`JdkTransport.networkError` read the causes of an exception to their end.** Java allows a
+   chain that loops, and a caller's `HttpClient` (ADR-0038) could throw one; the call would never
+   return. It now reads to a depth of 16, and a test gives it a chain that loops.
+3. **A connect timeout named the wrong limit.** `HttpConnectTimeoutException` gave
+   `no response within <config.timeout>`, while a caller's `HttpClient` can have a shorter
+   connect timeout of its own. It is now `no connection within <limit>`, where the limit is the
+   shorter of the two (`JdkTransport.connectLimit`). Tested with an `https` request to a socket
+   that accepts and never answers: the handshake waits, and a client with a connect timeout of
+   200 ms gives `no connection within 200 milliseconds` with a `timeout` of 5 s. ADR-0049 says
+   so; it was written on this branch and is not yet on `dev`.
+4. **Chapter 9's `explain` called every error that is not retried "a defect to report"**,
+   `InvalidConfig`, a 404 for a wrong base URL and a refused certificate included, and no
+   tutorial showed `NetworkFailure`. `explain` now has a case for `InvalidConfig`, for
+   `Unexpected` and for `Network(NetworkFailure.Certificate, _)`, and the chapter says what each
+   `NetworkFailure` means, in both tutorials.
+5. **The Spark guide pointed to chapter 12 for "a client over a fake transport"**, which chapter
+   12 no longer shows. It now shows the test kit, `() => JevTestkit.answering(urgent.is(true))`,
+   and says why the example's own tests also use a `Transport`: they count the calls. A new test
+   of `scala213Spark`, which now depends on `scala213Testkit` in `Test`, checks that sentence.
+6. **The README named `jev4s-testkit` without a way to use it.** It now links chapter 12 of both
+   tutorials.
+7. **`InvalidConfig` was "a value that HTTP cannot carry"** in the concepts guide, the tutorials
+   and the Scaladoc of `JevConfig`, next to examples, a timeout of zero and a retry jitter above 1,
+   that are not about HTTP. It is now "a value that cannot work", or "that the JDK would refuse".
+8. **No example tested a whole answer.** The `Router` of chapter 12 now sends a ticket to a person
+   when the team's confidence is under 0.8, and a fourth test gives a `ChoiceAnswer` with a
+   confidence of 0.6, in both tutorials.
+9. Prose lines over 100 columns, not links, in both tutorials, the concepts guide and the README,
+   rewrapped; the two code blocks of the Spark guide with no language are `text`.
+
+- Measured, JDK 25 and 21: `scala3` 168 tests, `scala213` 139, 11 in `scala3Testkit` and 12 in
+  `scala213Testkit`, 6 and 6 in the guides, 6 in the Spark example on JDK 21. 100% statement and
+  branch coverage in the four projects. Every mutant detected: 232 of 249 in `scala3` (12 ignored
+  and 5 that do not compile, as before), 237 of 238 in `scala213` (1 ignored), 24 and 26 in the
+  kits. Two mutants in each module are detected by a timeout, not a failure: `dropWhile` for
+  `takeWhile`, and `drop(16)` for `take(16)`, in `networkError`, loop on the chain of causes
+  that loops, which is what the depth of 16 prevents. The Scaladoc check, the docs check and
+  actionlint pass.
+- `LiveSuite` against the real API after T22 to T27, approved by the owner on 2026-09-25: the
+  three tests of each module pass, `jev-1.13.0` (a reply decoded into typed answers, a wrong key
+  as `Unauthorized`, an unknown model as `Rejected`).
+
+### T28 — Fixes from a second review of T18 to T27
+
+**Status:** Done 2026-09-25
+
+**Branch:** `task/t18-t28`, with T18 to T27, before its first commit.
+
+A review of the working tree of T18 to T27 on 2026-09-25. On a copy of that tree, the tests,
+the formatting check, coverage, the Spark tests on JDK 21, `check-docs.py` and
+`check-scaladoc.py` pass, with the numbers that T27 recorded. Stryker4s, `LiveSuite` and CI on
+JDK 25 were not run again.
+
+**To fix**
+
+1. **A caller's `HttpClient` with a very long connect timeout makes `JdkTransport` throw.**
+   `connectLimit` converts the client's connect timeout to a Scala duration, and
+   `DurationConverters.toScala` throws above `Long.MaxValue` nanoseconds, about 292 years.
+   Measured with `ChronoUnit.FOREVER.getDuration`, Scala 3.9.0, JDK 25:
+   `IllegalArgumentException: Java duration PT2562047788015215H30M7.999999999S cannot be
+   expressed as a Scala duration`. `connecting` is a strict `val`, so the transport throws when
+   it is built, and so does `JevClient(config, httpClient)`: the class of defect that ADR-0042
+   and ADR-0045 close. Compare the two limits as `java.time.Duration`s, and convert only the
+   shorter one. Test it with such a client, in both modules.
+2. **`named` refuses a sealed trait that does not extend `Product`.** With `sealed trait Team`
+   and case objects, `JevChoice.named(Billing, Sales)` gives three errors, the first
+   `inferred type arguments [Team] do not conform to method named's type parameter bounds
+   [C <: Product]`. The signature `def named[C](options: (C with Product)*)` accepts both that
+   trait and the `sealed abstract class Team extends Product with Serializable` of the guides:
+   `C` is inferred from the expected type, and each case object is a `Product`. Checked in a
+   project of one file, Scala 2.13.16, `-Xlint -Werror`; the same holds for `JevScale.named`.
+   To settle by the owner: the bound `L <: Product` is a decision recorded in ADR-0043, which is
+   not yet on `dev`. If the bound stays, § 4 of `docs/guide/scala213.md` must say that `extends
+   Product` is needed; today it says that it "keeps the inferred types simple".
+3. **The `Branch:` lines of T18 and T19** name `task/library-fixes-and-ergonomics` and
+   `docs/readme-guides-examples`, which do not exist: the work is on `docs/plan-t18-t19`. The
+   branch has not been pushed. Either rename it before its first commit, to a name for what it
+   now holds, and update the `Branch:` line of each task on it, or correct the two lines.
+
+**Smaller**
+
+4. `AGENTS.md`: "The Spark tests need JDK 17 or 21" ends the paragraph on documented compile
+   errors; it belongs next to the Spark commands.
+5. The README says the module "runs on Spark 4.0, 4.1 and 4.2". The pom gives the reason; the
+   Spark example ran on 4.0.4 only. Say which version was tested.
+6. The README opens with "the only Scala client for Jev that runs on Spark 4", with no date.
+   "Other Scala clients" gives the date of the check; the claim at the top should point there,
+   or carry the date too.
+
+Noted for later, not for this task: the test kit cannot show what the code under test asked;
+and from a whole `ScoreAnswer` it keeps `score`, `confidence` and `probabilities`, while
+`normalized` and `mostLikely` come from the question, as ADR-0048 documents.
+
+**Done when:** points 1 to 6 are fixed, or the owner decided to leave them; point 2 is settled
+by the owner, with ADR-0043 changed if the signature changes; the definition of done holds in
+both modules.
+
+#### Done
+
+1. `connectLimit` compares the two limits as `java.time.Duration`s and converts only the
+   caller's connect timeout, and only when it is the shorter. A test in each module gives it a
+   client with `ChronoUnit.FOREVER`, and another asks through `JevClient` with a client whose
+   connect timeout is 1000 years, beyond `Long.MaxValue` nanoseconds: it answers. A connect
+   timeout equal to `timeout` keeps `timeout` as written (`30000 milliseconds`), as `min` did.
+   Found: with `FOREVER`, the JDK's own client connects to nothing. On JDK 25 a request to a
+   local server gives a `ConnectException`, which jev4s returns as `no connection to 127.0.0.1`;
+   with 1000 years it connects. This is the JDK's behaviour, not jev4s's, and the error is a
+   value.
+2. Settled by the owner on 2026-09-25: `JevChoice.named[C](options: (C with Product)*)` and
+   `JevScale.named[L](levels: (L with Product)*)`. A test of `QuestionSuite` uses a
+   `sealed trait Size` that does not extend `Product`. ADR-0043, not yet on `dev`, says so in its
+   context and its decision; § 4 of `docs/guide/scala213.md` says that a sealed trait works too,
+   and that `extends Product with Serializable` is not needed.
+3. The owner renamed the branch to `task/t18-t28` before its first commit, a name for what it
+   holds; the `Branch:` and `Outcome` lines of T18 to T28 name it.
+4. The sentence on the Spark tests' JDK follows the build commands in `AGENTS.md`.
+5. The README says the module is built for every Spark 4 and tested on 4.0.4, and the Spark
+   guide says the same in its opening and in chapter 1.
+6. The README's claim at the top carries the date, 2026-09-25, and links "Other Scala clients".
+
+- Measured, JDK 25: `scala3` 170 tests, `scala213` 142, 11 in `scala3Testkit` and 12 in
+  `scala213Testkit`, 6 and 6 in the guides. 100% statement and branch coverage in the four
+  projects. Every mutant detected: 235 of 252 in `scala3` (12 ignored and 5 that do not compile,
+  as before), 240 of 241 in `scala213` (1 ignored). The formatting check, the docs check and the
+  Scaladoc check pass. The test kits' mutants, the Spark tests, `LiveSuite` and CI on JDK 21 and
+  17 were not run: T28 changes neither the kits nor the Spark example.
