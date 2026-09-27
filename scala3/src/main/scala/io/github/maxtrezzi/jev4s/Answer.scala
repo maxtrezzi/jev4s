@@ -17,6 +17,8 @@ final case class NoulAnswer(probability: Probability) derives CanEqual:
   * two levels (for example 1.3), the level with the highest probability, how confident Jev is,
   * and the probability of every level. Each level is a value of type `L`: a case of your enum, as
   * in `probabilities(Mood.Angry)`, or the level as you gave it, as in `probabilities("Calm")`.
+  * Every level of the question is in `probabilities`: a reply that leaves a level out is a
+  * [[JevError.Decoding]].
   *
   * When two levels have the same highest probability, `mostLikely` is the lower one. It is not the
   * level nearest to `score`: with probabilities 0.5, 0, 0.5, the score is 1 and the middle level
@@ -34,7 +36,8 @@ final case class ScoreAnswer[L](
 ) derives CanEqual
 
 /** The answer to a [[Question.Choice]]: the chosen value, how confident Jev is, and the
-  * probability of every option.
+  * probability of every option. Every option of the question is in `probabilities`: a reply that
+  * leaves an option out is a [[JevError.Decoding]].
   */
 final case class ChoiceAnswer[C](choice: C, confidence: Probability, probabilities: Map[C, Probability])
     derives CanEqual:

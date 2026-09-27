@@ -22,6 +22,8 @@ The first release.
 - A Score's answer gives its score, its score from 0 to 1 (`normalized`), and its most likely
   level (`mostLikely`). A Noul's answer gives "yes" or "no" when its probability is high enough
   (`ifConfident`).
+- The `probabilities` of an answer hold every level of the Score, or every option of the
+  Choice. A reply that leaves one out is a `JevError.Decoding`.
 - `JevClient`, over the JDK's `java.net.http`: retries like the official SDKs, with a limit of
   30 seconds on each call. You can give it your own `HttpClient`, or your own `Transport`.
 - Direct style: every call returns `Either[JevError, A]`, and no call throws an exception. A
@@ -48,4 +50,5 @@ The first release.
 ### Test kits (`jev4s-testkit_3`, `jev4s-testkit_2.13`)
 
 - A client for your tests that answers with typed values, such as
-  `(team = Team.Billing, urgent = true)`, with no network.
+  `(team = Team.Billing, urgent = true)`, with no network. A mistake in a test, such as an answer
+  that is not one of the question's options, throws at once.

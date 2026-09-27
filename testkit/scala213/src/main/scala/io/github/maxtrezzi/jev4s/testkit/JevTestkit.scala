@@ -29,9 +29,9 @@ object JevTestkit {
     * The client does not look at what your code asks. Questions under other names get a
     * `JevError.Decoding` error, as a real reply without their answers would.
     *
-    * An answer that is not one of its question's levels or options, or two answers under the same
-    * name, throw an `IllegalArgumentException` at once: it is a mistake in the test, reported as an
-    * assertion is.
+    * An answer that is not one of its question's levels or options, a whole answer that leaves one
+    * out of its probabilities, or two answers under the same name, throw an
+    * `IllegalArgumentException` at once: it is a mistake in the test, reported as an assertion is.
     */
   def answering(answers: Answered*): JevClient = answering(defaultModel, _ => ())(answers: _*)
 
@@ -79,8 +79,11 @@ private[testkit] object FakeReply {
         case level             => (index(level).toDouble, 1.0)
       }
       val probabilities = answer match {
-        case a: ScoreAnswer[_] => a.probabilities.toList.map { case (level, p) => index(level).toString -> p.value }
-        case level             => oneHot(values.indices.map(_.toString).toList, index(level).toString)
+        case a: ScoreAnswer[_] =>
+          val stated = a.probabilities.toList.map { case (level, p) => index(level).toString -> p.value }
+          complete(name, "level", values, a.probabilities.keys)
+          stated
+        case level => oneHot(values.indices.map(_.toString).toList, index(level).toString)
       }
       ujson.Obj(
         "type"          -> "score",
@@ -93,7 +96,10 @@ private[testkit] object FakeReply {
       def key(value: Any)                     = keys(position(name, "option", choice.options.map(_.value), value))
       val (chosen, confidence, probabilities) = answer match {
         case a: ChoiceAnswer[_] =>
-          (key(a.choice), a.confidence.value, a.probabilities.toList.map { case (c, p) => key(c) -> p.value })
+          val chosen = key(a.choice)
+          val stated = a.probabilities.toList.map { case (c, p) => key(c) -> p.value }
+          complete(name, "option", choice.options.map(_.value), a.probabilities.keys)
+          (chosen, a.confidence.value, stated)
         case value => (key(value), 1.0, oneHot(keys, key(value)))
       }
       ujson.Obj(
@@ -109,6 +115,12 @@ private[testkit] object FakeReply {
     values.indexWhere(_ == value) match {
       case -1    => throw new IllegalArgumentException(s"'$name': $value is not one of its ${kind}s")
       case index => index
+    }
+
+  /** A whole answer gives every level or option a probability, as a real reply does (ADR-0053). */
+  private def complete(name: String, kind: String, values: List[Any], stated: Iterable[Any]): Unit =
+    values.find(value => !stated.exists(_ == value)).foreach { value =>
+      throw new IllegalArgumentException(s"'$name': the answer gives no probability to its $kind $value")
     }
 
   /** Probability 1 for `chosen`, and 0 for every other key. */

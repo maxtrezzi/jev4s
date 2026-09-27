@@ -81,26 +81,34 @@ private[jev4s] object Codec:
         yield NoulAnswer(p)
       case Question.Score(_, levels) =>
         val values = levels.map(_.value)
+        val labels = levels.map(l => l.value -> text(l.text))
         for
           _             <- json.hasType("score", name)
           score         <- json.field("score").flatMap(_.number(name))
           confidence    <- json.field("confidence").flatMap(_.probability(name))
           probabilities <- json.probabilities(name)(index => index.toIntOption.flatMap(values.lift))
-          // maxByOption keeps the first of equal maxima: a tie goes to the lower level.
-          mostLikely <- values
-            .filter(probabilities.contains)
-            .maxByOption(probabilities)
-            .toRight(s"'$name': no probabilities")
-        yield ScoreAnswer(score, score / (levels.size - 1), mostLikely, confidence, probabilities)
+          _             <- missing(labels, probabilities, s"'$name': no probability for the level")
+        // maxBy keeps the first of equal maxima: a tie goes to the lower level.
+        yield ScoreAnswer(score, score / (levels.size - 1), values.maxBy(probabilities), confidence, probabilities)
       case Question.Choice(_, options) =>
-        val byKey = options.map(o => o.key -> o.value).toMap
+        val byKey  = options.map(o => o.key -> o.value).toMap
+        val labels = options.map(o => o.value -> o.key)
         for
           _             <- json.hasType("choice", name)
           key           <- json.field("choice").flatMap(_.string(name))
           choice        <- byKey.get(key).toRight(s"'$name': '$key' is not one of its options")
           confidence    <- json.field("confidence").flatMap(_.probability(name))
           probabilities <- json.probabilities(name)(byKey.get)
+          _             <- missing(labels, probabilities, s"'$name': no probability for the option")
         yield ChoiceAnswer(choice, confidence, probabilities)
+
+  /** An error for the first level or option that `probabilities` leaves out: a caller reads the
+    * map with `apply`, so every level and option must be in it (ADR-0053).
+    */
+  private def missing[K](expected: List[(K, String)], probabilities: Map[K, Probability], what: String) =
+    expected.find((k, _) => !probabilities.contains(k)).map((_, label) => s"$what '$label'").toLeft(())
+
+  private def text(value: ujson.Value): String = value.strOpt.getOrElse(value.render())
 
   extension (json: ujson.Value)
     private def field(name: String): Either[String, ujson.Value] =

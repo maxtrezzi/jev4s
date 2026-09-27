@@ -6,12 +6,12 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, M8 and T1 to T29 are done, and M7 is in progress; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, M8 and T1 to T30 are done, and M7 is in progress; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
 `derives JevScale` in Scala 3 or a `JevScale` written by hand in 2.13, and its answer names the
-`mostLikely` level (ADR-0034) and the score on a scale from 0 to 1, `normalized` (ADR-0047). A Noul's answer has `ifConfident`, "yes" or "no" when its probability is high enough (ADR-0050). In 2.13, `JevChoice.named` and `JevScale.named` list case objects
+`mostLikely` level (ADR-0034) and the score on a scale from 0 to 1, `normalized` (ADR-0047). A Noul's answer has `ifConfident`, "yes" or "no" when its probability is high enough (ADR-0050). The `probabilities` of an answer hold every level or option of its question, or the reply is `JevError.Decoding` (ADR-0053). In 2.13, `JevChoice.named` and `JevScale.named` list case objects
 once, named after them (ADR-0043); `Choice.keys` builds a Choice over runtime keys in both. A reply without its input tokens still answers, with
 `Reply.inputTokens` as `None` (ADR-0035). The 2.13 module compiles with Scala 2.13.16, the Scala
 of Spark 4.0 (ADR-0036). Each module also has its client, `JevClient`:

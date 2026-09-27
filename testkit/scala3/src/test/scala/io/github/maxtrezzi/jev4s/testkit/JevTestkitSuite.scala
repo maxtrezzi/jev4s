@@ -58,9 +58,16 @@ class JevTestkitSuite extends munit.FunSuite:
     assertEquals((answer.score, answer.normalized, answer.mostLikely), (0.0, 0.0, ujson.Str("Low")))
 
   test("a whole answer sets the confidence and the probabilities; the rest follows from the question"):
-    val team    = ChoiceAnswer(Team.Technical, p(0.6), Map(Team.Technical -> p(0.6), Team.Billing -> p(0.4)))
-    val feeling = ScoreAnswer(1.3, 0.0, Feeling.Calm, p(0.7), Map(Feeling.Annoyed -> p(0.7), Feeling.Angry -> p(0.3)))
-    val r       = ask(JevTestkit.answering(triage)((team = team, urgent = Probability(0.9), feeling = feeling)), triage)
+    val team =
+      ChoiceAnswer(Team.Technical, p(0.6), Map(Team.Technical -> p(0.6), Team.Billing -> p(0.4), Team.Sales -> p(0.0)))
+    val feeling = ScoreAnswer(
+      1.3,
+      0.0,
+      Feeling.Calm,
+      p(0.7),
+      Map(Feeling.Calm -> p(0.0), Feeling.Annoyed -> p(0.7), Feeling.Angry -> p(0.3)),
+    )
+    val r = ask(JevTestkit.answering(triage)((team = team, urgent = Probability(0.9), feeling = feeling)), triage)
     assertEquals(r.team, team)
     assertEquals(r.feeling, feeling.copy(normalized = 0.65, mostLikely = Feeling.Annoyed))
 
@@ -140,6 +147,22 @@ class JevTestkitSuite extends munit.FunSuite:
     assertEquals(
       intercept[IllegalArgumentException](JevTestkit.answering(risk)((risk = otherLevel))).getMessage,
       "'risk': \"Medium\" is not one of its levels",
+    )
+
+  test("a whole answer that leaves a level or an option out of its probabilities throws at once"):
+    val team = ChoiceAnswer(Team.Billing, p(1.0), Map(Team.Billing -> p(1.0), Team.Sales -> p(0.0)))
+    assertEquals(
+      intercept[IllegalArgumentException](
+        JevTestkit.answering(triage)((team = team, urgent = true, feeling = Feeling.Calm))
+      ).getMessage,
+      "'team': the answer gives no probability to its option Technical",
+    )
+    val feeling = ScoreAnswer(0.0, 0.0, Feeling.Calm, p(1.0), Map(Feeling.Calm -> p(1.0), Feeling.Angry -> p(0.0)))
+    assertEquals(
+      intercept[IllegalArgumentException](
+        JevTestkit.answering(triage)((team = Team.Billing, urgent = true, feeling = feeling))
+      ).getMessage,
+      "'feeling': the answer gives no probability to its level Annoyed",
     )
 
   test("a failing client returns its error on every call"):

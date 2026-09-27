@@ -27,6 +27,14 @@ the discussion starts from the reasons already written there.
   module goes first; the 2.13 module follows in its own style. Each module has a test kit,
   `jev4s-testkit`, in `testkit/`, which follows the same rules
   ([ADR-0048](docs/adr/0048-a-test-kit-answers-with-typed-values.md)).
+- **Keep the API of the last release, or say that you break it.** A patch version, such as
+  `0.1.1`, keeps the API of the earlier patches of its minor version, and CI checks it: MiMa
+  in both modules, and TASTy-MiMa for the Scala 3 types
+  ([ADR-0052](docs/adr/0052-mima-and-tasty-mima-check-each-patch-version.md)). If the check fails
+  because the change must break the API, say so in the pull request: the change then goes into
+  a new minor version, and the maintainer chooses it.
+- **Add a line to [`CHANGELOG.md`](CHANGELOG.md)**, under "Unreleased", for each change that a
+  user can see.
 - **Tests must cover every statement and branch, and survive mutation testing**
   ([ADR-0008](docs/adr/0008-full-coverage-and-mutation-testing.md)). If a mutant survives
   and no test can kill it, explain why in

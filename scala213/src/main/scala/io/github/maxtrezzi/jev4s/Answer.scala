@@ -21,7 +21,8 @@ final case class NoulAnswer(probability: Probability) extends Answer {
   * levels (for example 1.3), the level with the highest probability, how confident Jev is, and
   * the probability of every level. Each level is a value of type `L`: a value of your own type, as
   * in `probabilities.get(Mood.Angry)`, or the level as you gave it, as in
-  * `probabilities.get("Calm")`.
+  * `probabilities.get("Calm")`. Every level of the question is in `probabilities`: a reply that
+  * leaves a level out is a [[JevError.Decoding]].
   *
   * When two levels have the same highest probability, `mostLikely` is the lower one. It is not the
   * level nearest to `score`: with probabilities 0.5, 0, 0.5, the score is 1 and the middle level
@@ -39,7 +40,8 @@ final case class ScoreAnswer[L](
 ) extends Answer
 
 /** The answer to a [[Choice]]: the chosen value, how confident Jev is, and the probability of
-  * every option.
+  * every option. Every option of the question is in `probabilities`: a reply that leaves an option
+  * out is a [[JevError.Decoding]].
   */
 final case class ChoiceAnswer[C](choice: C, confidence: Probability, probabilities: Map[C, Probability])
     extends Answer {

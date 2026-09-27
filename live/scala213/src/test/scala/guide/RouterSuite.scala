@@ -19,7 +19,12 @@ class RouterSuite extends munit.FunSuite {
 
   test("a team that Jev is not sure of goes to a person") {
     val p      = (d: Double) => Probability.from(d).get
-    val unsure = ChoiceAnswer[Team](Team.Billing, p(0.6), Map(Team.Billing -> p(0.6), Team.Sales -> p(0.4)))
+    val unsure =
+      ChoiceAnswer[Team](
+        Team.Billing,
+        p(0.6),
+        Map(Team.Billing -> p(0.6), Team.Technical -> p(0.0), Team.Sales -> p(0.4))
+      )
     val client = JevTestkit.answering(team.is(unsure), urgent.is(true), feeling.is(Feeling.Angry))
     assertEquals(new Router(client).route(Tickets.doubleCharge), "a person, because Jev is not sure of the team")
   }

@@ -74,7 +74,7 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0018](0018-mutation-testing-runs-on-every-pull-request.md) | Mutation testing runs in CI on every pull request | Accepted |
 | [0019](0019-probability-literals-and-questions-compared-by-value.md) | Probability literals checked by the compiler, and questions compared by value | Accepted |
 | [0020](0020-code-stryker4s-cannot-mutate-is-mutated-by-hand.md) | Code Stryker4s cannot mutate is excluded, and its mutants are applied by hand | Accepted — static mutants widened by ADR-0024 |
-| [0021](0021-what-the-codec-keeps-from-a-jev-reply.md) | What the codec keeps from a Jev reply | Accepted — instructions and criteria amended by ADR-0031; shape of ScoreAnswer amended by ADR-0034; required fields amended by ADR-0035 |
+| [0021](0021-what-the-codec-keeps-from-a-jev-reply.md) | What the codec keeps from a Jev reply | Accepted — instructions and criteria amended by ADR-0031; shape of ScoreAnswer amended by ADR-0034; required fields amended by ADR-0035; complete probabilities amended by ADR-0053 |
 | [0022](0022-the-scala-3-client-api.md) | The Scala 3 client API, with compile-time checks and no inline code | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025 |
 | [0023](0023-the-scala-2-13-client-api.md) | The Scala 2.13 client API: typed keys over the Scala 3 client's pieces | Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; question match amended by ADR-0028; answers and `askMap` amended by ADR-0037; choice options amended by ADR-0043 |
 | [0024](0024-http-retries-and-configuration.md) | HTTP over java.net.http, the official SDKs' retries, and configuration from the environment | Accepted — 400 mapping amended by ADR-0026; API key and base URL amended by ADR-0027; server error message amended by ADR-0029; retry budget amended by ADR-0030; the caller's HTTP client amended by ADR-0038; network errors amended by ADR-0049 |
@@ -106,3 +106,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0050](0050-a-noul-answer-is-confident-on-either-side.md) | A Noul answer is confident on either side | Accepted |
 | [0051](0051-publish-with-sbt-from-a-tag-on-main.md) | Publish with sbt's own Central Portal support, from a tag on `main` | Accepted |
 | [0052](0052-mima-and-tasty-mima-check-each-patch-version.md) | MiMa and TASTy-MiMa check each patch version against its minor version | Accepted |
+| [0053](0053-an-answer-has-a-probability-for-every-level-and-option.md) | An answer has a probability for every level and option | Accepted |

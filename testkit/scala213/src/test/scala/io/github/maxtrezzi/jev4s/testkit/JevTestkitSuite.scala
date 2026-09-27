@@ -56,9 +56,18 @@ class JevTestkitSuite extends munit.FunSuite {
   }
 
   test("a whole answer sets the confidence and the probabilities; the rest follows from the question") {
-    val t = ChoiceAnswer[Team](Team.Technical, p(0.6), Map(Team.Technical -> p(0.6), Team.Billing -> p(0.4)))
-    val f =
-      ScoreAnswer[Feeling](1.3, 0.0, Feeling.Calm, p(0.7), Map(Feeling.Annoyed -> p(0.7), Feeling.Angry -> p(0.3)))
+    val t = ChoiceAnswer[Team](
+      Team.Technical,
+      p(0.6),
+      Map(Team.Technical -> p(0.6), Team.Billing -> p(0.4), Team.Sales -> p(0.0))
+    )
+    val f = ScoreAnswer[Feeling](
+      1.3,
+      0.0,
+      Feeling.Calm,
+      p(0.7),
+      Map(Feeling.Calm -> p(0.0), Feeling.Annoyed -> p(0.7), Feeling.Angry -> p(0.3))
+    )
     val client      = JevTestkit.answering(team.is(t), urgent.is(p(0.9)), feeling.is(f))
     val (tt, _, ff) = ok(client.ask("any state", team, urgent, feeling))
     assertEquals(tt, t)
@@ -127,6 +136,23 @@ class JevTestkitSuite extends munit.FunSuite {
     assertEquals(
       intercept[IllegalArgumentException](JevTestkit.answering(risk.is(otherLevel))).getMessage,
       "'risk': \"Medium\" is not one of its levels"
+    )
+  }
+
+  test("a whole answer that leaves a level or an option out of its probabilities throws at once") {
+    val t = ChoiceAnswer[Team](Team.Billing, p(1.0), Map(Team.Billing -> p(1.0), Team.Sales -> p(0.0)))
+    assertEquals(
+      intercept[IllegalArgumentException](
+        JevTestkit.answering(team.is(t), urgent.is(true), feeling.is(Feeling.Calm))
+      ).getMessage,
+      "'team': the answer gives no probability to its option Technical"
+    )
+    val f = ScoreAnswer[Feeling](0.0, 0.0, Feeling.Calm, p(1.0), Map(Feeling.Calm -> p(1.0), Feeling.Angry -> p(0.0)))
+    assertEquals(
+      intercept[IllegalArgumentException](
+        JevTestkit.answering(team.is(Team.Billing), urgent.is(true), feeling.is(f))
+      ).getMessage,
+      "'feeling': the answer gives no probability to its level Annoyed"
     )
   }
 
