@@ -57,6 +57,15 @@ jobs:
       - name: No Scaladoc warning
         if: matrix.module == 'scala3' && matrix.java == '21'
         run: python3 build/check-scaladoc.py
+      # ADR-0052: the API of the releases that this version keeps. MiMa compares the bytecode of
+      # the module and its test kit; TASTy-MiMa the Scala 3 types of jev4s_3. Before a patch
+      # version, such as 0.1.0-SNAPSHOT or 0.2.0, there is nothing to compare and both pass.
+      - name: Compatibility with the previous releases
+        if: matrix.java == '21'
+        run: sbt -batch ${{ matrix.module }}/mimaReportBinaryIssues ${{ matrix.module }}Testkit/mimaReportBinaryIssues
+      - name: TASTy compatibility with the previous releases
+        if: matrix.module == 'scala3' && matrix.java == '21'
+        run: sbt -batch scala3/tastyMiMaReportIssues
       # The Spark example (M8) runs Spark in local mode against a fake transport or a local server.
       # Spark 4.0 does not start on JDK 25, so it runs on 17 and 21 only.
       - name: Test the Spark example

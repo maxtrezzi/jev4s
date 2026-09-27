@@ -41,6 +41,8 @@ jobs:
           test "$versions" = "${GITHUB_REF_NAME#v}"
       - name: Test
         run: sbt -batch test
+      - name: Compatibility with the previous releases (ADR-0052)
+        run: sbt -batch mimaReportBinaryIssues scala3/tastyMiMaReportIssues
       - name: Import the signing key
         run: echo "$PGP_SECRET" | base64 --decode | gpg --batch --import
         env:
