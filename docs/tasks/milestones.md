@@ -344,7 +344,8 @@ Scala 3 or 2.13.
 
 ### M7 — Publishing
 
-**Status:** In progress — [ADR-0051](../adr/0051-publish-with-sbt-from-a-tag-on-main.md)
+**Status:** In progress — [ADR-0051](../adr/0051-publish-with-sbt-from-a-tag-on-main.md),
+[ADR-0052](../adr/0052-mima-and-tasty-mima-check-each-patch-version.md)
 
 **Branch:** `milestone/m7-publishing`
 
@@ -386,6 +387,12 @@ new project, Scala 3 or 2.13.
   tests, imports the key from `PGP_SECRET`, and runs `publishSigned sonaRelease`. actionlint
   finds no problem.
 - **`CHANGELOG.md`**, with the first release under "Unreleased".
+- **Compatibility checks**, option C of the four offered to the owner (ADR-0052):
+  sbt-mima-plugin 1.2.1 on the four published projects, sbt-tasty-mima 1.4.0 on `jev4s_3` with
+  the core 1.4.1, tasty-query 1.9.0 and `java.net.http` on its JDK classpath.
+  `compatibleReleases` in `build.sbt` derives the releases to compare with from the version:
+  `x.y.0` to `x.y.(z-1)`. CI runs them in the test job on JDK 21, and the release workflow
+  before signing.
 
 #### Found
 
@@ -397,7 +404,36 @@ new project, Scala 3 or 2.13.
 - **The version check of the workflow**, run locally: `print ThisBuild / version` prints each
   aggregated project's version; with the build at `0.1.0-SNAPSHOT`, the tag `v0.1.0` is refused.
 
-Left: MiMa and TASTy-MiMa, a decision for the owner; the README and the guides at the published
+- **What the checks catch, measured** against the build published as `0.1.0` to a scratch
+  repository and checked as `0.1.1-SNAPSHOT`: nothing when nothing changed; MiMa, a parameter
+  added to `NoulAnswer.ifConfident` in 2.13; TASTy-MiMa, `AnswerOf` answering `List[a]`, which
+  MiMa passes. Neither reports `AnswerOf` without its bound `<: Answer`, nor `a & Product` in
+  place of `a` (all answers are case classes, so that one breaks nobody).
+- **TASTy-MiMa 1.4.0 as released cannot read Scala 3.9**: `TASTy signature has wrong version.
+  expected: 28.7, found: 28.9`; with tasty-query 1.8.0, `expected: 28.8`. tasty-query 1.9.0
+  reads it.
+- **TASTy-MiMa cannot read the Scala 3 test kit**: tasty-query throws `AssertionError: TypeRef
+  ... NoulAnswer has no underlying because it refers to a ClassSymbol` while reducing
+  `FakeAnswer`, a match type on `AnswerOf` bounded by the union `Answer`, with no change at all.
+  Ten lines reproduce it outside jev4s, also on Scala 3.7.4 with the plugin's own versions:
+
+  ```scala
+  final case class NoulAnswer(p: Double)
+  final case class ScoreAnswer[L](level: L)
+  type Answer = NoulAnswer | ScoreAnswer[?]
+  trait Question[A <: Answer]
+  type AnswerOf[Q] <: Answer = Q match
+    case Question[a] => a
+  type FakeAnswer[Q] = AnswerOf[Q] match
+    case NoulAnswer     => Boolean
+    case ScoreAnswer[l] => l
+  ```
+
+  Reporting it to scalacenter/tasty-query is the owner's decision.
+- **MiMa fails when it has nothing to compare**, which is every `x.y.0`: `mimaFailOnNoPrevious`
+  is off.
+
+Left: the README and the guides at the published
 version, with the test kits' coordinates; the review of `dev` as released; the owner's steps
 (secrets, the repository public, protection on `dev` and `main`, private vulnerability
 reporting). The remote branches already merged were deleted on 2026-09-27.

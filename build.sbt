@@ -45,6 +45,38 @@ val fullCoverage = Seq(
   coverageFailOnMinimum      := true,
 )
 
+// ADR-0052: the releases whose API this version keeps. Under early-semver a patch version keeps
+// the API of every earlier patch of its minor version, so 0.1.2 is checked against 0.1.0 and
+// 0.1.1; a new minor version in 0.x may break it, so 0.2.0 is checked against nothing.
+def compatibleReleases(version: String): Set[String] =
+  version.takeWhile(_ != '-').split('.') match {
+    case Array(major, minor, patch) => (0 until patch.toInt).map(p => s"$major.$minor.$p").toSet
+    case _                          => sys.error(s"the version must be major.minor.patch: $version")
+  }
+
+// MiMa compares the bytecode with those releases, in every published project. A version x.y.0
+// has none, and that is not an error.
+ThisBuild / mimaFailOnNoPrevious := false
+val binaryCompatibility =
+  mimaPreviousArtifacts := compatibleReleases(version.value).map(organization.value %% moduleName.value % _)
+
+// TASTy-MiMa compares the Scala 3 types, which the bytecode erases: a match type such as
+// AnswerOf, the evidence of a derivation, a parameter that becomes varargs. Its 1.4.0 release
+// reads TASTy up to Scala 3.7; the core 1.4.1 with tasty-query 1.9.0 reads Scala 3.9.
+// Only jev4s_3: tasty-query fails with an AssertionError on the test kit's FakeAnswer, a match
+// type on a match type bounded by a union, even when nothing changed (docs/tasks, M7).
+val tastyCompatibility = Seq(
+  tastyMiMaPreviousArtifacts := compatibleReleases(version.value).map(organization.value %% moduleName.value % _),
+  tastyMiMaVersionOverride   := Some("1.4.1"),
+  tastyMiMaTastyQueryVersionOverride := Some("1.9.0"),
+  // It reads the JDK's java.base only; JdkTransport and JevClient use java.net.http, a module of
+  // its own.
+  tastyMiMaJavaBootClasspath := {
+    val base = tastyMiMaJavaBootClasspath.value
+    base ++ base.map(_.resolveSibling("java.net.http"))
+  },
+)
+
 lazy val scala3 = project
   .settings(
     name         := "jev4s",
@@ -61,6 +93,8 @@ lazy val scala3 = project
     goldenFiles,
     documentedErrors,
     fullCoverage,
+    binaryCompatibility,
+    tastyCompatibility,
   )
 
 lazy val scala213 = project
@@ -71,6 +105,7 @@ lazy val scala213 = project
     libraryDependencies ++= Seq(ujson, munit),
     goldenFiles,
     fullCoverage,
+    binaryCompatibility,
   )
 
 // ADR-0048: a test kit for each module, published as jev4s-testkit next to jev4s. Each one
@@ -85,6 +120,7 @@ lazy val scala3Testkit = project
     libraryDependencies += munit,
     goldenFiles,
     fullCoverage,
+    binaryCompatibility,
   )
 
 lazy val scala213Testkit = project
@@ -97,6 +133,7 @@ lazy val scala213Testkit = project
     libraryDependencies += munit,
     goldenFiles,
     fullCoverage,
+    binaryCompatibility,
   )
 
 // Tests and examples against the real API (M5). They cost money, so they are separate projects

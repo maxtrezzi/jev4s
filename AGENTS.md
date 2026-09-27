@@ -29,7 +29,8 @@ through OpenRouter or Vercel AI Gateway. An Apache Spark example of the 2.13 mod
 `docs/guide/spark.md`. Everything done is on `dev`, where CI
 runs it on JDK 17, 21 and 25, the Spark example on 17 and 21. The library publishes as `jev4s` and renames on request (ADR-0033), to Maven Central with sbt's own
 Central Portal support, from a tag on `main`, at the version written in `build.sbt` (ADR-0051);
-its jars use JDK 17's API.
+its jars use JDK 17's API. MiMa checks each patch version against the earlier patches of its
+minor version, and TASTy-MiMa does too for `jev4s_3` (ADR-0052).
 The repository is **private** for now.
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
@@ -117,6 +118,7 @@ sbt "project scala3" clean stryker                    # mutation testing, one mo
 sbt "project scala213" "set allowUnsafeScalaLibUpgrade := true" clean stryker   # the 2.13 module
 sbt "project scala3Testkit" clean stryker             # a test kit (ADR-0048); the 2.13 one also sets
                                                       # allowUnsafeScalaLibUpgrade on scala213 and scala213Testkit
+sbt mimaReportBinaryIssues scala3/tastyMiMaReportIssues   # the API of earlier patches kept (ADR-0052)
 python3 build/check-mutants.py scala3                 # fails on any undetected mutant
 python3 build/check-mutants.py testkit/scala3         # the same, for a test kit
 python3 build/check-docs.py                           # ADR index, status lines, links, quoted examples
@@ -158,6 +160,12 @@ only. Never set it in `build.sbt`: the check is what keeps the published module 
 tag is the owner's, like any push. Never add sbt-dynver or sbt-ci-release, and never drop the
 `-release` options: the published jar is built by one JDK, not by CI's matrix.
 
+**A patch version keeps the API of the earlier patches of its minor version (ADR-0052).**
+`compatibleReleases` in `build.sbt` derives them from the version; `x.y.0` has none. A break
+that must ship goes into a new minor version, never into a MiMa or TASTy-MiMa filter. The TASTy
+check needs its overrides, core 1.4.1 and tasty-query 1.9.0, to read Scala 3.9, and leaves out
+the Scala 3 test kit, whose `FakeAnswer` makes tasty-query fail.
+
 **Run `sbt clean` after a coverage run** before anything else that compiles: coverage
 instruments the classes, and a `publishLocal` from an instrumented build ships the
 instrumentation.
@@ -165,7 +173,8 @@ instrumentation.
 CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each module on JDK 17,
 21 and 25 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`),
 the Spark example's tests in the 2.13 job, runs coverage and Stryker4s with the mutant check per
-module, and runs the docs check and, for Scala 3, the Scaladoc check. Mutation testing runs on every pull request
+module, the compatibility checks of ADR-0052 on JDK 21, and runs the docs check and, for Scala 3,
+the Scaladoc check. Mutation testing runs on every pull request
 ([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md)); never point it at a
 project that calls the real API.
 

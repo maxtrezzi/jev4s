@@ -105,3 +105,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0049](0049-a-network-error-says-what-failed.md) | A network error says what failed | Accepted |
 | [0050](0050-a-noul-answer-is-confident-on-either-side.md) | A Noul answer is confident on either side | Accepted |
 | [0051](0051-publish-with-sbt-from-a-tag-on-main.md) | Publish with sbt's own Central Portal support, from a tag on `main` | Accepted |
+| [0052](0052-mima-and-tasty-mima-check-each-patch-version.md) | MiMa and TASTy-MiMa check each patch version against its minor version | Accepted |
