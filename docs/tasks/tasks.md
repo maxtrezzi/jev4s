@@ -734,7 +734,7 @@ and branch coverage in both, as T17 recorded. Mutation testing was not re-run.
 
 **Status:** Done 2026-09-25 — [ADR-0043](../adr/0043-2-13-options-and-levels-named-after-their-case-objects.md), [ADR-0045](../adr/0045-a-retry-policy-whose-wait-can-be-negative-is-an-error.md)
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T28, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T28, as the owner asked.
 
 Every change to the two published modules that the review planned, on one branch, so that the
 definition of done — coverage, mutants, both modules — runs once. T19, the documentation, uses
@@ -805,7 +805,7 @@ Out of scope, noted for later: a threshold on `NoulAnswer`, next to `ChoiceAnswe
 case once; `named` and `Choice.keys` are tested, a case class included for `named`; the
 definition of done holds in both modules.
 
-**Outcome.** Done on the working tree of `docs/plan-t18-t19`, together with T19, at the owner's
+**Outcome.** Done on the working tree of `task/t18-t28`, together with T19, at the owner's
 request.
 
 1. **Settled by the owner on 2026-09-25: the check joins `JdkTransport.problems`**, as
@@ -837,7 +837,7 @@ request.
 
 **Status:** Done 2026-09-25 — [ADR-0044](../adr/0044-documented-compile-errors-are-checked-by-a-test.md), [ADR-0046](../adr/0046-the-spark-example-holds-one-client-per-executor-jvm.md)
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T28, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T28, as the owner asked.
 
 The owner asked on 2026-09-25 for a README that stresses two things, each with an example a
 reader takes in at a glance: the Spark compatibility of the 2.13 module, and the robustness of
@@ -963,7 +963,7 @@ holds one client per executor JVM, measured; no recorded output in the README or
 comes from a run before this task's; the docs check passes; the definition of done holds for
 every test this task adds.
 
-**Outcome.** Done on the working tree of `docs/plan-t18-t19`, together with T18, at the owner's
+**Outcome.** Done on the working tree of `task/t18-t28`, together with T18, at the owner's
 request. The owner accepted ADR-0046 on 2026-09-25, and confirmed the shape of the cases of
 ADR-0044 and the rules of ADR-0045 described here.
 
@@ -1037,7 +1037,7 @@ examples, and were left as they are.
 
 **Status:** Done 2026-09-25 — [ADR-0047](../adr/0047-a-score-answer-carries-its-normalized-score.md)
 
-**Branch:** `docs/plan-t18-t19`, with T18 and T19, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 and T19, as the owner asked.
 
 T19's helper `normalized` needed the question next to the answer: in 2.13 a key does not give
 back its `Score`, so chapter 6 made each key in the call only to pass the Score to the helper.
@@ -1065,7 +1065,7 @@ same priority.
 
 **Status:** Done 2026-09-25 — [ADR-0048](../adr/0048-a-test-kit-answers-with-typed-values.md)
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T20, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T20, as the owner asked.
 
 D4 closed on 2026-09-25 with the owner's choice of a separate artifact. The work: a test kit for
 each module, its tests, CI, and chapter 12 of both tutorials.
@@ -1110,7 +1110,7 @@ added to its entry.
 
 **Status:** Done 2026-09-25 — [ADR-0049](../adr/0049-a-network-error-says-what-failed.md)
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T21, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
 
 T1 noted that `JevError.Network` drops the cause. With a message only, a timeout, a refused
 connection and a refused certificate look the same, and all are retried, a certificate that
@@ -1143,7 +1143,7 @@ in both modules.
 
 **Status:** Done 2026-09-25 — [ADR-0050](../adr/0050-a-noul-answer-is-confident-on-either-side.md)
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T21, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
 
 T18 noted a threshold on `NoulAnswer`, next to `ChoiceAnswer.ifConfident`.
 
@@ -1169,7 +1169,7 @@ modules, tested at the boundaries; the tutorials show it.
 
 **Status:** Done 2026-09-25
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T21, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
 
 JDK 25 is the long-term-support release after 21. The tests of this repository ran on it for
 T18 to T21, on this machine, but CI tested 17 and 21 only, and the README asked for 21 or 17.
@@ -1190,7 +1190,7 @@ jev4s supports.
 
 **Status:** Done 2026-09-25
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T21, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T21, as the owner asked.
 
 jev4s handles an API key, and the repository will be public. A reader who finds a problem with
 the key needs a private way to report it, and a bug report needs the versions and no key.
@@ -1214,7 +1214,7 @@ for what a report needs.
 
 **Status:** Done 2026-09-25
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T25, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T25, as the owner asked.
 
 M1 noted that the Scala 3 Scaladoc prints `Flag -classpath set repeatedly`, a warning that
 mattered once M7 publishes the documentation jar. Scaladoc 3.9.0 prints it as `Option -classpath
@@ -1250,7 +1250,7 @@ was updated`, in `scala3` and in `scala3Testkit`.
 
 **Status:** Done 2026-09-25
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T26, as the owner asked.
+**Branch:** `task/t18-t28`, with T18 to T26, as the owner asked.
 
 A review of the code, the documentation and the examples that T18 to T26 changed, on the working
 tree, before M7.
@@ -1312,7 +1312,7 @@ tree, before M7.
 
 **Status:** Done 2026-09-25
 
-**Branch:** `docs/plan-t18-t19`, with T18 to T27, before its first commit.
+**Branch:** `task/t18-t28`, with T18 to T27, before its first commit.
 
 A review of the working tree of T18 to T27 on 2026-09-25. On a copy of that tree, the tests,
 the formatting check, coverage, the Spark tests on JDK 21, `check-docs.py` and
@@ -1379,7 +1379,8 @@ both modules.
    `sealed trait Size` that does not extend `Product`. ADR-0043, not yet on `dev`, says so in its
    context and its decision; § 4 of `docs/guide/scala213.md` says that a sealed trait works too,
    and that `extends Product with Serializable` is not needed.
-3. The owner kept the branch: the `Branch:` lines of T18 and T19 now name `docs/plan-t18-t19`.
+3. The owner renamed the branch to `task/t18-t28` before its first commit, a name for what it
+   holds; the `Branch:` and `Outcome` lines of T18 to T28 name it.
 4. The sentence on the Spark tests' JDK follows the build commands in `AGENTS.md`.
 5. The README says the module is built for every Spark 4 and tested on 4.0.4, and the Spark
    guide says the same in its opening and in chapter 1.
