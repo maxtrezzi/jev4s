@@ -2,7 +2,7 @@
 // `%% "jev4s"` resolves to jev4s_3 or jev4s_2.13 from the user's own Scala version.
 
 ThisBuild / organization := "io.github.maxtrezzi"
-ThisBuild / version      := "0.1.0"
+ThisBuild / version      := "0.1.1-SNAPSHOT"
 ThisBuild / description  := "An unofficial Scala client for Jev, the typed-decision model of TypeSafe AI."
 ThisBuild / licenses     := List("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
 ThisBuild / homepage     := Some(url("https://github.com/maxtrezzi/jev4s"))
