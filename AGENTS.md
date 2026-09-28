@@ -6,7 +6,8 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, M8 and T1 to T30 are done, and M7 is in progress; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M6, M8 and T1 to T30 are done, and M7 is in progress: the build is at `0.1.0`, which
+publishes when the owner pushes the tag `v0.1.0` on `main`; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from

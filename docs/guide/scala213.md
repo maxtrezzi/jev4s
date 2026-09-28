@@ -30,13 +30,12 @@ few hundred input tokens.
 
 You need **Scala 2.13.16 or later**, and JDK 17 or later: CI tests jev4s on JDK 17, 21 and
 25. Use JDK 21 or later if you can: a call that waits costs little on a virtual thread, and
-[chapter 13](#13-many-requests) uses them. jev4s is not on Maven Central yet: clone this
-repository and run `sbt publishLocal` in it. Then, in your project:
+[chapter 13](#13-many-requests) uses them. Add jev4s to your project:
 
 ```scala
 // build.sbt
 scalaVersion := "2.13.16"
-libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0-SNAPSHOT"
+libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"
 ```
 
 Put your API key from TypeSafe AI in the environment variable `TYPESAFE_API_KEY`, in the shell
@@ -805,7 +804,7 @@ give, and never uses the network. Add it to the tests of your project:
 
 ```scala
 // build.sbt
-libraryDependencies += "io.github.maxtrezzi" %% "jev4s-testkit" % "0.1.0-SNAPSHOT" % Test
+libraryDependencies += "io.github.maxtrezzi" %% "jev4s-testkit" % "0.1.0" % Test
 ```
 
 <!-- snippet: live/scala213/src/test/scala/guide/RouterSuite.scala#test -->

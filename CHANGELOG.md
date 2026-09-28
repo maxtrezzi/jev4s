@@ -11,7 +11,7 @@ Each version publishes four artifacts, all with the same version: `jev4s_3`, `je
 A new kind of `JevEvent` is always listed here: a `match` on the events that lists every case
 warns until it handles the new one.
 
-## Unreleased
+## 0.1.0
 
 The first release.
 
