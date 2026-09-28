@@ -66,7 +66,7 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0010](0010-reply-metadata-through-onreply.md) | Reply metadata through `onReply` | Superseded by ADR-0025 |
 | [0011](0011-record-decisions-as-adrs.md) | Record decisions as ADRs, discussions outside the repository | Accepted |
 | [0012](0012-track-work-items-in-docs-tasks.md) | Track work items in `docs/tasks/` | Accepted |
-| [0013](0013-one-branch-per-task-work-lands-on-dev.md) | One branch per task; work lands on `dev`, `main` carries releases | Accepted |
+| [0013](0013-one-branch-per-task-work-lands-on-dev.md) | One branch per task; work lands on `dev`, `main` carries releases | Accepted — merging `main` into `dev` amended by ADR-0054 |
 | [0014](0014-agent-guidance-lives-in-agents-md.md) | Agent guidance lives in `AGENTS.md` | Accepted |
 | [0015](0015-user-facing-prose-for-a-non-native-reader.md) | User-facing prose is written for a non-native reader | Accepted |
 | [0016](0016-undetected-mutants-are-checked-from-the-report.md) | Undetected mutants are checked from the report, not by Stryker's threshold | Accepted |
@@ -104,6 +104,7 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0048](0048-a-test-kit-answers-with-typed-values.md) | A test kit answers with typed values | Accepted |
 | [0049](0049-a-network-error-says-what-failed.md) | A network error says what failed | Accepted |
 | [0050](0050-a-noul-answer-is-confident-on-either-side.md) | A Noul answer is confident on either side | Accepted |
-| [0051](0051-publish-with-sbt-from-a-tag-on-main.md) | Publish with sbt's own Central Portal support, from a tag on `main` | Accepted |
+| [0051](0051-publish-with-sbt-from-a-tag-on-main.md) | Publish with sbt's own Central Portal support, from a tag on `main` | Accepted — release steps amended by ADR-0054 |
 | [0052](0052-mima-and-tasty-mima-check-each-patch-version.md) | MiMa and TASTy-MiMa check each patch version against its minor version | Accepted |
 | [0053](0053-an-answer-has-a-probability-for-every-level-and-option.md) | An answer has a probability for every level and option | Accepted |
+| [0054](0054-dev-records-each-release-commit-of-main.md) | `dev` records each release commit of `main` with an ours-merge | Accepted |
