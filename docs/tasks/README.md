@@ -28,7 +28,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Done |
 | [M5](milestones.md#m5--real-http) | Real HTTP | Done |
 | [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | Done |
-| [M7](milestones.md#m7--publishing) | Publishing | In progress |
+| [M7](milestones.md#m7--publishing) | Publishing | Done |
 | [M8](milestones.md#m8--optional) | Optional | Done |
 | [T1](tasks.md#t1--scala-3-model-polish-before-m2) | Scala 3 model polish before M2 | Done |
 | [T2](tasks.md#t2--structured-instructions-and-criteria) | Structured instructions and criteria | Done |

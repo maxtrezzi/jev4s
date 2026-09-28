@@ -344,7 +344,7 @@ Scala 3 or 2.13.
 
 ### M7 — Publishing
 
-**Status:** In progress — [ADR-0051](../adr/0051-publish-with-sbt-from-a-tag-on-main.md),
+**Status:** Done 2026-09-28 — [ADR-0051](../adr/0051-publish-with-sbt-from-a-tag-on-main.md),
 [ADR-0052](../adr/0052-mima-and-tasty-mima-check-each-patch-version.md)
 
 **Branch:** `milestone/m7-publishing`
@@ -441,11 +441,24 @@ new project, Scala 3 or 2.13.
 - **MiMa fails when it has nothing to compare**, which is every `x.y.0`: `mimaFailOnNoPrevious`
   is off.
 
-Left: the owner's steps (the four secrets of the release workflow, the repository public,
-protection on `dev` and `main`, private vulnerability reporting); the squashed pull request from
-`dev` to `main` whose subject is `0.1.0`, and the tag `v0.1.0` on its commit (ADR-0051); after the
-release, `dev` at `0.1.1-SNAPSHOT`; a new project that resolves `0.1.0`, Scala 3 and 2.13, which
-is the "done when". The remote branches already merged were deleted on 2026-09-27.
+- **Released on 2026-09-28.** The four secrets were set: `PGP_SECRET` and `PGP_PASSPHRASE` from a
+  new signing key, `maxtrezzi (release)`, RSA 4096, fingerprint
+  `EB71EAD0CD7AEE667D093D309EC2E218A2086E72`, on `keyserver.ubuntu.com` and `keys.openpgp.org`,
+  because the passphrase of the key used for modelrack4j was not recorded; `SONATYPE_USERNAME` and
+  `SONATYPE_PASSWORD` from the Portal token in the owner's Maven settings. `0.1.0` was squashed
+  onto `main` as `dd3dcec` (#26), whose tree is `dev`'s, and the tag `v0.1.0` on it ran
+  `release.yml` to success in 14 minutes. The four POMs were on `repo1.maven.org` when it ended.
+- **The "done when" holds**, checked on 2026-09-28 with two new sbt projects that resolve
+  `0.1.0` from Maven Central: Scala 3.9.0 compiles code that asks with a named tuple, and a test
+  with `jev4s-testkit` passes; Scala 2.13.16 asks through a fake transport and prints
+  `Right(true)`. The published `jev4s_3-0.1.0.jar` has a good signature from the new key, and its
+  `META-INF/` holds `LICENSE` and `NOTICE`.
+- The GitHub Release `v0.1.0` carries the CHANGELOG's section. `dev` is at `0.1.1-SNAPSHOT`, so
+  MiMa and TASTy-MiMa now compare it with the published `0.1.0` (ADR-0052).
+
+Left for the owner, outside M7: the repository public, protection on `dev` and `main`
+(ADR-0013), and private vulnerability reporting (`SECURITY.md`). The remote branches already
+merged were deleted on 2026-09-27 and 2026-09-28.
 
 ### M8 — Optional
 
