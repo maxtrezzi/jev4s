@@ -1,0 +1,50 @@
+package guide
+
+import io.github.maxtrezzi.jev4s._
+
+// snippet: team
+sealed abstract class Team extends Product with Serializable
+object Team {
+  case object Billing   extends Team
+  case object Technical extends Team
+  case object Sales     extends Team
+
+  implicit val choices: JevChoice[Team] = JevChoice.named(Billing, Technical, Sales)
+}
+// end: team
+
+// snippet: feeling
+sealed abstract class Feeling extends Product with Serializable
+object Feeling {
+  case object Calm    extends Feeling
+  case object Annoyed extends Feeling
+  case object Angry   extends Feeling
+
+  implicit val levels: JevScale[Feeling] = JevScale.named(Calm, Annoyed, Angry) // from low to high
+}
+// end: feeling
+
+// snippet: questions
+object Triage {
+  val team    = Choice.of[Team]("Which team should handle `message`?").as("team") // the options come from Team
+  val urgent  = Noul("Does the customer need an answer today?").as("urgent")
+  val feeling = Score.of[Feeling]("How does the customer feel in `message`?").as("feeling")
+}
+// end: questions
+
+// snippet: ask
+object ThreeQuestions {
+  import Triage._
+
+  def main(args: Array[String]): Unit =
+    client.ask(Tickets.doubleCharge, team, urgent, feeling) match { // the Ticket of chapter 3, the keys above
+      case Right((t, u, f)) => // the answers, in the order of the keys
+        val chosen: Team       = t.choice // one of the cases of Team
+        val isUrgent: Boolean  = u.isYes
+        val score: Double      = f.score  // from 0 (Calm) to 2 (Angry)
+        val angry: Probability = f.probabilities(Feeling.Angry)
+        println(s"$chosen, urgent: $isUrgent, feeling: $score, angry: ${angry.value}")
+      case Left(error) => println(s"Jev did not answer: $error")
+    }
+}
+// end: ask

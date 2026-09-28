@@ -1,0 +1,11 @@
+{
+  "case": "score",
+  "why": "a Score with three levels",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "requested_model": "jev-1.13.0",
+  "recorded_at": "2026-09-22T09:19:21+00:00",
+  "endpoint": "POST /v1/systemone"
+}

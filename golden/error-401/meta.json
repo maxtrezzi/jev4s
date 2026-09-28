@@ -1,0 +1,18 @@
+{
+  "case": "error-401",
+  "why": "a valid request with a made-up API key",
+  "status": 401,
+  "headers": {
+    "connection": "close",
+    "content-length": "138",
+    "content-type": "application/json",
+    "date": "Fri, 25 Sep 2026 05:27:02 GMT",
+    "server": "istio-envoy",
+    "x-envoy-upstream-service-time": "4",
+    "x-typesafe-request-id": "req_01a0d7080800781ab2213e51b85553ff"
+  },
+  "elapsed_ms": 548,
+  "requested_model": "jev-1.13.0",
+  "recorded_at": "2026-09-25T05:27:02+00:00",
+  "endpoint": "POST /v1/systemone"
+}

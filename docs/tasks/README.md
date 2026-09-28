@@ -16,22 +16,54 @@ only gets work done closes by being marked `Done`, with what it found.
 
 - [`milestones.md`](milestones.md) — M1–M8. What ships, in what order.
 - [`open-decisions.md`](open-decisions.md) — items waiting on the owner, not on work.
+- [`tasks.md`](tasks.md) — work items between milestones (T1…).
 
 ## Status board
 
 | Item | Title | Status |
 |---|---|---|
-| [M1](milestones.md#m1--base-two-modules-and-the-model) | Base: two modules and the model | Not started |
-| [M2](milestones.md#m2--json-codec) | JSON (`Codec`) | Not started |
-| [M3](milestones.md#m3--scala-3-api) | Scala 3 API | Not started |
-| [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Not started |
-| [M5](milestones.md#m5--real-http) | Real HTTP | Not started |
-| [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | Not started |
-| [M7](milestones.md#m7--publishing) | Publishing | Not started |
-| [M8](milestones.md#m8--optional) | Optional | Not started |
-| [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Needs decision |
-| [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Needs decision |
-| [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Blocked on M1 |
+| [M1](milestones.md#m1--base-two-modules-and-the-model) | Base: two modules and the model | Done |
+| [M2](milestones.md#m2--json-codec) | JSON (`Codec`) | Done |
+| [M3](milestones.md#m3--scala-3-api) | Scala 3 API | Done |
+| [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Done |
+| [M5](milestones.md#m5--real-http) | Real HTTP | Done |
+| [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | Done |
+| [M7](milestones.md#m7--publishing) | Publishing | In progress |
+| [M8](milestones.md#m8--optional) | Optional | Done |
+| [T1](tasks.md#t1--scala-3-model-polish-before-m2) | Scala 3 model polish before M2 | Done |
+| [T2](tasks.md#t2--structured-instructions-and-criteria) | Structured instructions and criteria | Done |
+| [T3](tasks.md#t3--newer-major-versions-of-the-github-actions) | Newer major versions of the GitHub actions | Done |
+| [T4](tasks.md#t4--fixes-from-the-review-of-the-integrated-branch) | Fixes from the review of the integrated branch | Done |
+| [T5](tasks.md#t5--a-time-limit-on-the-retries-of-a-call) | A time limit on the retries of a call | Done |
+| [T6](tasks.md#t6--user-guides) | User guides | Done |
+| [T7](tasks.md#t7--a-score-typed-by-the-callers-enum) | A Score typed by the caller's enum | Done |
+| [T8](tasks.md#t8--a-reply-without-input-tokens-still-answers) | A reply without input tokens still answers | Done |
+| [T9](tasks.md#t9--the-213-module-on-scala-21316) | The 2.13 module on Scala 2.13.16 | Done |
+| [T10](tasks.md#t10--typed-tuples-from-the-213-client) | Typed tuples from the 2.13 client | Done |
+| [T11](tasks.md#t11--the-callers-own-http-client) | The caller's own HTTP client | Done |
+| [T12](tasks.md#t12--scaladoc-fixes) | Scaladoc fixes | Done |
+| [T13](tasks.md#t13--a-guide-section-on-gateways) | A guide section on gateways | Done |
+| [T14](tasks.md#t14--a-guide-chapter-on-many-requests) | A guide chapter on many requests | Done |
+| [T15](tasks.md#t15--every-header-of-a-real-reply) | Every header of a real reply | Done |
+| [T16](tasks.md#t16--the-request-id-of-each-reply) | The request id of each reply | Done |
+| [T17](tasks.md#t17--a-review-before-the-first-release) | A review before the first release | Done |
+| [T18](tasks.md#t18--library-fixes-and-213-options-and-levels-without-repeated-names) | Library fixes, and 2.13 options and levels without repeated names | Done |
+| [T19](tasks.md#t19--documentation-and-examples-spark-4-the-scala-3-compiler-and-real-outputs) | Documentation and examples: Spark 4, the Scala 3 compiler, and real outputs | Done |
+| [T20](tasks.md#t20--a-scores-answer-carries-its-normalized-score) | A Score's answer carries its normalized score | Done |
+| [T21](tasks.md#t21--a-test-kit-that-answers-with-typed-values) | A test kit that answers with typed values | Done |
+| [T22](tasks.md#t22--a-network-error-that-says-what-failed) | A network error that says what failed | Done |
+| [T23](tasks.md#t23--a-threshold-on-a-nouls-answer) | A threshold on a Noul's answer | Done |
+| [T24](tasks.md#t24--jdk-25-tested-and-declared) | JDK 25, tested and declared | Done |
+| [T25](tasks.md#t25--a-security-policy-and-issue-forms) | A security policy and issue forms | Done |
+| [T26](tasks.md#t26--scaladoc-warnings-fail-the-build) | Scaladoc warnings fail the build | Done |
+| [T27](tasks.md#t27--fixes-from-the-review-of-t18-to-t26) | Fixes from the review of T18 to T26 | Done |
+| [T28](tasks.md#t28--fixes-from-a-second-review-of-t18-to-t27) | Fixes from a second review of T18 to T27 | Done |
+| [T29](tasks.md#t29--the-readme-leads-with-direct-style) | The README leads with direct style | Done |
+| [T30](tasks.md#t30--a-review-before-the-release) | A review before the release | Done |
+| [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
+| [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
+| [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |
+| [D4](open-decisions.md#d4--a-test-helper-that-answers-with-typed-values) | A test helper that answers with typed values | Done |
 
 ## Conventions
 

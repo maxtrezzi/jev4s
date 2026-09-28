@@ -8,7 +8,8 @@ writing an ADR ([ADR-0011](../adr/0011-record-decisions-as-adrs.md)). An entry m
 
 ### D1 — Scala 3 target version
 
-**Status:** Needs decision
+**Status:** Done 2026-09-22 — [ADR-0017](../adr/0017-scala-3-9-lts.md): Scala 3.9.0 LTS,
+superseding ADR-0006
 
 [ADR-0006](../adr/0006-scala-3-7-rather-than-3-3-lts.md) compiles the Scala 3 module with 3.7.3,
 for named tuples, and excludes users on 3.3 LTS. Now that the Scala 3 module is the showcase
@@ -16,18 +17,83 @@ for named tuples, and excludes users on 3.3 LTS. Now that the Scala 3 module is 
 a Scala 3 LTS release with named tuples exists, it is the natural target. To settle: check the
 current Scala 3 release and LTS lines at the source, then keep 3.7.3 or supersede ADR-0006.
 
+**Found 2026-09-21:** it exists. The download page of scala-lang.org lists **3.9.0 as the current
+3.9.x LTS release**, released on 2026-09-03, next to 3.3.8 as the current 3.3.x LTS. Named
+tuples are standard since 3.7, so 3.9 has them. M1 still compiles with 3.7.3, as ADR-0006 says.
+
+**Found 2026-09-22, on 3.9.0:**
+
+- The page now says "Scala LTS currently 3.9.0 — advised to be used for publishing libraries".
+  3.9.0 is on Maven Central; the newest release there is 3.10.0-RC2.
+- The switch needed no source change. `scala3` compiles with `-Werror`, and gives the same
+  22 tests, 100% statement and branch coverage, and 54 mutants (52 killed, 2 compile errors
+  from `strictEquality`, as in M1). The Stryker4s run took about 11 s, as in M1.
+- The Scaladoc warning from M1 is still there, with a new text:
+  `Option -classpath was updated`. It does not fail `scala3/doc`. It still matters in M7.
+
 ### D2 — The name "Jev" in the library name
 
-**Status:** Needs decision
+**Status:** Done 2026-09-22 —
+[ADR-0033](../adr/0033-publish-as-jev4s-and-rename-on-request.md)
 
 "Jev" is a TypeSafe AI product name ([ADR-0007](../adr/0007-name-coordinates-and-package.md)).
 Should the owner ask TypeSafe AI before publishing under `jev4s`, or publish and rename if they
 ask?
 
+**2026-09-22:** the owner keeps D2 open until M7. It matters only when the coordinates are
+published, and a name on Maven Central cannot be taken back. Before M7: read TypeSafe AI's terms
+of use and any trademark or brand guidelines for a rule on names used by third-party libraries.
+
+#### Found
+
+- **TypeSafe AI publishes no brand or trademark guidelines for third-party projects.** The Legal
+  page lists the Data Processing Agreement, the Master Customer Agreement and the Privacy Policy
+  only. The Master Customer Agreement, 16.4 "Publicity", grants neither party the right to use
+  the name, brand or logo of the other; it does not forbid naming them.
+- **The community already publishes under the marks**: `scala-jev-sdk` is on Maven Central, and
+  `zio-typesafe-ai` carries the company name.
+- **The owner wrote to TypeSafe AI on 2026-09-22**, to `privacy@typesafe.ai`, the only address
+  the documentation publishes, asking them to forward it to the right team and asking whether the name is allowed inside a
+  third-party client's name and whether guidelines exist, and stating that the library publishes
+  as `jev4s` and changes its name at their request. The answer, of either kind, is recorded here
+  when it arrives.
+- The decision is [ADR-0033](../adr/0033-publish-as-jev4s-and-rename-on-request.md): publish as
+  `jev4s` without waiting, and rename on request. M7 is unblocked.
+
 ### D3 — When mutation testing runs in CI
 
-**Status:** Blocked on M1
+**Status:** Done 2026-09-22 — [ADR-0018](../adr/0018-mutation-testing-runs-on-every-pull-request.md):
+on every pull request, reopened if a module job passes 5 minutes
 
 [ADR-0008](../adr/0008-full-coverage-and-mutation-testing.md) runs Stryker4s on every pull
 request while that is affordable, otherwise nightly. M1 gives the first measurement of how long
 a run takes in each module; decide then.
+
+**Measured in M1:** about 11 s of wall time per module on the development machine, sbt start-up
+included, for 54 mutants each. The CI workflow of M1 runs it in each module job on every pull
+request, as ADR-0008 says by default. The owner decides whether that stays.
+
+### D4 — A test helper that answers with typed values
+
+**Status:** Done 2026-09-25 — [ADR-0048](../adr/0048-a-test-kit-answers-with-typed-values.md)
+
+Chapter 12 of both tutorials tests the caller's code over `JevClient.withTransport`, with a reply
+written in the API's JSON (`guide.RouterSuite`), while the concepts guide says "With jev4s you
+never write this JSON". A fake that answers with typed values — the answers of a named tuple in
+Scala 3, of the keys in 2.13 — would keep a caller's tests in Scala, and in the types of its
+questions.
+
+The client decodes JSON from a `Transport`, so a helper either encodes typed answers back into the
+API's JSON, which needs an encoder of answers next to the `Codec`'s decoder, or answers without a
+transport. `typesafe-sdk-scala` records and replays real replies instead (its README, read
+2026-09-25). The options seen so far:
+
+- a helper in each published module, that turns typed answers into a reply;
+- a separate test artifact, `jev4s-testkit`, which M7 would publish too;
+- no helper: the chapter uses the files in `golden/` as its fixtures, and says so.
+
+Closes with an ADR; the work it decides becomes a task.
+
+**Decided by the owner on 2026-09-25: a separate artifact, `jev4s-testkit`**, built at once as
+T21 ([ADR-0048](../adr/0048-a-test-kit-answers-with-typed-values.md)).
+

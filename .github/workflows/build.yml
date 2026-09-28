@@ -11,13 +11,141 @@ permissions:
   contents: read
 
 jobs:
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      # One config, two dialects (.scalafmt.conf). The live projects are not aggregated by the
+      # root, so they are checked by name.
+      - name: Check formatting
+        run: sbt -batch scalafmtCheckAll scalafmtSbtCheck scala3Live/scalafmtCheckAll scala213Live/scalafmtCheckAll scala213Spark/scalafmtCheckAll
+
+  test:
+    # The modules share no code (ADR-0009): each is tested on its own, on each supported JDK.
+    name: test ${{ matrix.module }} on JDK ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [scala3, scala213]
+        java: ['17', '21', '25']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      # The live project is compiled, and only the tests of the guides run (package guide): they
+      # use a fake transport or a local server. LiveSuite calls the paid API, and never runs here.
+      # Scaladoc is built too: a comment it cannot read fails publishLocal, and no test sees it.
+      - name: Test, build the Scaladoc, compile the live project, and run the guides' tests
+        run: sbt -batch "project ${{ matrix.module }}" test doc "${{ matrix.module }}Live/testOnly guide.*"
+      # The test kit of the module (ADR-0048), published next to it.
+      - name: Test the test kit and build its Scaladoc
+        run: sbt -batch ${{ matrix.module }}Testkit/test ${{ matrix.module }}Testkit/doc
+      # Scala 3's Scaladoc does not take -Werror, so a link it cannot resolve is only a warning.
+      # The 2.13 Scaladoc takes it, and fails above.
+      - name: No Scaladoc warning
+        if: matrix.module == 'scala3' && matrix.java == '21'
+        run: python3 build/check-scaladoc.py
+      # ADR-0052: the API of the releases that this version keeps. MiMa compares the bytecode of
+      # the module and its test kit; TASTy-MiMa the Scala 3 types of jev4s_3. Before a patch
+      # version, such as 0.1.0-SNAPSHOT or 0.2.0, there is nothing to compare and both pass.
+      - name: Compatibility with the previous releases
+        if: matrix.java == '21'
+        run: sbt -batch ${{ matrix.module }}/mimaReportBinaryIssues ${{ matrix.module }}Testkit/mimaReportBinaryIssues
+      - name: TASTy compatibility with the previous releases
+        if: matrix.module == 'scala3' && matrix.java == '21'
+        run: sbt -batch scala3/tastyMiMaReportIssues
+      # The Spark example (M8) runs Spark in local mode against a fake transport or a local server.
+      # Spark 4.0 does not start on JDK 25, so it runs on 17 and 21 only.
+      - name: Test the Spark example
+        if: matrix.module == 'scala213' && matrix.java != '25'
+        run: sbt -batch scala213Spark/test
+
+  coverage:
+    # ADR-0008: below 100% statement or branch coverage the build fails.
+    name: coverage ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [scala3, scala213]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - name: Test with coverage
+        run: sbt -batch "project ${{ matrix.module }}" clean coverage test coverageReport
+      - name: Test the test kit with coverage
+        run: sbt -batch "project ${{ matrix.module }}Testkit" clean coverage test coverageReport
+      - name: Keep the coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-${{ matrix.module }}
+          path: ${{ matrix.module }}/target/scala-*/scoverage-report/
+          if-no-files-found: ignore
+
+  mutation:
+    # On every pull request (ADR-0018).
+    name: mutation ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [scala3, scala213]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      # Stryker4s puts its test runner, built with scala-library 2.13.18, on the classpath of the
+      # 2.13 module, and sbt stops a 2.13.16 build that sees a newer library (SIP-51). The setting
+      # allows it for this run only; the other jobs keep the check that guards ADR-0036.
+      - name: Mutation testing
+        run: sbt -batch "project ${{ matrix.module }}" "set scala213 / allowUnsafeScalaLibUpgrade := true" clean stryker
+      # Stryker's break threshold cannot exceed 99; this fails on any undetected mutant, and on a
+      # mutant Stryker4s ignored without a @SuppressWarnings (ADR-0016, ADR-0024).
+      - name: No undetected mutant
+        run: python3 build/check-mutants.py ${{ matrix.module }}
+      - name: Mutation testing of the test kit
+        run: sbt -batch "project ${{ matrix.module }}Testkit" "set scala213 / allowUnsafeScalaLibUpgrade := true" "set scala213Testkit / allowUnsafeScalaLibUpgrade := true" clean stryker
+      - name: No undetected mutant in the test kit
+        run: python3 build/check-mutants.py testkit/${{ matrix.module }}
+      - name: Keep the mutation report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutation-${{ matrix.module }}
+          path: |
+            ${{ matrix.module }}/target/stryker4s-report/
+            testkit/${{ matrix.module }}/target/stryker4s-report/
+          if-no-files-found: ignore
+
   docs:
     name: docs consistency
     runs-on: ubuntu-latest
     steps:
       # The checker resolves links against `git ls-files`, not the file system: a target that
       # is git-ignored resolves on a contributor's machine and fails for everyone who clones.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check ADR status lines, the index, and every link
         run: python3 build/check-docs.py
