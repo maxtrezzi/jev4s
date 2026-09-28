@@ -86,7 +86,8 @@ finding is never appended to an ADR; it goes to `docs/tasks/`.
 ([ADR-0013](docs/adr/0013-one-branch-per-task-work-lands-on-dev.md))
 
 - **`dev` is the default branch. `main` carries releases only.** Never commit to either
-  directly, never branch from `main`, never merge `main` into `dev`, never rebase `dev` onto it.
+  directly, never branch from `main`, never rebase `dev` onto it, and never merge `main` into `dev`
+  but for the ours-merge of each release commit (ADR-0054).
 - **Branch from `dev` before starting**, one branch per work item, named after it:
   `milestone/m1-base`, `task/<slug>`, `decision/d1-<slug>`, `docs/<slug>`. The branch carries
   the work, its status in `docs/tasks/`, and any ADR it produces. Every pull request targets
@@ -158,7 +159,9 @@ only. Never set it in `build.sbt`: the check is what keeps the published module 
 **A release follows ADR-0051.** The version is `ThisBuild / version` in `build.sbt`, a
 `-SNAPSHOT` on `dev`: the release pull request sets it and the CHANGELOG, and a tag
 `v<version>` on the squashed commit on `main` starts `.github/workflows/release.yml`. Pushing a
-tag is the owner's, like any push. Never add sbt-dynver or sbt-ci-release, and never drop the
+tag is the owner's, like any push. After the release, the pull request that moves `dev` to the
+next `-SNAPSHOT` also holds `git merge -s ours origin/main`, and is merged with a merge commit,
+never squashed: otherwise the next release pull request conflicts with `main` (ADR-0054). Never add sbt-dynver or sbt-ci-release, and never drop the
 `-release` options: the published jar is built by one JDK, not by CI's matrix.
 
 **A patch version keeps the API of the earlier patches of its minor version (ADR-0052).**

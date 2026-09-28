@@ -1482,3 +1482,35 @@ them the test kits' coordinates in chapter 12); the "Report a vulnerability" but
   (1 ignored), 28 of 28 and 31 of 31 in the test kits. The formatting, docs, Scaladoc and
   compatibility checks pass.
 
+### T31 — The next release pull request conflicts with `main`
+
+**Status:** Done 2026-09-28 — [ADR-0054](../adr/0054-dev-records-each-release-commit-of-main.md)
+
+**Branch:** `task/t31-release-back-merge`
+
+A check of the repository after it became public, on 2026-09-28, found the rulesets of
+ADR-0013: `dev_main`, active on `dev` and `main`, with no bypass, blocking deletion and
+force-pushes, and requiring a pull request with no approval and the twelve CI checks, current
+with the base; and `v*` on tags, blocking deletion, update and force-pushes, but disabled.
+Private vulnerability reporting was on.
+
+**Done when:** the tag ruleset is active, and the next release pull request from `dev` to `main`
+can merge.
+
+#### Found
+
+- **The tag ruleset was disabled.** The owner asked for it to be active; it is, since 2026-09-28.
+- **The next release pull request would be conflicting and blocked.** The squash of `0.1.0`
+  (`dd3dcec`) is on `main` and not in `dev`; the merge base is still `0e94844`. `git merge-tree`
+  of `main` and `dev` gives five conflicts, and the ruleset's "current with the base" rule
+  holds `dev` behind `main` for good, since ADR-0013 forbids merging `main` into `dev`.
+- **An ours-merge fixes both**, measured with a merge commit built by hand from `dev`'s tree and
+  the parents `dev` and `main`: same tree as `dev`, `main` an ancestor, and a merge into `main`
+  with no conflict whose result is `dev`'s tree. ADR-0054, chosen by the owner over a release
+  merged with a merge commit.
+
+#### Done
+
+- ADR-0054, which amends ADR-0013 and ADR-0051, and the rules of `AGENTS.md`.
+- This branch holds `git merge -s ours origin/main` for `dd3dcec`; its pull request is merged with
+  a merge commit.

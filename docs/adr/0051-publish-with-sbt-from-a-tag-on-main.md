@@ -1,6 +1,6 @@
 # ADR-0051: Publish with sbt's own Central Portal support, from a tag on `main`
 
-- **Status:** Accepted
+- **Status:** Accepted — release steps amended by ADR-0054
 - **Date:** 2026-09-27
 - **Supersedes:** —
 - **Amends:** —
