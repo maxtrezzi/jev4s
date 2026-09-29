@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M8 and T1 to T30 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
+**M1 to M8 and T1 to T31 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
 `0.1.1-SNAPSHOT`.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
@@ -32,7 +32,8 @@ runs it on JDK 17, 21 and 25, the Spark example on 17 and 21. The library publis
 Central Portal support, from a tag on `main`, at the version written in `build.sbt` (ADR-0051);
 its jars use JDK 17's API. MiMa checks each patch version against the earlier patches of its
 minor version, and TASTy-MiMa does too for `jev4s_3` (ADR-0052).
-The repository is **private** for now.
+The repository is **public**, checked on 2026-09-28, with private vulnerability reporting on
+(`SECURITY.md`).
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
 treat a stale instruction here as a defect: the next session will follow it.
@@ -91,9 +92,12 @@ finding is never appended to an ADR; it goes to `docs/tasks/`.
 - **Branch from `dev` before starting**, one branch per work item, named after it:
   `milestone/m1-base`, `task/<slug>`, `decision/d1-<slug>`, `docs/<slug>`. The branch carries
   the work, its status in `docs/tasks/`, and any ADR it produces. Every pull request targets
-  `dev`.
-- **Nothing enforces this while the repository is private**: GitHub's free plan offers no
-  branch protection on private repositories. Keep the rule anyway.
+  `dev`, but the release pull request from `dev` to `main` (ADR-0051).
+- **GitHub enforces part of this** (ADR-0013). The ruleset `dev_main`, with no one allowed to
+  bypass it, requires a pull request into `dev` or `main`, with no approval, the twelve CI checks
+  passed, and the branch current with its base; it blocks deletion and force-pushes. The ruleset
+  `v*` blocks deleting, moving or force-pushing a tag of a version. Branch names, one branch per
+  work item and the merge method (squash, or a merge commit for ADR-0054) are kept by discipline.
 - **Pushing, merging and rebasing are asked for every time**, including merging a pull
   request. Finish the work, commit it, say what you would push or merge, and wait for a yes.
 - **An ADR number is only safe once it is on `dev`.** After changing one, search the whole tree,
