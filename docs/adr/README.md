@@ -108,3 +108,4 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0052](0052-mima-and-tasty-mima-check-each-patch-version.md) | MiMa and TASTy-MiMa check each patch version against its minor version | Accepted |
 | [0053](0053-an-answer-has-a-probability-for-every-level-and-option.md) | An answer has a probability for every level and option | Accepted |
 | [0054](0054-dev-records-each-release-commit-of-main.md) | `dev` records each release commit of `main` with an ours-merge | Accepted |
+| [0055](0055-dependabot-alerts-cover-the-published-modules.md) | Dependabot alerts cover the published modules, and a task fixes them | Accepted |

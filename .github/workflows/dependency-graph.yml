@@ -1,0 +1,32 @@
+name: dependency-graph
+
+# GitHub does not read an sbt build, so Dependabot knows jev4s's dependencies only from the
+# snapshot this workflow submits (ADR-0055). Dependabot scans the default branch, dev.
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  # The dependency submission API needs it.
+  contents: write
+
+jobs:
+  submit:
+    name: submit the dependency graph
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      # Only the four published modules, with their tests. The live projects and the Spark
+      # example are not published, and Spark is the caller's own (Provided). The Scala tool
+      # configurations hold the compiler, the REPL and Scaladoc, which run in the build only.
+      - uses: scalacenter/sbt-dependency-submission@v3
+        with:
+          modules-ignore: root_2.12 scala3live_3 scala213live_2.13 scala213spark_2.13
+          configs-ignore: scala-tool scala-doc-tool scala-repl-tool
