@@ -1514,3 +1514,36 @@ can merge.
 - ADR-0054, which amends ADR-0013 and ADR-0051, and the rules of `AGENTS.md`.
 - This branch holds `git merge -s ours origin/main` for `dd3dcec`; its pull request is merged with
   a merge commit.
+
+### T32 — Alerts for the dependencies of the published modules
+
+**Status:** Done 2026-10-27 — [ADR-0055](../adr/0055-dependabot-alerts-cover-the-published-modules.md)
+
+**Branch:** `task/t32-dependency-alerts`
+
+jev4s is public, and `0.1.0` is on Maven Central. A check of the repository on 2026-10-27 found
+private vulnerability reporting on, and Dependabot alerts, secret scanning and push protection
+off. The dependency graph held only the GitHub Actions of the workflows: GitHub does not read
+an sbt build.
+
+**Done when:** Dependabot alerts, secret scanning and push protection are on, and a workflow on
+`dev` submits the dependencies of the published modules to the dependency graph.
+
+#### Found
+
+- **The whole build has 242 packages, and 25 have known vulnerabilities on osv.dev.** All 25
+  come from Spark 4.0.4 in `scala213Spark` (44 resolved packages, in the `runtime` scope:
+  sbt resolves `Provided` in `compile-internal`), or from Scaladoc and the REPL in the Scala 3
+  tool configurations (jackson, jline, jsoup). None of them is in a published jar.
+- **The four published modules, with their tests, have 19 packages, and none has a known
+  vulnerability.** Measured with `sbt-github-dependency-submission` 3.2.2, the plugin that the
+  action runs, loaded with `--addPluginSbtFile`, and its snapshot checked on osv.dev.
+
+#### Done
+
+- Dependabot alerts, secret scanning and push protection are on since 2026-10-27, as the owner
+  asked. Dependabot security updates stay off.
+- ADR-0055, and `.github/workflows/dependency-graph.yml`, which submits the four published
+  modules on each push to `dev`, without the projects that are not published and without the
+  Scala tool configurations.
+- `AGENTS.md` says what the repository has on, and what the new workflow does.

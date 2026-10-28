@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M8 and T1 to T31 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
+**M1 to M8 and T1 to T32 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
 `0.1.1-SNAPSHOT`.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
@@ -33,7 +33,8 @@ Central Portal support, from a tag on `main`, at the version written in `build.s
 its jars use JDK 17's API. MiMa checks each patch version against the earlier patches of its
 minor version, and TASTy-MiMa does too for `jev4s_3` (ADR-0052).
 The repository is **public**, checked on 2026-09-28, with private vulnerability reporting on
-(`SECURITY.md`).
+(`SECURITY.md`). Dependabot alerts, secret scanning and push protection are on, and Dependabot
+opens no pull requests (ADR-0055).
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
 treat a stale instruction here as a defect: the next session will follow it.
@@ -182,7 +183,9 @@ CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each
 21 and 25 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`),
 the Spark example's tests in the 2.13 job, runs coverage and Stryker4s with the mutant check per
 module, the compatibility checks of ADR-0052 on JDK 21, and runs the docs check and, for Scala 3,
-the Scaladoc check. Mutation testing runs on every pull request
+the Scaladoc check. `.github/workflows/dependency-graph.yml` submits the dependencies of the four
+published modules on each push to `dev`, for Dependabot alerts (ADR-0055): a new project that is
+not published goes into its `modules-ignore`. Mutation testing runs on every pull request
 ([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md)); never point it at a
 project that calls the real API.
 
