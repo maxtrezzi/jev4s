@@ -1536,8 +1536,10 @@ an sbt build.
   sbt resolves `Provided` in `compile-internal`), or from Scaladoc and the REPL in the Scala 3
   tool configurations (jackson, jline, jsoup). None of them is in a published jar.
 - **The four published modules, with their tests, have 19 packages, and none has a known
-  vulnerability.** Measured with `sbt-github-dependency-submission` 3.2.2, the plugin that the
-  action runs, loaded with `--addPluginSbtFile`, and its snapshot checked on osv.dev.
+  vulnerability.** Measured locally with `sbt-github-dependency-submission` 3.2.2, loaded with
+  `--addPluginSbtFile`, and its snapshot checked on osv.dev. On 2026-10-28 the action's `v3` tag
+  ran the plugin 3.2.3; its first submission on `dev`, after the merge of #30, lists the same 19
+  packages.
 
 #### Done
 
