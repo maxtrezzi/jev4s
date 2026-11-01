@@ -291,7 +291,7 @@ error:
 r.urgnet                                         // error: value urgnet is not a member of (team : ChoiceAnswer[Team], …
 val feeling: ScoreAnswer[Feeling] = r.urgent     // error: Found: NoulAnswer Required: ScoreAnswer[Feeling]
 r.feeling.probabilities("Angry")                 // error: Found: ("Angry" : String) Required: Feeling
-client.ask(doubleCharge, (urgent = Noul("Urgent?"), count = 3)) // error: every value in the named tuple must be a question: Noul, Score or Choice
+client.ask(doubleCharge, (urgent = Noul("Urgent?"), count = 3)) // error: every value in the named tuple must be a question: Noul, Score, Choice or Box
 client.ask(doubleCharge, (Noul("Urgent?"), Noul("Angry?")))     // error: the questions must be a named tuple, such as (urgent = Noul("Is it urgent?"))
 Choice[java.time.DayOfWeek]("Which day?")        // error: no options for Choice[java.time.DayOfWeek]: define a given JevChoice[java.time.DayOfWeek]
 Score("How does the customer feel?")             // error: a Score needs its levels: give them, as in Score("How?", "Calm", "Angry"), …

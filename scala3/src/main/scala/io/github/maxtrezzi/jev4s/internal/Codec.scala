@@ -8,13 +8,26 @@ import scala.util.Try
   */
 private[jev4s] object Codec:
 
-  /** The body of `POST /v1/systemone`. Questions keep their order. */
-  def encode(model: String, state: ujson.Value, questions: List[(String, Question[?])]): ujson.Value =
-    ujson.Obj(
+  /** The body of `POST /v1/systemone`. Questions keep their order. Each distinct image goes once in
+    * `assets`, in base64, under its ref; with no image there is no `assets`, which the API refuses
+    * empty.
+    */
+  def encode(
+      model: String,
+      state: ujson.Value,
+      questions: List[(String, Question[?])],
+      images: List[Image] = Nil,
+  ): ujson.Value =
+    val body = ujson.Obj(
       "state"     -> state,
       "model"     -> model,
       "questions" -> ujson.Obj.from(questions.map((name, question) => name -> encodeQuestion(question))),
     )
+    if images.nonEmpty then body("assets") = ujson.Obj.from(images.distinct.map(image => image.ref -> asset(image)))
+    body
+
+  private def asset(image: Image): ujson.Value =
+    ujson.Obj("type" -> "image", "format" -> image.format.wire, "data_base64" -> image.base64)
 
   /** The answers of a successful reply, in the order of `questions`, and the reply's metadata. The
     * order of the answers in the JSON does not matter.
@@ -68,6 +81,8 @@ private[jev4s] object Codec:
     case Question.Choice(instructions, options) =>
       val criteria = options.map(o => o.key -> o.description.getOrElse(ujson.Null))
       ujson.Obj("type" -> "choice", "instructions" -> instructions, "criteria" -> ujson.Obj.from(criteria))
+    case Question.Box(instructions) =>
+      ujson.Obj("type" -> "box", "instructions" -> instructions)
 
   /** The answer to one question. Matching on the question refines `A`, so each branch returns the
     * answer type of its own question, with no cast.
@@ -101,6 +116,18 @@ private[jev4s] object Codec:
           probabilities <- json.probabilities(name)(byKey.get)
           _             <- missing(labels, probabilities, s"'$name': no probability for the option")
         yield ChoiceAnswer(choice, confidence, probabilities)
+      case Question.Box(_) =>
+        for
+          _          <- json.hasType("box", name)
+          box        <- json.field("box")
+          top        <- box.field("top").flatMap(_.fraction(name, "top"))
+          bottom     <- box.field("bottom").flatMap(_.fraction(name, "bottom"))
+          left       <- box.field("left").flatMap(_.fraction(name, "left"))
+          right      <- box.field("right").flatMap(_.fraction(name, "right"))
+          confidence <- json.field("confidence")
+          known      <- if confidence.isNull then Right(None) else confidence.probability(name).map(Some(_))
+        // The order of the edges is not checked: the schema does not promise it (ADR-0057).
+        yield BoxAnswer(Region(top, bottom, left, right), known)
 
   /** An error for the first level or option that `probabilities` leaves out: a caller reads the
     * map with `apply`, so every level and option must be in it (ADR-0053).
@@ -120,6 +147,8 @@ private[jev4s] object Codec:
     private def wholeNumber: Option[Long]                              = json.numOpt.filter(_.isWhole).map(_.toLong)
     private def probability(name: String): Either[String, Probability] =
       number(name).flatMap(d => Probability.from(d).toRight(s"'$name': $d is not a probability"))
+    private def fraction(name: String, edge: String): Either[String, Double] =
+      number(name).filterOrElse(d => d >= 0 && d <= 1, s"'$name': the $edge edge $json is not between 0 and 1")
     private def hasType(expected: String, name: String): Either[String, Unit] =
       field("type")
         .flatMap(_.string(name))

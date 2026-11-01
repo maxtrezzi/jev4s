@@ -94,7 +94,7 @@ Probability(1.5)                 // error: a Probability must be between 0 and 1
 enum Mood derives JevScale:      // error: a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases
   case Fine
 client.ask(42, questions)        // error: no ToState[Int]: give one, for example `given ToState[Int] = s => ujson.Obj(...)`, …
-client.ask(ticket, (team = questions.team, count = 3)) // error: every value in the named tuple must be a question: Noul, Score or Choice
+client.ask(ticket, (team = questions.team, count = 3)) // error: every value in the named tuple must be a question: Noul, Score, Choice or Box
 ```
 
 A test compiles each line and compares the message, so this list stays true. What the compiler

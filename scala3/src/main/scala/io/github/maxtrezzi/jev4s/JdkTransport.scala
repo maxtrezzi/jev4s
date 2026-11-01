@@ -16,7 +16,8 @@ import scala.jdk.OptionConverters.*
 
 import io.github.maxtrezzi.jev4s.internal.Codec
 
-/** The [[Transport]] over `java.net.http`, with the retries of `config.retry`. It sends a
+/** The [[Transport]] over `java.net.http`, with the retries of `config.retry`, and the header of
+  * each of `config.dangerZones` on every request. It sends a
   * [[JevEvent.Responded]] to `onEvent` for each response, and a [[JevEvent.Retrying]] before each
   * wait. `nanoTime` is the clock that measures `maxElapsed`; replace it only in tests.
   *
@@ -66,14 +67,14 @@ final class JdkTransport(
       case _ => result
 
   private def once(body: String): Either[JevError, String] =
-    val request = HttpRequest
+    val builder = HttpRequest
       .newBuilder(endpoint)
       .timeout(config.timeout.toJava)
       .header("Authorization", s"Bearer ${config.apiKey.value}")
       .header("Content-Type", "application/json")
-      .POST(BodyPublishers.ofString(body))
-      .build()
-    val sent =
+    config.dangerZones.foreach(zone => builder.header(zone.header, "true"))
+    val request = builder.POST(BodyPublishers.ofString(body)).build()
+    val sent    =
       try Right(client.send(request, BodyHandlers.ofString()))
       catch case e: IOException => Left(JdkTransport.networkError(e, endpoint, config.timeout, connecting))
     sent.flatMap: response =>
