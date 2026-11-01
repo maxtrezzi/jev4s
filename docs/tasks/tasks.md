@@ -1549,3 +1549,48 @@ an sbt build.
   modules on each push to `dev`, without the projects that are not published and without the
   Scala tool configurations.
 - `AGENTS.md` says what the repository has on, and what the new workflow does.
+
+### T33 — Images and box questions
+
+**Status:** Not started — [ADR-0056](../adr/0056-images-travel-in-the-state-as-base64-assets.md),
+[ADR-0057](../adr/0057-the-box-question-answers-with-a-region.md) (Proposed)
+
+**Branch:** `task/t33-images-and-boxes`
+
+Jev 1.14 (2026-10-14) reads PNG and JPEG images and adds a fourth kind of question, `box`, which
+answers with a rectangle. Both official SDKs support them (Python 0.7.5, npm 0.7.0). jev4s 0.1.0
+covers three kinds of question out of four, and the README's compile error says "every value in
+the named tuple must be a question: Noul, Score or Choice".
+
+An `Image` from bytes, sent in the state as a base64 asset under a placeholder derived from its
+bytes, once the config opts in with `DangerZone.Images` (ADR-0056). A `Box` question that
+answers with a `BoxAnswer` holding a `Region` and an optional confidence, and a `Problem` for a
+box with no image (ADR-0057). Scala 3 first, then 2.13. It ships as 0.2.0.
+
+**Measured on 2026-11-01**, with raw HTTP calls answered by `jev-1.14.0`: about 55 requests and
+33,000 input tokens, about $0.0014.
+
+- `jev-latest` and `jev-preview` both take images; the header is required, and without it the
+  API answers 400 with a message that names it.
+- Each side of an image must be 280 pixels or more, and at most a value between 1536 and 1791.
+  Undocumented.
+- 503 `Image processing is unavailable.` about one request in five; sending it again passed.
+- About one input token per 380 pixels, plus about 270 for a question and the state.
+- A box with no image answers 200 with an invented box and a confidence of 0.1.
+- Base64 and multipart give the same answer and token count.
+
+To settle while implementing:
+
+- the shape of a state with images (`State(json, images*)` or another), and what the API does with
+  an asset that nothing uses;
+- that MiMa and TASTy-MiMa refuse the change in a patch, so the version is 0.2.0.
+
+Out of scope, noted for later: images in `instructions` and `criteria` (the placeholder works
+there, measured); multipart in `JdkTransport`; a Spark example that locates something in each
+file of a `binaryFile` source; `DangerZone.LongContext`.
+
+**Done when:** a Box over an `Image` works in both modules, with the opt-in; the `Validator`
+problems of ADR-0056 and ADR-0057 are reported; `golden/` holds a real box reply over a small PNG
+drawn for the purpose; the README, a guide section and `live/` show it, with the measured size
+limits and their date; ADR-0056 and ADR-0057 are Accepted and their amendments recorded at both
+ends; the definition of done holds.

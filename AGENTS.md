@@ -6,8 +6,8 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M8 and T1 to T32 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
-`0.1.1-SNAPSHOT`.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M8 and T1 to T32 are done; T33 is planned, with ADR-0056 and ADR-0057 proposed. `0.1.0` is
+on Maven Central (2026-09-28), and `dev` is at `0.1.1-SNAPSHOT`.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
