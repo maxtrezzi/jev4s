@@ -109,3 +109,5 @@ and after a renumber search the whole tree, source included, for the old `ADR-NN
 | [0053](0053-an-answer-has-a-probability-for-every-level-and-option.md) | An answer has a probability for every level and option | Accepted |
 | [0054](0054-dev-records-each-release-commit-of-main.md) | `dev` records each release commit of `main` with an ours-merge | Accepted |
 | [0055](0055-dependabot-alerts-cover-the-published-modules.md) | Dependabot alerts cover the published modules, and a task fixes them | Accepted |
+| [0056](0056-images-travel-in-the-state-as-base64-assets.md) | Images travel in the state, as base64 assets, behind an explicit opt-in | Proposed |
+| [0057](0057-the-box-question-answers-with-a-region.md) | The box question answers with a Region | Proposed |
