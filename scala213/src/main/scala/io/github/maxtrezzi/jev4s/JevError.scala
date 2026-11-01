@@ -93,6 +93,11 @@ sealed abstract class Problem extends Product with Serializable {
     case Problem.DuplicateOptionKey(n, key) => s"choice '$n' uses the option key '$key' more than once"
     case Problem.DuplicateLevelValue(n, v)  => s"score '$n' gives the value '$v' to more than one level"
     case Problem.DuplicateOptionValue(n, v) => s"choice '$n' gives the value '$v' to more than one option"
+    case Problem.BoxWithoutImage(n)         => s"box '$n' needs an image in the state"
+    case Problem.UnknownImage(ref)          =>
+      s"the state uses the image '$ref', but does not give it: add it to the state's images"
+    case Problem.UnusedImage(ref) =>
+      s"the image '$ref' is given, but the state does not use it: put its ref in the state"
   }
 }
 
@@ -106,4 +111,7 @@ object Problem {
   final case class DuplicateOptionKey(name: String, key: String)     extends Problem
   final case class DuplicateLevelValue(name: String, value: String)  extends Problem
   final case class DuplicateOptionValue(name: String, value: String) extends Problem
+  final case class BoxWithoutImage(name: String)                     extends Problem
+  final case class UnknownImage(ref: String)                         extends Problem
+  final case class UnusedImage(ref: String)                          extends Problem
 }

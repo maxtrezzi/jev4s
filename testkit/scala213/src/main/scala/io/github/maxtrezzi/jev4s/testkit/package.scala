@@ -20,4 +20,10 @@ package object testkit {
     def is(choice: C): Answered               = new Answered(key.name, key.question, choice)
     def is(answer: ChoiceAnswer[C]): Answered = new Answered(key.name, key.question, answer)
   }
+
+  /** The answer a test gives to a Box: `dog.is(Region(0.1, 0.4, 0.2, 0.8))`, or a whole answer. */
+  implicit class BoxAnswers(private val key: Key[BoxAnswer]) extends AnyVal {
+    def is(region: Region): Answered    = new Answered(key.name, key.question, region)
+    def is(answer: BoxAnswer): Answered = new Answered(key.name, key.question, answer)
+  }
 }

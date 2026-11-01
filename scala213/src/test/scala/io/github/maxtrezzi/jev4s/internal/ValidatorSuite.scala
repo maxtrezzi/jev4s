@@ -82,4 +82,40 @@ class ValidatorSuite extends munit.FunSuite {
       List(Problem.DuplicateName("x"), Problem.ScoreLevels("x", 1), Problem.EmptyName, Problem.ChoiceOptions(" ", 0))
     )
   }
+
+  private def image(last: Int): Image =
+    Image(Array(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, last).map(_.toByte)).toOption.get
+  private val photo = image(1)
+  private val other = image(2)
+  private val box   = "dog" -> Box("The dog")
+
+  test("a Box needs an image in the state") {
+    assertEquals(
+      Validator.validate(List(box, "cat" -> Box("The cat")), "a photo of a dog"),
+      List(Problem.BoxWithoutImage("dog"), Problem.BoxWithoutImage("cat"))
+    )
+    assertEquals(Validator.validate(List(box), photo.ref, List(photo)), Nil)
+    assertEquals(Validator.validate(List("q" -> Noul("Urgent?")), "text"), Nil)
+  }
+
+  test("every image ref in the state is given, and every image given is in the state") {
+    assertEquals(
+      Validator.validate(List(box), photo.ref, List(other)),
+      List(Problem.UnknownImage(photo.ref), Problem.UnusedImage(other.ref))
+    )
+  }
+
+  test("refs are found in every string of the JSON, inside longer text too, and each is reported once") {
+    val state = ujson.Obj(
+      "photos"  -> ujson.Arr(ujson.Obj("main" -> photo.ref), 3, ujson.Null),
+      "caption" -> s"Compare ${photo.ref} with ${other.ref}.",
+      "again"   -> other.ref
+    )
+    assertEquals(Validator.validate(List(box), state, List(photo, other, photo)), Nil)
+    assertEquals(Validator.validate(List(box), state, List(photo)), List(Problem.UnknownImage(other.ref)))
+    assertEquals(
+      Validator.validate(List(box), ujson.Obj(photo.ref -> "a key is not a place for an image"), List(photo)),
+      List(Problem.UnusedImage(photo.ref))
+    )
+  }
 }

@@ -197,4 +197,38 @@ class JevClientSuite extends munit.FunSuite {
       Left(JevError.InvalidConfig("the timeout must be more than zero: 0 days"))
     )
   }
+
+  // golden/box: a Box over a PNG, which the request names by its ref.
+  private val boxRequest = Golden.read("box/request.json")
+  private val rectangle  = Image.fromBase64(boxRequest("assets").obj.values.head("data_base64").str).toOption.get
+  private val box        = Box("The red rectangle").as("rectangle")
+  private def boxClient(transport: Transport) = JevClient.withTransport(boxRequest("model").str, transport)
+
+  test("an image as the state is sent in assets, and a Box answers with its region") {
+    val transport = FakeTransport.golden("box")
+    val region    = answer(boxClient(transport).ask(rectangle, box)).region
+    assertEquals(transport.sent.map(ujson.read(_)), List(boxRequest))
+    assertEquals(region.top, Golden.read("box/response.json")("answers")("rectangle")("box")("top").num)
+  }
+
+  test("a State sends its JSON and its images, and askMap answers a Box too") {
+    val transport = FakeTransport.golden("box")
+    val answers   = boxClient(transport)
+      .askMap(State(ujson.Str(rectangle.ref), rectangle), Map("rectangle" -> Box("The red rectangle")))
+    assertEquals(transport.sent.map(ujson.read(_)), List(boxRequest))
+    assert(answers.map(_("rectangle")).exists(_.isInstanceOf[BoxAnswer]), answers)
+  }
+
+  test("a Box with no image, or an image the state does not use, is not sent") {
+    val transport = FakeTransport.golden("box")
+    assertEquals(
+      boxClient(transport).ask("a red rectangle", box),
+      Left(JevError.InvalidRequest(List(Problem.BoxWithoutImage("rectangle"))))
+    )
+    assertEquals(
+      boxClient(transport).ask(State(ujson.Str("no ref here"), rectangle), box),
+      Left(JevError.InvalidRequest(List(Problem.UnusedImage(rectangle.ref))))
+    )
+    assertEquals(transport.sent, Nil)
+  }
 }

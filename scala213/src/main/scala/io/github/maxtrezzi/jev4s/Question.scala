@@ -112,6 +112,11 @@ object Choice {
   def keys(instructions: ujson.Value, keys: String*): Choice[String] = of(instructions)(JevChoice.keys(keys: _*))
 }
 
+/** Where the instructions' subject is in the state's image, as a [[Region]]. The request needs an
+  * [[Image]] in its state.
+  */
+final case class Box(instructions: ujson.Value) extends Question[BoxAnswer]
+
 /** One option of a Choice: your value, the key Jev sees, and an optional description. */
 final case class ChoiceOption[C](value: C, key: String, description: Option[ujson.Value] = None)
 
