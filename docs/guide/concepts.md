@@ -21,6 +21,7 @@ has a bug.
 8. [Models, cost and limits](#8-models-cost-and-limits)
 9. [How jev4s talks to Jev](#9-how-jev4s-talks-to-jev)
 10. [Through a gateway](#10-through-a-gateway)
+11. [Images and the Box question](#11-images-and-the-box-question)
 
 ## 1. A first request
 
@@ -146,6 +147,9 @@ There are three kinds:
 
 Choose the kind from the shape of the answer your code needs. A Noul maps to an `if`. A Score
 maps to a threshold or a ranking. A Choice maps to a `match` with one branch for each option.
+
+Since Jev 1.14 there is a fourth kind, the **Box**, which says where something is in an image:
+see [Images and the Box question](#11-images-and-the-box-question).
 
 ### Noul: yes or no
 
@@ -554,3 +558,30 @@ the questions inside `input`
 ([Cloudflare's model page](https://developers.cloudflare.com/ai/models/typesafe/jev/), read on
 2026-09-25). A base URL cannot reach it. A `Transport` of your own could change the shape, but it
 cannot read the key of a `JevConfig`, so it would need the key from somewhere else.
+
+## 11. Images and the Box question
+
+Since Jev 1.14 (October 2026), the state can hold PNG and JPEG images. TypeSafe calls this a
+"danger zone": images are experimental, not promised for production, and each request must send
+the header `TypeSafe-Danger-Zone-Images: true`. In jev4s you turn it on once, in the config, with
+`dangerZones`.
+
+An image goes in the request under a name, its `ref`, and the state names it where the image
+belongs: alone, or inside JSON next to other data. jev4s gives each image a `ref` made from its
+bytes, so the same image always gives the same request.
+
+The **Box** question has only instructions: what to locate. Its answer is a rectangle, with four
+edges as fractions from 0 to 1 (`top` and `bottom` of the height, `left` and `right` of the
+width), and a confidence, which can be missing. Noul, Score and Choice questions work on images
+too.
+
+What was measured on 2026-11-01, with `jev-1.14.0`:
+
+- each side of an image must be at least 280 pixels, and at most a limit between 1,536 and 1,791;
+- an image costs about one input token for each 380 pixels;
+- about one request in five got "503 Image processing is unavailable", and the next attempt
+  passed;
+- a Box with no image is still answered, with a box that Jev made up, so jev4s does not send it;
+- a Box about something that is not in the image is answered too, with a low confidence.
+
+The tutorials show the code: [Scala 3](scala3.md#14-images), [Scala 2.13](scala213.md#14-images).

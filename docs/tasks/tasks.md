@@ -1552,8 +1552,8 @@ an sbt build.
 
 ### T33 — Images and box questions
 
-**Status:** Not started — [ADR-0056](../adr/0056-images-travel-in-the-state-as-base64-assets.md),
-[ADR-0057](../adr/0057-the-box-question-answers-with-a-region.md) (Proposed)
+**Status:** Done 2026-11-01 — [ADR-0056](../adr/0056-images-travel-in-the-state-as-base64-assets.md),
+[ADR-0057](../adr/0057-the-box-question-answers-with-a-region.md)
 
 **Branch:** `task/t33-images-and-boxes`
 
@@ -1594,3 +1594,50 @@ problems of ADR-0056 and ADR-0057 are reported; `golden/` holds a real box reply
 drawn for the purpose; the README, a guide section and `live/` show it, with the measured size
 limits and their date; ADR-0056 and ADR-0057 are Accepted and their amendments recorded at both
 ends; the definition of done holds.
+
+#### Found
+
+- **`ToState` needs no new result type.** A second method, `images`, with a default of no image,
+  keeps `toState` the single abstract method: a `ToState` written as a lambda still compiles. The
+  shape of a state with images is `State(json, images*)`, with a given for an `Image` alone.
+  ADR-0056 was changed to say so before it was accepted.
+- **The API refuses an asset that nothing names**: 400, `Invalid image request.`, measured on
+  2026-11-01. `Problem.UnusedImage` keeps such a request from being sent.
+- **The placeholder is billed.** With `image-` and 64 hex digits, the same Box cost 844 input
+  tokens, against 819 with a UUID and 813 with `image-` and 32 hex digits. The ref is the first 16
+  bytes of the SHA-256.
+- **MiMa and TASTy-MiMa refuse the change in a patch.** Against 0.1.0, MiMa finds 3 problems in
+  each module, the `apply`, `copy` and constructor of `JevConfig`, and TASTy-MiMa 6, those three,
+  the `Answer` union, and the signatures of `Codec.encode` and `Validator.validate`. `dev` moves
+  to `0.2.0-SNAPSHOT`, against which both have nothing to compare, and pass.
+- **The API answers through Cloudflare** since at least 2026-11-01 (`server: cloudflare`; it was
+  `istio-envoy` on 2026-09-24), and sets a `__cf_bm` cookie. `capture-golden.py` keeps the
+  cookie's name and leaves its value out of `golden/`.
+- **The 503 of the image service is frequent.** In the runs of 2026-11-01 it came back on 5
+  attempts out of 9 at its worst; `capture-golden.py` sends a 503 again, at most three times, and
+  never records one. jev4s retries it as a `ServerError`.
+- **A new answer breaks an exhaustive `match`.** The `Runtime` examples of both guides listed
+  every kind of answer from `askMap`, and stopped compiling under `-Werror` until they handled
+  `BoxAnswer`: the CHANGELOG says so.
+- **The real runs** of the guides' examples, on 2026-11-01, located the rectangle at (108, 40),
+  228 × 125 pixels, and (103, 36), 233 × 130, against (112, 56), 224 × 112.
+
+#### Done
+
+- Both modules: `Image`, `ImageFormat`, `ImageError`, `State`, `ToState.images`, `Box`,
+  `BoxAnswer`, `Region` (and `Pixels` in 2.13), `DangerZone`, `JevConfig.dangerZones`, the
+  header in `JdkTransport`, `assets` in the codec, and `Problem.BoxWithoutImage`, `UnknownImage`
+  and `UnusedImage`. The test kits answer a Box with a `Region` or a `BoxAnswer`.
+- `golden/box`, recorded by `capture-golden.py`, which draws the PNG. `live/images/rectangle.png`
+  is the same image.
+- Chapter 14 of both tutorials, a section of the concepts guide, the README, the CHANGELOG, and
+  the documented compile error of `AllQuestions`.
+- ADR-0056 and ADR-0057 Accepted, with their amendments of ADR-0021, ADR-0022, ADR-0023, ADR-0024
+  and ADR-0048 recorded at both ends.
+
+| Project | Tests | Coverage | Mutants |
+|---|---|---|---|
+| `scala3` | 196 | 100% / 100% | 320, every one detected |
+| `scala213` | 169 | 100% / 100% | 309, every one detected |
+| `scala3Testkit` | 13 | 100% / 100% | 36, every one detected |
+| `scala213Testkit` | 14 | 100% / 100% | 39, every one detected |

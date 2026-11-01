@@ -25,6 +25,7 @@ few hundred input tokens.
 11. [Logs and metrics](#11-logs-and-metrics)
 12. [Testing your code](#12-testing-your-code)
 13. [Many requests](#13-many-requests)
+14. [Images](#14-images)
 
 ## 1. Set up a project
 
@@ -562,6 +563,7 @@ val items = List("hiking boots", "running shoes", "team subscription")
             case a: NoulAnswer      => println(s"$name: ${a.isYes}")
             case a: ScoreAnswer[?]  => println(s"$name: ${a.score}")
             case a: ChoiceAnswer[?] => println(s"$name: ${a.choice}")
+            case a: BoxAnswer       => println(s"$name: ${a.region}")
     case Left(error) => println(s"Jev did not answer: $error")
 ```
 
@@ -912,3 +914,91 @@ them, and send them again later at a lower rate, or give them to a person:
 ```
 
 Run it with `sbt "scala3Live/runMain guide.manyRequests"`. It makes three calls to Jev.
+
+## 14. Images
+
+Since Jev 1.14 (October 2026), Jev reads PNG and JPEG images, and a fourth kind of question, the
+**Box**, says where something is in an image. TypeSafe calls images experimental: it does not
+promise them for production, and it can change them. You turn them on in the config, with a
+model that reads images:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-client -->
+```scala
+/** A client for questions about images: Jev 1.14, with the images danger zone turned on. */
+lazy val imageClient: JevClient =
+  JevConfig.fromEnv("jev-1.14.0").map(_.copy(dangerZones = Set(DangerZone.Images))) match
+    case Right(config) => JevClient(config)
+    case Left(problem) => sys.error(problem.message)
+```
+
+An `Image` comes from the bytes of a PNG or JPEG file. jev4s does not read files itself:
+`Files.readAllBytes` does, and `Image(bytes)` returns an `ImageError` when the bytes are not a PNG
+or a JPEG. Give the image as the state, and ask a Box. The answer is a `Region`, with four edges
+from 0 to 1, and a confidence:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-locate -->
+```scala
+/** Where the red rectangle is in `photo`, in pixels, if Jev is sure enough. */
+def locate(client: JevClient, photo: Image, width: Int, height: Int) =
+  client
+    .ask(photo, (rectangle = Box("The red rectangle")))
+    .map(_.rectangle.ifConfident(Probability(0.8)).map(_.inPixels(width, height)))
+```
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-ask -->
+```scala
+@main def images(): Unit =
+  Image(Files.readAllBytes(Path.of("live/images/rectangle.png"))) match
+    case Left(error)  => println(s"Not an image: ${error.message}")
+    case Right(photo) =>
+      locate(imageClient, photo, width = 448, height = 448) match
+        case Right(Some(p)) => println(s"The rectangle is at (${p.x}, ${p.y}), ${p.width} × ${p.height} pixels")
+        case Right(None)    => println("Jev is not sure where the rectangle is")
+        case Left(error)    => println(s"Jev did not answer: $error")
+```
+
+The image is [`live/images/rectangle.png`](../../live/images/rectangle.png), 448 × 448 pixels,
+with a red rectangle at (112, 56), 224 × 112 pixels. On 2026-11-01 it printed:
+
+```
+The rectangle is at (108, 40), 228 × 125 pixels
+```
+
+The left, right and bottom edges are close. The top edge is often too high: here by 3 to 5% of
+the height, and by up to 7% on images under 512 pixels. Run `sbt "scala3Live/runMain guide.images"` to try it.
+
+**An image next to other data.** Put the image's `ref` where the image goes in the JSON, and give
+the image in `images` as well. Noul, Score and Choice questions work on images too:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-state -->
+```scala
+/** A photo of a parcel, and the label that your system read from it. */
+final case class Parcel(photo: Image, label: String)
+
+given ToState[Parcel]:
+  def toState(parcel: Parcel): ujson.Value         = ujson.Obj("photo" -> parcel.photo.ref, "label" -> parcel.label)
+  override def images(parcel: Parcel): List[Image] = List(parcel.photo)
+
+val labelMatches = Noul("Does the label on the parcel in `photo` show the text in `label`?")
+```
+
+**What to know before you use images.** These were measured on 2026-11-01. TypeSafe does not
+document them, and they can change.
+
+- **Size.** Each side of an image must be at least 280 pixels, and at most a limit between 1,536
+  and 1,791 pixels. Otherwise Jev answers "Invalid image dimensions.", and the call returns
+  `Rejected`.
+- **Cost.** An image costs about one input token for each 380 pixels: 819 tokens for an image of
+  448 × 448 with one question, 3,045 for 1024 × 1024.
+- **Errors.** About one request in five got "503 Image processing is unavailable." jev4s sends the
+  request again, as for any server error, and the next attempt passed.
+- **Checks before sending.** A Box with no image in the state is not sent: the call returns
+  `InvalidRequest` with `BoxWithoutImage`, because Jev would answer it anyway, with a box it made
+  up. An image that the state does not use, or a `ref` in the state without its image, is not sent
+  either.
+- **Something that is not there.** Jev answers a Box even when the thing is not in the image. In
+  a test, a Box for "The dog" on the red rectangle came back with a confidence of 0.33, against
+  0.93 for the rectangle. Read the region with `ifConfident`.
+- **Tests.** The test kit answers a Box with a `Region`, which means a confidence of 1, or with a
+  whole `BoxAnswer`:
+  `JevTestkit.answering((rectangle = Box("The red rectangle")))((rectangle = Region(0.125, 0.375, 0.25, 0.75)))`.
