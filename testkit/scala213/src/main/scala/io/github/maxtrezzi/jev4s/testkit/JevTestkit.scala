@@ -27,7 +27,9 @@ object JevTestkit {
     * names [[defaultModel]], and reports no input tokens.
     *
     * The client does not look at what your code asks. Questions under other names get a
-    * `JevError.Decoding` error, as a real reply without their answers would.
+    * `JevError.Decoding` error, as a real reply without their answers would. The request is
+    * still checked before it is "sent", as a real client checks it: a Box with no image in the
+    * state is a `JevError.InvalidRequest`, so give the code under test an `Image`.
     *
     * An answer that is not one of its question's levels or options, a whole answer that leaves one
     * out of its probabilities, or two answers under the same name, throw an

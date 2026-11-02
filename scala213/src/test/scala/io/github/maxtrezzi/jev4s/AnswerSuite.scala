@@ -2,6 +2,22 @@ package io.github.maxtrezzi.jev4s
 
 class AnswerSuite extends munit.FunSuite {
 
+  test("every answer can be serialized, as Spark does, and comes back equal") {
+    val p       = Probability.unsafe(0.5)
+    val answers = List[Answer](
+      NoulAnswer(p),
+      ScoreAnswer[String](1.0, 0.5, "a", p, Map("a" -> p)),
+      ChoiceAnswer[String]("a", p, Map("a" -> p)),
+      BoxAnswer(Region(0.1, 0.4, 0.2, 0.8), Some(p))
+    )
+    for (answer <- answers) {
+      val bytes = new java.io.ByteArrayOutputStream()
+      new java.io.ObjectOutputStream(bytes).writeObject(answer)
+      val back = new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(bytes.toByteArray)).readObject()
+      assertEquals(back, answer)
+    }
+  }
+
   test("a Noul is yes from 0.5 up") {
     assert(NoulAnswer(Probability.unsafe(0.5)).isYes)
     assert(!NoulAnswer(Probability.unsafe(Math.nextDown(0.5))).isYes)

@@ -56,6 +56,7 @@ class ImageSuite extends munit.FunSuite:
     assertEquals(Image.fromBase64(text), Right(image(png)))
     assertEquals(Image.fromBase64(text.take(8) + "\n " + text.drop(8) + "\r\n"), Right(image(png)))
     assertEquals(Image.fromBase64("not base64!"), Left(ImageError.NotBase64))
+    assertEquals(Image.fromBase64(s"data:image/png;base64,$text"), Left(ImageError.NotBase64))
     assertEquals(
       Image.fromBase64(Base64.getEncoder.encodeToString("GIF89a".getBytes("US-ASCII"))),
       Left(ImageError.UnknownFormat),

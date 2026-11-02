@@ -824,7 +824,7 @@ level: a reply from Jev gives each one a probability, even when it is 0.
 
 Under the test kit is `JevClient.withTransport`, which you can use yourself. A `Transport` is one
 function: it takes the body of the request and returns the body of the reply, or a `JevError`.
-The concepts guide shows [real replies](concepts.md#3-three-kinds-of-question). A client over a
+The concepts guide shows [real replies](concepts.md#3-kinds-of-question). A client over a
 transport of your own does not retry: the retries belong to the transport of `JevClient(config)`.
 
 This test uses [munit](https://scalameta.org/munit/), but any test library works: the test kit

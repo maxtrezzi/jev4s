@@ -36,7 +36,9 @@ object JevTestkit:
     * give one, and reports no input tokens.
     *
     * The client does not look at what your code asks. Questions under other names get a
-    * [[JevError.Decoding]] error, as a real reply without their answers would.
+    * [[JevError.Decoding]] error, as a real reply without their answers would. The request is
+    * still checked before it is "sent", as a real client checks it: a Box with no image in the
+    * state is a [[JevError.InvalidRequest]], so give the code under test an [[Image]].
     *
     * @throws IllegalArgumentException
     *   when an answer is not one of its question's levels or options, or a whole answer leaves one

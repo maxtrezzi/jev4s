@@ -46,7 +46,9 @@ object Image {
     else ImageFormat.of(bytes).toRight(ImageError.UnknownFormat).map(format => new Image(bytes.clone, format))
 
   /** An image from the bytes of a PNG or JPEG file, written in base64. Spaces and line breaks are
-    * ignored.
+    * ignored. Give the base64 text alone: with a `data:` prefix, as in
+    * `data:image/png;base64,iVBOR…`, the text is not base64, and the result is
+    * [[ImageError.NotBase64]].
     */
   def fromBase64(text: String): Either[ImageError, Image] = {
     val compact = text.filterNot(_.isWhitespace)

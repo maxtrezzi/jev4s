@@ -13,7 +13,7 @@ has a bug.
 
 1. [A first request](#1-a-first-request)
 2. [The state](#2-the-state)
-3. [Three kinds of question](#3-three-kinds-of-question)
+3. [Kinds of question](#3-kinds-of-question)
 4. [Probabilities and confidence](#4-probabilities-and-confidence)
 5. [How to write good questions](#5-how-to-write-good-questions)
 6. [Many questions in one call](#6-many-questions-in-one-call)
@@ -128,7 +128,7 @@ languages work, but less well, so test them with your own data.
 In jev4s, the state is a `String`, a `ujson.Value`, or a value of your own type, such as a
 `Ticket`, with a `ToState` that turns it into JSON. The tutorials use exactly this example.
 
-## 3. Three kinds of question
+## 3. Kinds of question
 
 Every question has three parts:
 
@@ -137,7 +137,7 @@ Every question has three parts:
 - the **instructions**: the question, or a statement to judge.
 - the **criteria**: the possible answers. Their form depends on the kind of question.
 
-There are three kinds:
+There are three kinds for text, and a fourth, the Box, for images (below):
 
 | Kind | It answers | You give | You get back |
 |---|---|---|---|
@@ -307,7 +307,7 @@ higher confidence alone does not prove that a question is better.
 
 ## 6. Many questions in one call
 
-Send every question about the same state in **one request**. You can mix the three kinds. Jev
+Send every question about the same state in **one request**. You can mix the kinds. Jev
 answers all the questions in parallel, so more questions add almost no time, and each question
 costs only its own few tokens. TypeSafe measured 13 questions in one call as 11.5 times cheaper
 and 9.6 times faster than 13 calls.
