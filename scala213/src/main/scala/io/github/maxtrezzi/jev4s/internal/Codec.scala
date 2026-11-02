@@ -11,13 +11,27 @@ private[jev4s] final case class Decoded(answers: List[Answer], reply: Reply)
   */
 private[jev4s] object Codec {
 
-  /** The body of `POST /v1/systemone`. Questions keep their order. */
-  def encode(model: String, state: ujson.Value, questions: List[(String, Question[_])]): ujson.Value =
-    ujson.Obj(
+  /** The body of `POST /v1/systemone`. Questions keep their order. Each distinct image goes once in
+    * `assets`, in base64, under its ref; with no image there is no `assets`, which the API refuses
+    * empty.
+    */
+  def encode(
+      model: String,
+      state: ujson.Value,
+      questions: List[(String, Question[_])],
+      images: List[Image] = Nil
+  ): ujson.Value = {
+    val body = ujson.Obj(
       "state"     -> state,
       "model"     -> model,
       "questions" -> ujson.Obj.from(questions.map { case (name, question) => name -> encodeQuestion(question) })
     )
+    if (images.nonEmpty) body("assets") = ujson.Obj.from(images.distinct.map(image => image.ref -> asset(image)))
+    body
+  }
+
+  private def asset(image: Image): ujson.Value =
+    ujson.Obj("type" -> "image", "format" -> image.format.wire, "data_base64" -> image.base64)
 
   /** The answers of a successful reply, in the order of `questions`, and the reply's metadata. The
     * order of the answers in the JSON does not matter.
@@ -73,6 +87,8 @@ private[jev4s] object Codec {
     case Choice(instructions, options) =>
       val criteria = options.map(o => o.key -> o.description.getOrElse(ujson.Null))
       ujson.Obj("type" -> "choice", "instructions" -> instructions, "criteria" -> ujson.Obj.from(criteria))
+    case Box(instructions) =>
+      ujson.Obj("type" -> "box", "instructions" -> instructions)
   }
 
   private def decodeAnswer(name: String, question: Question[_], json: ujson.Value): Either[String, Answer] =
@@ -84,7 +100,21 @@ private[jev4s] object Codec {
         } yield NoulAnswer(p)
       case s: Score[_]  => decodeScore(name, s, json)
       case c: Choice[_] => decodeChoice(name, c, json)
+      case Box(_)       => decodeBox(name, json)
     }
+
+  private def decodeBox(name: String, json: ujson.Value): Either[String, Answer] =
+    for {
+      _          <- hasType(json, "box", name)
+      box        <- field(json, "box")
+      top        <- field(box, "top").flatMap(fraction(_, name, "top"))
+      bottom     <- field(box, "bottom").flatMap(fraction(_, name, "bottom"))
+      left       <- field(box, "left").flatMap(fraction(_, name, "left"))
+      right      <- field(box, "right").flatMap(fraction(_, name, "right"))
+      confidence <- field(json, "confidence")
+      known      <- if (confidence.isNull) Right(None) else probability(confidence, name).map(Some(_))
+      // The order of the edges is not checked: the schema does not promise it (ADR-0057).
+    } yield BoxAnswer(Region(top, bottom, left, right), known)
 
   private def decodeScore[L](name: String, question: Score[L], json: ujson.Value): Either[String, Answer] = {
     val values = question.levels.map(_.value)
@@ -133,6 +163,9 @@ private[jev4s] object Codec {
 
   private def probability(json: ujson.Value, name: String): Either[String, Probability] =
     number(json, name).flatMap(d => Probability.from(d).toRight(s"'$name': $d is not a probability"))
+
+  private def fraction(json: ujson.Value, name: String, edge: String): Either[String, Double] =
+    number(json, name).filterOrElse(d => d >= 0 && d <= 1, s"'$name': the $edge edge $json is not between 0 and 1")
 
   private def hasType(json: ujson.Value, expected: String, name: String): Either[String, Unit] =
     field(json, "type").flatMap(string(_, name)).flatMap { found =>

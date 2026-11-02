@@ -9,7 +9,7 @@ type AnswerOf[Q] <: Answer = Q match
   case Question[a] => a
 
 /** Evidence that every value of a named tuple is a question, found by the compiler. */
-@implicitNotFound("every value in the named tuple must be a question: Noul, Score or Choice")
+@implicitNotFound("every value in the named tuple must be a question: Noul, Score, Choice or Box")
 sealed trait AllQuestions[T <: Tuple]:
   def list(values: T): List[Question[?]]
 

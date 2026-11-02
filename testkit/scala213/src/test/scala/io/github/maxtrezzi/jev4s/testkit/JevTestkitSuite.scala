@@ -170,6 +170,18 @@ class JevTestkitSuite extends munit.FunSuite {
     )
   }
 
+  test("a Box answers with a region and a confidence of 1, or with a whole answer") {
+    val photo  = Image(Array(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1).map(_.toByte)).toOption.get
+    val dog    = Box("The dog").as("dog")
+    val cat    = Box("The cat").as("cat")
+    val region = Region(0.1, 0.4, 0.2, 0.8)
+    val (d, c) = ok(JevTestkit.answering(dog.is(region), cat.is(BoxAnswer(region, None))).ask(photo, dog, cat))
+    assertEquals(d, BoxAnswer(region, Some(p(1.0))))
+    assertEquals(c, BoxAnswer(region, None))
+    val confident = JevTestkit.answering(dog.is(BoxAnswer(region, Some(p(0.3)))))
+    assertEquals(confident.ask(photo, dog).map(_.confidence), Right(Some(p(0.3))))
+  }
+
   test("a failing client returns its error on every call") {
     assertEquals(JevTestkit.failing(JevError.Overloaded).ask("any state", urgent), Left(JevError.Overloaded))
     assertEquals(

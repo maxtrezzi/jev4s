@@ -106,4 +106,10 @@ class JevConfigSuite extends munit.FunSuite {
       assert(client.ask("text", Noul("Urgent?").as("is_urgent")).isRight)
     } finally server.close()
   }
+
+  test("no danger zone is on by default") {
+    assertEquals(JevConfig(new ApiKey("k"), "jev-1.14.0").dangerZones, Set.empty[DangerZone])
+    assertEquals(from("TYPESAFE_API_KEY" -> "k").map(_.dangerZones), Right(Set.empty[DangerZone]))
+    assertEquals(DangerZone.Images.header, "TypeSafe-Danger-Zone-Images")
+  }
 }

@@ -1,9 +1,9 @@
 # ADR-0056: Images travel in the state, as base64 assets, behind an explicit opt-in
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-01
 - **Supersedes:** —
-- **Amends:** —
+- **Amends:** ADR-0022, ADR-0023, ADR-0024
 
 ## Context
 
@@ -32,13 +32,15 @@ Measured on 2026-11-01 with raw HTTP calls, all answered by `jev-1.14.0`:
 - An image costs about one input token per 380 pixels: 819 tokens for a 448×448 image with one
   question, 3045 for 1024×1024.
 - A placeholder works in the `instructions` as well as in the `state`.
+- An asset that nothing in the request names is refused: 400, `Invalid image request.`
+- A placeholder of `image-` and 64 hex digits cost 25 more input tokens than a UUID: the
+  placeholder is billed.
 
 Today the state is a `ujson.Value`, from `ToState[S]` ([ADR-0022](0022-the-scala-3-client-api.md),
 [ADR-0023](0023-the-scala-2-13-client-api.md)), and `Transport.send` takes and returns a `String`.
 
-When accepted, this ADR amends ADR-0022 and ADR-0023 (`ToState`) and ADR-0024 (`JevConfig` and the
-headers of `JdkTransport`). The branch that implements it sets `Amends` here and records the
-amendment in their status.
+This ADR amends ADR-0022 and ADR-0023 (`ToState` and the state) and ADR-0024 (`JevConfig` and the
+headers of `JdkTransport`).
 
 ## Forces
 
@@ -52,6 +54,9 @@ amendment in their status.
   Finding `"assets"` in the body guesses at JSON in a component that does not read it. An
   explicit setting in `JevConfig` names what the caller accepts, as the SDKs do with their
   default headers.
+- **How `ToState` carries images.** Changing its result to a state with images breaks every
+  `ToState` that users wrote, most of them a lambda to `ujson.Value`. A second method with a
+  default of no image keeps `toState` the single abstract method, so those lambdas still compile.
 - **Where an image goes.** `instructions` and `criteria` are `ujson.Value`s
   ([ADR-0031](0031-instructions-and-criteria-are-ujson-values.md)), a closed type that cannot hold
   an image. A `Content` type in their place, with an interpolator such as `img"Is $photo
@@ -76,24 +81,26 @@ Proposed, Scala 3 first, then 2.13:
   the first bytes; anything else, or no bytes, is an `ImageError`. The array is copied and never
   handed out. Two images are equal when their bytes are. In 2.13, `Image` is `Serializable`, for
   Spark ([ADR-0041](0041-the-spark-example-builds-its-client-on-the-executors.md)).
-- **`image.ref`**, the placeholder, is derived from the SHA-256 of the bytes.
-- **Images go in the state.** `ToState[S]` returns the state's JSON with the images it uses. A
-  given for `Image` sends the image alone; a state value pairs any JSON with its images, as in
-  `State(ujson.Obj("photo" -> photo.ref, "caption" -> caption), photo)`. The exact shape is
-  settled in T33.
+- **`image.ref`**, the placeholder, is `image-` and the first 16 bytes of the SHA-256 of the
+  bytes, in hex: as long as the SDKs' own, since the placeholder is billed.
+- **Images go in the state.** `ToState[S]` keeps `toState(state): ujson.Value` and gains
+  `images(state): List[Image]`, which is empty by default. A given for `Image` sends the image
+  alone; `State(json, images*)` pairs any JSON with its images, as in
+  `State(ujson.Obj("photo" -> photo.ref, "caption" -> caption), photo)`.
 - **The codec writes each distinct image once in `assets`**, as `data_base64` with its `format`.
   The body stays a `String`, and `Transport` does not change.
 - **`JevConfig(dangerZones: Set[DangerZone] = Set.empty)`**, with `DangerZone.Images`.
   `JdkTransport` sends `TypeSafe-Danger-Zone-Images: true` on every request when it is set. A
   transport of the caller's own sends its own headers.
-- **The `Validator` reports** a placeholder in the state with no image, and an image that the
-  state does not use. To confirm in T33 what the API does with an unused asset.
+- **The `Validator` reports** a placeholder in the state with no image (`Problem.UnknownImage`),
+  and an image that the state does not use (`Problem.UnusedImage`), which the API refuses.
 - **No size limit in the code.** The guide states the limits measured on 2026-11-01, with the
   date.
 - **This ships as 0.2.0.** A new field in `JevConfig` changes its `apply`, `copy` and `unapply`,
   and `ToState` changes its result: MiMa and TASTy-MiMa refuse both in a patch
-  ([ADR-0052](0052-mima-and-tasty-mima-check-each-patch-version.md)). To confirm by running them
-  in T33.
+  ([ADR-0052](0052-mima-and-tasty-mima-check-each-patch-version.md)). Measured against 0.1.0:
+  MiMa finds 3 problems in each module, the `apply`, `copy` and constructor of `JevConfig`, and
+  TASTy-MiMa finds 6, those three, the `Answer` union and two internal signatures.
 
 ## Consequences
 
@@ -103,8 +110,8 @@ Proposed, Scala 3 first, then 2.13:
 - A request body is a third larger than with multipart, and stays in memory whole: a 1536×1536
   PNG is a few megabytes at most. Multipart can come later inside `JdkTransport` without changing
   the model.
-- Code that implements `ToState` for its own type changes, and so does code that builds a
-  `JevConfig` with positional arguments or matches on it.
+- A `ToState` written before keeps compiling, and sends no image. Code that matches on a
+  `JevConfig`, or builds one with all its arguments by position, changes.
 - Do not read files in `Image` "for convenience": it brings I/O errors into the library. Do not
   replace the content-derived placeholder with a random one "to match the SDKs": the requests
   stop being deterministic.

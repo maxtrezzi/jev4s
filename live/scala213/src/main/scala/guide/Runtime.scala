@@ -25,6 +25,7 @@ object Runtime {
             case a: NoulAnswer      => println(s"$name: ${a.isYes}")
             case a: ScoreAnswer[_]  => println(s"$name: ${a.score}")
             case a: ChoiceAnswer[_] => println(s"$name: ${a.choice}")
+            case a: BoxAnswer       => println(s"$name: ${a.region}")
           }
         }
       case Left(error) => println(s"Jev did not answer: $error")

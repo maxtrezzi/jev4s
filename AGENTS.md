@@ -6,8 +6,8 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M8 and T1 to T32 are done; T33 is planned, with ADR-0056 and ADR-0057 proposed. `0.1.0` is
-on Maven Central (2026-09-28), and `dev` is at `0.1.1-SNAPSHOT`.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M8 and T1 to T33 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
+`0.2.0-SNAPSHOT`, with images and the Box question for the next release.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -20,7 +20,7 @@ named tuples in Scala 3; in 2.13, typed keys answered as a tuple, 1 to 10 per ca
 `askMap` in both for questions built at runtime; over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpClient` (ADR-0038), or over any `Transport`, and reports replies, retries and each HTTP response with its request id as
 `JevEvent`s (ADR-0040). The library has no rate limiter; the tutorials show a pacer (ADR-0039). Each module has a test
-kit, `jev4s-testkit` in `testkit/`, whose client answers with typed values (ADR-0048). The API key is an `ApiKey` (ADR-0027), and a config that `java.net.http` would refuse, such as a key with a newline, is `JevError.InvalidConfig`, never an exception (ADR-0042), as is a `RetryPolicy` whose wait could be negative (ADR-0045). A request with no response is `JevError.Network` with its `NetworkFailure`, and a certificate that TLS refused is not retried (ADR-0049). Live tests and examples are in `live/`,
+kit, `jev4s-testkit` in `testkit/`, whose client answers with typed values (ADR-0048). The API key is an `ApiKey` (ADR-0027), and a config that `java.net.http` would refuse, such as a key with a newline, is `JevError.InvalidConfig`, never an exception (ADR-0042), as is a `RetryPolicy` whose wait could be negative (ADR-0045). A request with no response is `JevError.Network` with its `NetworkFailure`, and a certificate that TLS refused is not retried (ADR-0049). An `Image`, from the bytes of a PNG or JPEG file, goes in the state under a `ref` made from its bytes, and is sent once in `assets` in base64 when the config turns on `DangerZone.Images`; `ToState` gives a state's images (ADR-0056). A `Box` answers with a `Region` and an optional confidence, and a Box with no image is a `Problem` (ADR-0057). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
 version, all quoting the examples in `live/` (ADR-0032), and the compile errors that the README and the

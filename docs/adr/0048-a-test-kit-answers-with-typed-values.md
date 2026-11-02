@@ -1,6 +1,6 @@
 # ADR-0048: A test kit answers with typed values
 
-- **Status:** Accepted
+- **Status:** Accepted — Box answers amended by ADR-0057
 - **Date:** 2026-09-25
 - **Supersedes:** —
 - **Amends:** —

@@ -34,6 +34,15 @@ class JdkTransportSuite extends munit.FunSuite {
     }
   }
 
+  test("each danger zone of the config sends its header, and none is sent by default") {
+    withServer(Reply(200, "{}"), Reply(200, "{}")) { server =>
+      new JdkTransport(config(server).copy(dangerZones = Set(DangerZone.Images))).send("{}")
+      new JdkTransport(config(server)).send("{}")
+      val headers = server.requests.asScala.toList.map(_.headers)
+      assertEquals(headers.map(_.get("typesafe-danger-zone-images")), List(Some("true"), None))
+    }
+  }
+
   test("a base URL with a path and a trailing slash keeps its path") {
     withServer(Reply(200, "{}")) { server =>
       val prefixed = config(server).copy(baseUrl = java.net.URI.create(s"${server.baseUrl}/proxy/"))

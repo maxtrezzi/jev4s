@@ -42,7 +42,7 @@ final class JevClient private (model: String, transport: Transport, onEvent: Jev
       values: AllQuestions[V],
   ): Either[JevError, NamedTuple[N, Tuple.Map[V, AnswerOf]]] =
     val pairs = names.list.zip(values.list(questions.toTuple))
-    run(toState.toState(state), pairs).map(answers =>
+    run(toState.toState(state), toState.images(state), pairs).map(answers =>
       Tuple.fromArray(answers.toArray).asInstanceOf[NamedTuple[N, Tuple.Map[V, AnswerOf]]]
     )
 
@@ -51,13 +51,17 @@ final class JevClient private (model: String, transport: Transport, onEvent: Jev
       toState: ToState[S]
   ): Either[JevError, Map[String, Answer]] =
     val pairs = questions.toList
-    run(toState.toState(state), pairs).map(answers => pairs.map(_._1).zip(answers).toMap)
+    run(toState.toState(state), toState.images(state), pairs).map(answers => pairs.map(_._1).zip(answers).toMap)
 
-  private def run(state: ujson.Value, questions: List[(String, Question[?])]): Either[JevError, List[Answer]] =
-    Validator.validate(questions) match
+  private def run(
+      state: ujson.Value,
+      images: List[Image],
+      questions: List[(String, Question[?])],
+  ): Either[JevError, List[Answer]] =
+    Validator.validate(questions, state, images) match
       case Nil =>
         for
-          body    <- transport.send(ujson.write(Codec.encode(model, state, questions)))
+          body    <- transport.send(ujson.write(Codec.encode(model, state, questions, images)))
           decoded <- Codec.decode(body, questions)
         yield
           onEvent(JevEvent.Replied(decoded.reply))

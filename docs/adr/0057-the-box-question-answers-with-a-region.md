@@ -1,9 +1,9 @@
 # ADR-0057: The box question answers with a Region
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-01
 - **Supersedes:** —
-- **Amends:** —
+- **Amends:** ADR-0021, ADR-0022, ADR-0023, ADR-0048
 
 ## Context
 
@@ -35,11 +35,10 @@ filled rectangle at a known place:
   it.
 - Noul and Choice questions about an image work as they do about text.
 
-When accepted, this ADR amends [ADR-0021](0021-what-the-codec-keeps-from-a-jev-reply.md) (the
-answers the codec reads), [ADR-0022](0022-the-scala-3-client-api.md) and
-[ADR-0023](0023-the-scala-2-13-client-api.md) (the message of `AllQuestions`), and
-[ADR-0048](0048-a-test-kit-answers-with-typed-values.md) (the test kits). The branch that
-implements it sets `Amends` here and records the amendment in their status.
+This ADR amends [ADR-0021](0021-what-the-codec-keeps-from-a-jev-reply.md) (the answers the codec
+reads), [ADR-0022](0022-the-scala-3-client-api.md) and
+[ADR-0023](0023-the-scala-2-13-client-api.md) (the kinds of question and the message of
+`AllQuestions`), and [ADR-0048](0048-a-test-kit-answers-with-typed-values.md) (the test kits).
 
 ## Forces
 
@@ -65,8 +64,9 @@ Proposed, Scala 3 first, then 2.13:
 - **`BoxAnswer(region: Region, confidence: Option[Probability])`**, with
   `ifConfident(min: Probability): Option[Region]`, `None` also when there is no confidence.
 - **`Region(top, bottom, left, right: Double)`**, as the API sends them, with `width`, `height`
-  and `inPixels(width: Int, height: Int)`. `width` and `height` do not assume the order of the
-  edges.
+  and `inPixels(width: Int, height: Int)`: a named tuple `(x, y, width, height)` in Scala 3, a
+  case class `Pixels` in 2.13. `width` and `height` do not assume the order of the edges. In 2.13
+  the threshold of `ifConfident` is a `Double`, as for the other answers.
 - **The codec** reads `type: "box"`, the four edges and `confidence`. An edge that is not a
   number from 0 to 1 is `JevError.Decoding`; `null` confidence is `None`; a missing `confidence`
   field is `JevError.Decoding`. It does not check the order of the edges.

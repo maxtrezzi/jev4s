@@ -83,6 +83,9 @@ enum Problem derives CanEqual:
   case DuplicateOptionKey(name: String, key: String)
   case DuplicateLevelValue(name: String, value: String)
   case DuplicateOptionValue(name: String, value: String)
+  case BoxWithoutImage(name: String)
+  case UnknownImage(ref: String)
+  case UnusedImage(ref: String)
 
   def message: String = this match
     case NoQuestions                => "a request needs at least one question"
@@ -94,3 +97,6 @@ enum Problem derives CanEqual:
     case DuplicateOptionKey(n, key) => s"choice '$n' uses the option key '$key' more than once"
     case DuplicateLevelValue(n, v)  => s"score '$n' gives the value '$v' to more than one level"
     case DuplicateOptionValue(n, v) => s"choice '$n' gives the value '$v' to more than one option"
+    case BoxWithoutImage(n)         => s"box '$n' needs an image in the state"
+    case UnknownImage(ref) => s"the state uses the image '$ref', but does not give it: add it to the state's images"
+    case UnusedImage(ref)  => s"the image '$ref' is given, but the state does not use it: put its ref in the state"

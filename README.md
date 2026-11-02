@@ -94,7 +94,7 @@ Probability(1.5)                 // error: a Probability must be between 0 and 1
 enum Mood derives JevScale:      // error: a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases
   case Fine
 client.ask(42, questions)        // error: no ToState[Int]: give one, for example `given ToState[Int] = s => ujson.Obj(...)`, …
-client.ask(ticket, (team = questions.team, count = 3)) // error: every value in the named tuple must be a question: Noul, Score or Choice
+client.ask(ticket, (team = questions.team, count = 3)) // error: every value in the named tuple must be a question: Noul, Score, Choice or Box
 ```
 
 A test compiles each line and compares the message, so this list stays true. What the compiler
@@ -229,7 +229,7 @@ Spark 4.0 does not start on JDK 25.
 
 | Guide | What it teaches |
 |---|---|
-| [Jev concepts](docs/guide/concepts.md) | What Jev is, the three kinds of question, probabilities and confidence, how to write good questions, errors and retries. For both Scala versions. |
+| [Jev concepts](docs/guide/concepts.md) | What Jev is, the kinds of question, probabilities and confidence, how to write good questions, errors and retries, images. For both Scala versions. |
 | [Tutorial for Scala 3](docs/guide/scala3.md) | jev4s step by step, from the first call to tests without the network. |
 | [Tutorial for Scala 2.13](docs/guide/scala213.md) | The same steps in Scala 2.13. |
 | [jev4s with Apache Spark](docs/guide/spark.md) | One question for each row of a Spark `Dataset`: a client on each executor, a shared rate, and why each action calls Jev again. |
@@ -248,6 +248,9 @@ and you can run each one from this repository, for example `sbt "scala3Live/runM
 - **Retries like the official SDKs**, with a limit on the total time of a call.
 - **No logs.** jev4s gives each event to a function of yours, which sends it to your logger or
   your metrics.
+- **Images, experimental.** Jev 1.14 reads PNG and JPEG images, and a Box question says where
+  something is in one: chapter 14 of the tutorials, [Scala 3](docs/guide/scala3.md#14-images) and
+  [Scala 2.13](docs/guide/scala213.md#14-images).
 - **One dependency**, [ujson](https://com-lihaoyi.github.io/upickle/). HTTP uses the JDK's
   `java.net.http`.
 - **Tests without the network.** `jev4s-testkit` gives your tests a client that answers with

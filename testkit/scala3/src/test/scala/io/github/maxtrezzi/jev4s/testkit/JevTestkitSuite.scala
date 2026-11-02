@@ -165,6 +165,17 @@ class JevTestkitSuite extends munit.FunSuite:
       "'feeling': the answer gives no probability to its level Annoyed",
     )
 
+  test("a Box answers with a region and a confidence of 1, or with a whole answer"):
+    val photo  = Image(Array(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1).map(_.toByte)).toOption.get
+    val boxes  = (dog = Box("The dog"), cat = Box("The cat"))
+    val region = Region(0.1, 0.4, 0.2, 0.8)
+    val client = JevTestkit.answering(boxes)((dog = region, cat = BoxAnswer(region, None)))
+    val r      = client.ask(photo, boxes).fold(e => fail(e.toString), identity)
+    assertEquals(r.dog, BoxAnswer(region, Some(p(1.0))))
+    assertEquals(r.cat, BoxAnswer(region, None))
+    val confident = JevTestkit.answering(boxes)((dog = BoxAnswer(region, Some(p(0.3))), cat = region))
+    assertEquals(confident.ask(photo, boxes).map(_.dog.confidence), Right(Some(p(0.3))))
+
   test("a failing client returns its error on every call"):
     val client = JevTestkit.failing(JevError.Overloaded)
     assertEquals(client.ask("any state", (urgent = Noul("Is it urgent?"))), Left(JevError.Overloaded))
