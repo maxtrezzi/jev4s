@@ -1693,6 +1693,21 @@ Found, and fixed on this branch, as the owner asked (2026-11-02):
 5. **`Image.fromBase64` refuses a `data:` URL** as `NotBase64`, as the npm SDK does, and did not
    say so. Its Scaladoc says it, and a test checks it, in both modules.
 
+6. **Older passages of the documents still described three kinds of question**, found when the
+   owner asked whether the documents were current:
+   - chapter 8 of both tutorials said that an answer of `askMap` is a Noul, Score or Choice
+     answer, "with one case for each", under code that has a fourth case, `BoxAnswer`;
+   - section 9 of the concepts guide had no `Box`, `BoxAnswer`, `Image`, `State` or
+     `dangerZones` in its tables, and none of the three new checks;
+   - chapter 12 of both tutorials did not say that the test kit answers a Box with a `Region` or
+     a `BoxAnswer`, nor that a Box needs an `Image` in a test too;
+   - the README's "Typed answers" did not name the Box;
+   - the concepts guide had no image among the forms of a state, gave a few hundred tokens as the
+     cost of a request without saying that an image costs more, and gave every question criteria,
+     which a Box has not.
+
+   Each passage says it now.
+
 Left, as the owner decided: in Scala 3, `Image` is not `Serializable`. ADR-0056 asks it of 2.13
 only, the module that runs on Spark.
 

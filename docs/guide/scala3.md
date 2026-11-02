@@ -577,8 +577,8 @@ vip: true
 ```
 
 The answers are a `Map[String, Answer]`, with the same names. The compiler does not know which
-question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer[?]` or a
-`ChoiceAnswer[?]`. Match on it, with one case for each.
+question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer[?]`, a
+`ChoiceAnswer[?]` or a `BoxAnswer`. Match on it, with one case for each.
 
 `Choice.keys(...)` makes a Choice whose options are strings: each key is also the value, so the
 choice is a `String`. Use it for options that you know only at runtime.
@@ -807,12 +807,13 @@ class RouterSuite extends munit.FunSuite:
 ```
 
 `JevTestkit.answering` takes the questions and a named tuple of answers with the same names:
-`true` or `false` for a Noul, a case of your enum for a Choice or a Score. The compiler checks
+`true` or `false` for a Noul, a case of your enum for a Choice or a Score, a `Region` for a Box
+([chapter 14](#14-images)). The compiler checks
 the names and the type of each answer, as it checks what `ask` returns. The client decodes them
 from a reply in the format of the API, so your code reads what it would read from Jev: all the
 probability on the option or the level you give, and a confidence of 1. For a Noul, you can also
-give a `Probability`. For another confidence, give a whole `ChoiceAnswer` or `ScoreAnswer`, as
-the third test does: its confidence of 0.6 is under the router's 0.8, so a person chooses the
+give a `Probability`. For another confidence, give a whole `ChoiceAnswer`, `ScoreAnswer` or
+`BoxAnswer`, as the third test does: its confidence of 0.6 is under the router's 0.8, so a person chooses the
 team. `JevTestkit.failing(error)` returns the error on every call, as a real call would after its
 retries.
 
@@ -820,7 +821,8 @@ The client does not look at what your code asks: a question under another name g
 `JevError.Decoding` error, as a real reply without its answer would. An answer that is not one of
 its question's options or levels throws `IllegalArgumentException` when you build the client: it
 is a mistake in the test. So does a whole answer whose `probabilities` leave out an option or a
-level: a reply from Jev gives each one a probability, even when it is 0.
+level: a reply from Jev gives each one a probability, even when it is 0. The request is still checked before it is sent, as with a real
+client: code that asks a Box needs an `Image` in its state, in a test too.
 
 Under the test kit is `JevClient.withTransport`, which you can use yourself. A `Transport` is one
 function: it takes the body of the request and returns the body of the reply, or a `JevError`.
