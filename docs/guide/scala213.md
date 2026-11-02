@@ -605,8 +605,8 @@ vip: true
 ```
 
 The answers are a `Map[String, Answer]`, with the same names. The compiler does not know which
-question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer[_]` or a
-`ChoiceAnswer[_]`. Match on it, with one case for each.
+question each name had, so each answer is an `Answer`: a `NoulAnswer`, a `ScoreAnswer[_]`, a
+`ChoiceAnswer[_]` or a `BoxAnswer`. Match on it, with one case for each.
 
 `Choice.keys(...)` makes a Choice whose options are strings: each key is also the value, so the
 choice is a `String`. Use it for options that you know only at runtime.
@@ -847,12 +847,13 @@ class RouterSuite extends munit.FunSuite {
 ```
 
 With `import io.github.maxtrezzi.jev4s.testkit._`, each key has `is`, which gives it an answer:
-`true` or `false` for a Noul, a value of your type for a Choice or a Score. The compiler checks
+`true` or `false` for a Noul, a value of your type for a Choice or a Score, a `Region` for a Box
+([chapter 14](#14-images)). The compiler checks
 that each answer has the type of its key. `JevTestkit.answering` takes the answers, and the
 client decodes them from a reply in the format of the API, so your code reads what it would read
 from Jev: all the probability on the option or the level you give, and a confidence of 1. For a
-Noul, you can also give a `Probability`. For another confidence, give a whole `ChoiceAnswer` or
-`ScoreAnswer`, as the third test does: its confidence of 0.6 is under the router's 0.8, so a
+Noul, you can also give a `Probability`. For another confidence, give a whole `ChoiceAnswer`,
+`ScoreAnswer` or `BoxAnswer`, as the third test does: its confidence of 0.6 is under the router's 0.8, so a
 person chooses the team. `JevTestkit.failing(error)` returns the error on every call, as a real
 call would after its retries.
 
@@ -861,11 +862,12 @@ The client does not look at what your code asks: a key with another name gets a
 its question's options or levels, or two answers for keys with the same name, throw
 `IllegalArgumentException` when you build the client: it is a mistake in the test. So does a
 whole answer whose `probabilities` leave out an option or a level: a reply from Jev gives each one
-a probability, even when it is 0.
+a probability, even when it is 0. The request is still checked before it is sent, as with a real
+client: code that asks a Box needs an `Image` in its state, in a test too.
 
 Under the test kit is `JevClient.withTransport`, which you can use yourself. A `Transport` is one
 function: it takes the body of the request and returns the body of the reply, or a `JevError`.
-The concepts guide shows [real replies](concepts.md#3-three-kinds-of-question). A client over a
+The concepts guide shows [real replies](concepts.md#3-kinds-of-question). A client over a
 transport of your own does not retry: the retries belong to the transport of
 `JevClient.create(config)`.
 

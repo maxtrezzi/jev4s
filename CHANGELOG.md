@@ -13,9 +13,9 @@ warns until it handles the new one.
 
 ## Unreleased
 
-This will be version 0.2.0. It can break your code in two places: a `match` on an answer that
-lists every kind of answer, and a `JevConfig` built with all its arguments by position or matched
-on.
+This will be version 0.2.0. It can break your code in three places: a `match` that lists every
+kind of answer, or every `Problem`, and a `JevConfig` built with all its arguments by position or
+matched on.
 
 ### Both modules
 
@@ -33,7 +33,8 @@ on.
   kind warns until it handles `BoxAnswer`.
 - **New checks before sending.** A request is not sent when it has a Box and no image
   (`Problem.BoxWithoutImage`), an image `ref` in the state without its image
-  (`Problem.UnknownImage`), or an image that the state does not use (`Problem.UnusedImage`).
+  (`Problem.UnknownImage`), or an image that the state does not use (`Problem.UnusedImage`). A
+  `match` on a `Problem` that lists every case warns until it handles these three.
 - **`JevConfig` has a new field, `dangerZones`**, with no zone turned on by default. A `ToState`
   that you wrote keeps compiling: `images` has a default of no image.
 
@@ -46,6 +47,9 @@ on.
 - `Region.inPixels` gives `Pixels(x, y, width, height)`, and `BoxAnswer.ifConfident` takes a
   `Double`, as the other answers do. An `Image` is `Serializable`, so a Spark closure can carry
   one.
+- **Every answer can be serialized.** A `Probability` inside a `Map` or an `Option` could not, so
+  in 0.1.0 a `ScoreAnswer` or a `ChoiceAnswer` failed with `NotSerializableException` when Spark
+  sent it. `Probability` is `Serializable` now.
 
 ### Test kits
 

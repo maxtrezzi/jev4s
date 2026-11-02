@@ -241,8 +241,8 @@ and you can run each one from this repository, for example `sbt "scala3Live/runM
 ## What jev4s gives you
 
 - **Typed answers.** A Noul gives a probability, a Score a position on your scale and its most
-  likely level, a Choice a value of your own type. The levels of a Score and the options of a
-  Choice can be your own types too.
+  likely level, a Choice a value of your own type, a Box where something is in an image. The
+  levels of a Score and the options of a Choice can be your own types too.
 - **No exceptions.** Every call returns `Either[JevError, A]`. Mistakes that the compiler can
   see are compile errors, and a request with problems is not sent.
 - **Retries like the official SDKs**, with a limit on the total time of a call.

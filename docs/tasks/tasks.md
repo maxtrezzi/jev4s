@@ -1641,3 +1641,77 @@ ends; the definition of done holds.
 | `scala213` | 169 | 100% / 100% | 309, every one detected |
 | `scala3Testkit` | 13 | 100% / 100% | 36, every one detected |
 | `scala213Testkit` | 14 | 100% / 100% | 39, every one detected |
+
+### T34 — A review before 0.2.0
+
+**Status:** Done 2026-11-02
+
+**Branch:** `task/t34-review-before-0-2-0`
+
+0.2.0 changes the public API (T33), so `dev` is reviewed as it will be released, as T30 did
+before 0.1.0: the history, the artifacts as they would be published, a new project that uses
+them, the new code of both modules and both test kits, and the documents a user reads first.
+
+**Done when:** each point found is fixed, or the owner decided to leave it; the definition of
+done holds in both modules and both test kits.
+
+#### Found
+
+Checked on 2026-11-02, on `dev` at `568be50`, JDK 25, no call to the real API:
+
+- **The history holds no secret.** A mirror clone, with the `refs/pull/*/head` of the 33 pull
+  requests, has 87 commits; their diffs hold no API key, no cookie value from `golden/box`, no
+  session link, and no `Claude-Session` trailer but the sentences that forbid it. The only email
+  addresses are GitHub's and Anthropic's `noreply`.
+- **The artifacts of `publishLocal` at `0.2.0-SNAPSHOT`** hold classes, TASTy, the manifest,
+  `LICENSE` and `NOTICE`, nothing from the tests or `golden/`. The poms depend on what 0.1.0's
+  did: ujson at runtime, munit in tests.
+- **A new project uses them**: with scala-cli, Scala 3.9.0 and 2.13.16, `-Werror`, a Box over
+  `live/images/rectangle.png` answered by the test kit gives (112, 56), 224 × 112 pixels, a
+  text state gives `InvalidRequest(List(BoxWithoutImage(rectangle)))`, and a `ToState` written
+  for 0.1.0 as a lambda still compiles.
+- **Both modules match point for point**: the messages of every `Problem` and of the codec are
+  the same strings.
+- CI on `dev` at `568be50`: 12 jobs of 12; `test scala213 on JDK 25` passed when run again,
+  after it failed to download sbt-pgp 2.3.2, whose pom answers 200 from Maven Central.
+
+Found, and fixed on this branch, as the owner asked (2026-11-02):
+
+1. **In 2.13, `ScoreAnswer`, `ChoiceAnswer` and `BoxAnswer` could not be serialized**:
+   `NotSerializableException: io.github.maxtrezzi.jev4s.Probability`. A value class inside a
+   `Map` or an `Option` is a real object, and `Probability` was not `Serializable`; since 0.1.0
+   for Score and Choice. `NoulAnswer` was, its field erased to a `Double`. In Scala 3 every answer
+   was, `Probability` being an opaque `Double`. `Probability` now extends `AnyVal with
+   Serializable`, and a test serializes every answer and reads it back equal.
+2. **The CHANGELOG did not say that a `match` on `Problem`** that lists every case warns until
+   it handles the three new ones. It does now.
+3. **The test kits said "the client does not look at what your code asks"**, but a request is
+   still checked: a Box with a text state is an `InvalidRequest` with the test kit too. Their
+   Scaladoc says so, and to give the code under test an `Image`.
+4. **The concepts guide said "Three kinds of question"** in a heading and "the three kinds" in
+   section 6, with four kinds. The heading is "Kinds of question", and the tutorials link to it.
+5. **`Image.fromBase64` refuses a `data:` URL** as `NotBase64`, as the npm SDK does, and did not
+   say so. Its Scaladoc says it, and a test checks it, in both modules.
+
+6. **Older passages of the documents still described three kinds of question**, found when the
+   owner asked whether the documents were current:
+   - chapter 8 of both tutorials said that an answer of `askMap` is a Noul, Score or Choice
+     answer, "with one case for each", under code that has a fourth case, `BoxAnswer`;
+   - section 9 of the concepts guide had no `Box`, `BoxAnswer`, `Image`, `State` or
+     `dangerZones` in its tables, and none of the three new checks;
+   - chapter 12 of both tutorials did not say that the test kit answers a Box with a `Region` or
+     a `BoxAnswer`, nor that a Box needs an `Image` in a test too;
+   - the README's "Typed answers" did not name the Box;
+   - the concepts guide had no image among the forms of a state, gave a few hundred tokens as the
+     cost of a request without saying that an image costs more, and gave every question criteria,
+     which a Box has not.
+
+   Each passage says it now.
+
+Left, as the owner decided: in Scala 3, `Image` is not `Serializable`. ADR-0056 asks it of 2.13
+only, the module that runs on Spark.
+
+- Measured after the fixes, JDK 25: `scala3` 196 tests, `scala213` 170, 13 in `scala3Testkit`
+  and 14 in `scala213Testkit`, 9 and 9 in the guides. 100% statement and branch coverage in the
+  four projects; every mutant of `scala213` detected, 306 of 309 (1 ignored, 2 timeouts, as
+  before). The formatting, docs, Scaladoc and compatibility checks pass.
