@@ -1715,3 +1715,30 @@ only, the module that runs on Spark.
   and 14 in `scala213Testkit`, 9 and 9 in the guides. 100% statement and branch coverage in the
   four projects; every mutant of `scala213` detected, 306 of 309 (1 ignored, 2 timeouts, as
   before). The formatting, docs, Scaladoc and compatibility checks pass.
+
+### T35 — The README shows images
+
+**Status:** Done 2026-11-02
+
+**Branch:** `docs/t35-readme-images`
+
+The README's three examples ask about a text ticket, and named images and the Box only in two
+lines of "What jev4s gives you". `dev` is the default branch, so the README that GitHub shows
+already describes images, next to coordinates of 0.1.0, which has none.
+
+**Done when:** the README shows an image and a Box in code quoted from `live/`, says that they
+come with 0.2.0, and its examples still hold for the model they name.
+
+#### Found
+
+- **`jev-1.13.0` still answers** the README's Scala 3 example, on 2026-11-02: "Send to Billing.
+  Duplicate charge: true. Feeling: Angry (1.82 of 2).", against 1.8 on 2026-09-25. The same
+  decision; the README's dated outputs stay. One call, a few hundred input tokens.
+
+#### Done
+
+- A section "Images" in the README's Scala 3 part quotes `image-client` and `image-locate` from
+  `live/scala3`, with the output of the run of 2026-11-01, and links chapter 14 of both
+  tutorials.
+- It says, as does "What jev4s gives you", that images come with 0.2.0, not on Maven Central
+  yet. The release pull request of 0.2.0 removes both remarks, with the coordinates.

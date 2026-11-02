@@ -64,6 +64,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T32](tasks.md#t32--alerts-for-the-dependencies-of-the-published-modules) | Alerts for the dependencies of the published modules | Done |
 | [T33](tasks.md#t33--images-and-box-questions) | Images and box questions | Done |
 | [T34](tasks.md#t34--a-review-before-020) | A review before 0.2.0 | Done |
+| [T35](tasks.md#t35--the-readme-shows-images) | The README shows images | Done |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
 | [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |
