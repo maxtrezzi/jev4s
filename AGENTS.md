@@ -6,7 +6,7 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M8 and T1 to T34 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
+**M1 to M8 and T1 to T35 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
 `0.2.0-SNAPSHOT`, with images and the Box question for the next release.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and

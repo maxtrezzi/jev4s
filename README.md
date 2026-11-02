@@ -101,6 +101,45 @@ A test compiles each line and compares the message, so this list stays true. Wha
 cannot see, such as two levels with the same text, jev4s checks before it sends the request: it
 returns every problem at once, as a value. No call throws an exception.
 
+### Images
+
+Jev 1.14 reads PNG and JPEG images, and a fourth kind of question, the Box, says where something
+is in one. **Images come with jev4s 0.2.0, which is not on Maven Central yet**: 0.1.0 does not
+have them, and the [CHANGELOG](CHANGELOG.md) lists them under "Unreleased". TypeSafe calls images
+experimental, so you turn them on in the config, with a model that reads them:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-client -->
+```scala
+/** A client for questions about images: Jev 1.14, with the images danger zone turned on. */
+lazy val imageClient: JevClient =
+  JevConfig.fromEnv("jev-1.14.0").map(_.copy(dangerZones = Set(DangerZone.Images))) match
+    case Right(config) => JevClient(config)
+    case Left(problem) => sys.error(problem.message)
+```
+
+An `Image` comes from the bytes of a PNG or JPEG file, and is the state. The answer to a Box is a
+`Region`, with its edges from 0 to 1, and a confidence:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-locate -->
+```scala
+/** Where the red rectangle is in `photo`, in pixels, if Jev is sure enough. */
+def locate(client: JevClient, photo: Image, width: Int, height: Int) =
+  client
+    .ask(photo, (rectangle = Box("The red rectangle")))
+    .map(_.rectangle.ifConfident(Probability(0.8)).map(_.inPixels(width, height)))
+```
+
+With [`live/images/rectangle.png`](live/images/rectangle.png), 448 × 448 pixels with a red
+rectangle at (112, 56), 224 × 112 pixels, a run on 2026-11-01 with `jev-1.14.0` printed:
+
+```text
+The rectangle is at (108, 40), 228 × 125 pixels
+```
+
+Chapter 14 of the tutorials, [Scala 3](docs/guide/scala3.md#14-images) and
+[Scala 2.13](docs/guide/scala213.md#14-images), shows an image next to other data, and what was
+measured: the sizes that Jev accepts, the cost of an image, and the errors that jev4s retries.
+
 ## On Spark 4
 
 Spark 4 runs on Scala 2.13 only, and the 2.13 module of jev4s is built for it. This is the core
@@ -248,8 +287,8 @@ and you can run each one from this repository, for example `sbt "scala3Live/runM
 - **Retries like the official SDKs**, with a limit on the total time of a call.
 - **No logs.** jev4s gives each event to a function of yours, which sends it to your logger or
   your metrics.
-- **Images, experimental.** Jev 1.14 reads PNG and JPEG images, and a Box question says where
-  something is in one: chapter 14 of the tutorials, [Scala 3](docs/guide/scala3.md#14-images) and
+- **Images, experimental, from 0.2.0.** Jev 1.14 reads PNG and JPEG images, and a Box question
+  says where something is in one: chapter 14 of the tutorials, [Scala 3](docs/guide/scala3.md#14-images) and
   [Scala 2.13](docs/guide/scala213.md#14-images).
 - **One dependency**, [ujson](https://com-lihaoyi.github.io/upickle/). HTTP uses the JDK's
   `java.net.http`.
