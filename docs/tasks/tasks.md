@@ -1742,3 +1742,22 @@ come with 0.2.0, and its examples still hold for the model they name.
   tutorials.
 - It says, as does "What jev4s gives you", that images come with 0.2.0, not on Maven Central
   yet. The release pull request of 0.2.0 removes both remarks, with the coordinates.
+
+### T36 — Release 0.2.0
+
+**Status:** In progress
+
+**Branch:** `task/t36-release-0-2-0`
+
+0.2.0 holds T33, T34 and T35: images and the Box question, and every 2.13 answer serializable.
+The release follows ADR-0051 and ADR-0054, in four steps:
+
+1. this branch sets the version to `0.2.0`, dates the CHANGELOG's section, and moves the
+   README's coordinates to `0.2.0`, without its remarks that images are not released yet (T35);
+2. a pull request from `dev` to `main`, squashed, whose subject is the version;
+3. the owner's tag `v0.2.0` on that commit, which starts `release.yml`;
+4. a pull request on `dev` that moves to `0.2.1-SNAPSHOT` and holds the ours-merge of the
+   release commit, merged with a merge commit.
+
+**Done when:** `io.github.maxtrezzi %% jev4s % 0.2.0` and its test kit resolve from Maven Central,
+in Scala 3 and in 2.13, and `dev` is at `0.2.1-SNAPSHOT` with `main` as its ancestor.
