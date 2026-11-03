@@ -13,9 +13,13 @@ warns until it handles the new one.
 
 ## Unreleased
 
-This will be version 0.2.0. It can break your code in three places: a `match` that lists every
-kind of answer, or every `Problem`, and a `JevConfig` built with all its arguments by position or
-matched on.
+Nothing yet.
+
+## 0.2.0
+
+Images, and the Box question. This version can break your code in three places: a `match` that
+lists every kind of answer, or every `Problem`, and a `JevConfig` built with all its arguments by
+position or matched on.
 
 ### Both modules
 
