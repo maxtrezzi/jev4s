@@ -95,3 +95,8 @@ class JevConfigSuite extends munit.FunSuite:
       val client     = JevClient(JevConfig(ApiKey("k"), "jev-1.13.0", server.baseUrl), httpClient = Some(own))
       assert(client.ask("text", (is_urgent = Noul("Urgent?"))).isRight)
     finally server.close()
+
+  test("no danger zone is on by default"):
+    assertEquals(JevConfig(ApiKey("k"), "jev-1.14.0").dangerZones, Set.empty[DangerZone])
+    assertEquals(from("TYPESAFE_API_KEY" -> "k").map(_.dangerZones), Right(Set.empty[DangerZone]))
+    assertEquals(DangerZone.Images.header, "TypeSafe-Danger-Zone-Images")

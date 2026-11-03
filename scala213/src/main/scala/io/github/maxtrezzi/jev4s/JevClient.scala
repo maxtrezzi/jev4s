@@ -240,20 +240,24 @@ final class JevClient private (model: String, transport: Transport, onEvent: Jev
       toState: ToState[S]
   ): Either[JevError, Map[String, Answer]] = {
     val pairs = questions.toList
-    run(toState.toState(state), pairs).map(answers => pairs.map(_._1).zip(answers).toMap)
+    run(toState.toState(state), toState.images(state), pairs).map(answers => pairs.map(_._1).zip(answers).toMap)
   }
 
   /** The answers of `keys`, in their order: the answer at position `i` is the one of `keys(i)`. */
   private def byKeys[S](state: S, keys: Key[_ <: Answer]*)(implicit
       toState: ToState[S]
   ): Either[JevError, Vector[Answer]] =
-    run(toState.toState(state), keys.toList.map(k => k.name -> k.question)).map(_.toVector)
+    run(toState.toState(state), toState.images(state), keys.toList.map(k => k.name -> k.question)).map(_.toVector)
 
-  private def run(state: ujson.Value, questions: List[(String, Question[_])]): Either[JevError, List[Answer]] =
-    Validator.validate(questions) match {
+  private def run(
+      state: ujson.Value,
+      images: List[Image],
+      questions: List[(String, Question[_])]
+  ): Either[JevError, List[Answer]] =
+    Validator.validate(questions, state, images) match {
       case Nil =>
         for {
-          body    <- transport.send(ujson.write(Codec.encode(model, state, questions)))
+          body    <- transport.send(ujson.write(Codec.encode(model, state, questions, images)))
           decoded <- Codec.decode(body, questions)
         } yield {
           onEvent(JevEvent.Replied(decoded.reply))

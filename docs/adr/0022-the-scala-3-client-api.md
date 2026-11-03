@@ -1,6 +1,6 @@
 # ADR-0022: The Scala 3 client API, with compile-time checks and no inline code
 
-- **Status:** Accepted — client construction amended by ADR-0024; callback amended by ADR-0025
+- **Status:** Accepted — client construction amended by ADR-0024; callback amended by ADR-0025; the state's images amended by ADR-0056; the Box question amended by ADR-0057
 - **Date:** 2026-09-22
 - **Supersedes:** —
 - **Amends:** —

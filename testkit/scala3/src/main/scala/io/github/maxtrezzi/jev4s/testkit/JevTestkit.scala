@@ -7,12 +7,14 @@ import scala.NamedTuple.NamedTuple
   *
   *   - for a `Noul`, `true` or `false`, or the `Probability` of "yes";
   *   - for a `Score[L]`, a level, an `L`, or a whole `ScoreAnswer[L]`;
-  *   - for a `Choice[C]`, an option, a `C`, or a whole `ChoiceAnswer[C]`.
+  *   - for a `Choice[C]`, an option, a `C`, or a whole `ChoiceAnswer[C]`;
+  *   - for a `Box`, a `Region`, or a whole `BoxAnswer`.
   */
 type FakeAnswer[Q] = AnswerOf[Q] match
   case NoulAnswer      => Boolean | Probability
   case ScoreAnswer[l]  => l | ScoreAnswer[l]
   case ChoiceAnswer[c] => c | ChoiceAnswer[c]
+  case BoxAnswer       => Region | BoxAnswer
 
 /** Clients for tests, which answer with the values you give, and never use the network.
   *
@@ -29,12 +31,14 @@ object JevTestkit:
     * The client decodes the answers from a reply in the format of the API, as it decodes a real
     * one, so what your code reads is what a real reply with these answers gives. A level or an
     * option means all the probability on it, and a confidence of 1: `mostLikely`, `normalized`
-    * and `probabilities` follow from it. For another confidence, or other probabilities, give a
-    * whole `ScoreAnswer` or `ChoiceAnswer`. The reply names `model`, [[defaultModel]] unless you
+    * and `probabilities` follow from it. A region means a confidence of 1. For another confidence,
+    * or other probabilities, give a whole `ScoreAnswer`, `ChoiceAnswer` or `BoxAnswer`. The reply names `model`, [[defaultModel]] unless you
     * give one, and reports no input tokens.
     *
     * The client does not look at what your code asks. Questions under other names get a
-    * [[JevError.Decoding]] error, as a real reply without their answers would.
+    * [[JevError.Decoding]] error, as a real reply without their answers would. The request is
+    * still checked before it is "sent", as a real client checks it: a Box with no image in the
+    * state is a [[JevError.InvalidRequest]], so give the code under test an [[Image]].
     *
     * @throws IllegalArgumentException
     *   when an answer is not one of its question's levels or options, or a whole answer leaves one
@@ -107,6 +111,13 @@ private[testkit] object FakeReply:
         "confidence"    -> confidence,
         "probabilities" -> ujson.Obj.from(probabilities.map((k, p) => k -> ujson.Num(p))),
       )
+    case Question.Box(_) =>
+      val (region, confidence) = answer match
+        case a: BoxAnswer => (a.region, a.confidence.fold(ujson.Null)(c => ujson.Num(c.value)))
+        case r: Region    => (r, ujson.Num(1.0))
+      val box =
+        ujson.Obj("top" -> region.top, "bottom" -> region.bottom, "left" -> region.left, "right" -> region.right)
+      ujson.Obj("type" -> "box", "box" -> box, "confidence" -> confidence)
 
   /** Where `value` is in `values`, compared with `equals`, as a `Map` of the answer compares keys. */
   private def position(name: String, kind: String, values: List[Any], value: Any): Int =

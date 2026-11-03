@@ -67,6 +67,12 @@ class GoldenSuite extends munit.FunSuite {
     )
   }
 
+  // golden/box: a Box over a PNG drawn by build/capture-golden.py, sent in base64.
+  private lazy val boxRequest = read("box/request.json")
+  private lazy val rectangle  =
+    Image.fromBase64(boxRequest("assets").obj.values.head("data_base64").str).toOption.get
+  private val boxed: List[(String, Question[_])] = List("rectangle" -> Box("The red rectangle"))
+
   private def read(name: String): ujson.Value = ujson.read(file(name))
   private def file(name: String): String      = {
     val stream = getClass.getResourceAsStream(s"/$name")
@@ -185,6 +191,24 @@ class GoldenSuite extends munit.FunSuite {
     assertEquals(
       Codec.errorMessage(file("error-422/response.json")),
       s"${item("loc").arr.map(_.str).mkString(".")}: ${item("msg").str}"
+    )
+  }
+
+  test("encode puts the image in assets, under the ref that the state names") {
+    assertEquals(Codec.encode(boxRequest("model").str, rectangle.ref, boxed, List(rectangle)), boxRequest)
+  }
+
+  test("a Box answer gives the region and the confidence of the reply") {
+    val json = answerOf("box", "rectangle")
+    val box  = json("box")
+    assertEquals(
+      decodeOk("box", boxed).answers,
+      List(
+        BoxAnswer(
+          Region(box("top").num, box("bottom").num, box("left").num, box("right").num),
+          Some(probability(json("confidence")))
+        )
+      )
     )
   }
 }

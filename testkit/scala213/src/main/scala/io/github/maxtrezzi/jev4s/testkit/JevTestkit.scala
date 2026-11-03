@@ -22,12 +22,14 @@ object JevTestkit {
     * The client decodes the answers from a reply in the format of the API, as it decodes a real
     * one, so what your code reads is what a real reply with these answers gives. A level or an
     * option means all the probability on it, and a confidence of 1: `mostLikely`, `normalized`
-    * and `probabilities` follow from it. For another confidence, or other probabilities, give a
-    * whole `ScoreAnswer` or `ChoiceAnswer`. The reply names [[defaultModel]], and reports no input
-    * tokens.
+    * and `probabilities` follow from it. A region means a confidence of 1. For another confidence,
+    * or other probabilities, give a whole `ScoreAnswer`, `ChoiceAnswer` or `BoxAnswer`. The reply
+    * names [[defaultModel]], and reports no input tokens.
     *
     * The client does not look at what your code asks. Questions under other names get a
-    * `JevError.Decoding` error, as a real reply without their answers would.
+    * `JevError.Decoding` error, as a real reply without their answers would. The request is
+    * still checked before it is "sent", as a real client checks it: a Box with no image in the
+    * state is a `JevError.InvalidRequest`, so give the code under test an `Image`.
     *
     * An answer that is not one of its question's levels or options, a whole answer that leaves one
     * out of its probabilities, or two answers under the same name, throw an
@@ -108,6 +110,14 @@ private[testkit] object FakeReply {
         "confidence"    -> confidence,
         "probabilities" -> ujson.Obj.from(probabilities.map { case (k, p) => k -> ujson.Num(p) })
       )
+    case _: Box =>
+      val (region, confidence) = answer match {
+        case a: BoxAnswer => (a.region, a.confidence.fold[ujson.Value](ujson.Null)(c => ujson.Num(c.value)))
+        case r            => (r.asInstanceOf[Region], ujson.Num(1.0)) // `is` gives a Box a Region or a BoxAnswer
+      }
+      val box =
+        ujson.Obj("top" -> region.top, "bottom" -> region.bottom, "left" -> region.left, "right" -> region.right)
+      ujson.Obj("type" -> "box", "box" -> box, "confidence" -> confidence)
   }
 
   /** Where `value` is in `values`, compared as a `Map` of the answer compares its keys. */

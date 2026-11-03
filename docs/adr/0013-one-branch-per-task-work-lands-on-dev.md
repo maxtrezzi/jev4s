@@ -1,6 +1,6 @@
 # ADR-0013: One branch per task; work lands on `dev`, `main` carries releases
 
-- **Status:** Accepted
+- **Status:** Accepted — merging `main` into `dev` amended by ADR-0054
 - **Date:** 2026-09-21
 - **Supersedes:** —
 - **Amends:** —

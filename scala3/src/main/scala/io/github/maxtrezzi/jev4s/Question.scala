@@ -8,7 +8,7 @@ import scala.deriving.Mirror
 /** A question for Jev. The type parameter is the type of its answer, so the compiler knows what
   * comes back.
   *
-  * The instructions, the criteria of a Noul, the levels of a Score and the descriptions of a
+  * The instructions of every question, the criteria of a Noul, the levels of a Score and the descriptions of a
   * Choice's options are text or JSON: pass a `String`, or a `ujson.Value` such as
   * `ujson.Obj("question" -> "Is it urgent?", "focus" -> "The customer's own words")`. JSON with
   * labelled parts helps Jev when a question has several parts, or needs supporting data.
@@ -36,10 +36,15 @@ enum Question[A <: Answer]:
     */
   case Choice[C](instructions: ujson.Value, options: List[ChoiceOption[C]]) extends Question[ChoiceAnswer[C]]
 
+  /** Where the instructions' subject is in the state's image, as a [[Region]]. The request needs
+    * an [[Image]] in its state.
+    */
+  case Box(instructions: ujson.Value) extends Question[BoxAnswer]
+
 object Question:
   given CanEqual[Question[?], Question[?]] = CanEqual.derived
 
-export Question.Noul
+export Question.{Box, Noul}
 
 /** A Score question. */
 type Score[L] = Question.Score[L]

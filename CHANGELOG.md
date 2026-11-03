@@ -11,6 +11,54 @@ Each version publishes four artifacts, all with the same version: `jev4s_3`, `je
 A new kind of `JevEvent` is always listed here: a `match` on the events that lists every case
 warns until it handles the new one.
 
+## Unreleased
+
+Nothing yet.
+
+## 0.2.0
+
+Images, and the Box question. This version can break your code in three places: a `match` that
+lists every kind of answer, or every `Problem`, and a `JevConfig` built with all its arguments by
+position or matched on.
+
+### Both modules
+
+- **Images, experimental.** Jev 1.14 reads PNG and JPEG images. `Image(bytes)` builds an image
+  from the bytes of a PNG or JPEG file, or returns an `ImageError`. Give the image as the state,
+  or put its `ref` in JSON with `State(json, image)`, or give it in `images` of your own
+  `ToState`. Turn images on with `JevConfig(..., dangerZones = Set(DangerZone.Images))` and a
+  model that reads them, such as `jev-1.14.0`. TypeSafe calls images experimental, and does not
+  promise them for production.
+- **The Box question.** `Box("The dog")` asks where something is in the image. Its answer,
+  `BoxAnswer`, has a `Region`, with four edges from 0 to 1, and a confidence, which can be
+  missing. `ifConfident` gives the region only when Jev is sure enough, and `inPixels` gives it in
+  pixels.
+- **A new kind of answer, `BoxAnswer`.** A `match` on the answers of `askMap` that lists every
+  kind warns until it handles `BoxAnswer`.
+- **New checks before sending.** A request is not sent when it has a Box and no image
+  (`Problem.BoxWithoutImage`), an image `ref` in the state without its image
+  (`Problem.UnknownImage`), or an image that the state does not use (`Problem.UnusedImage`). A
+  `match` on a `Problem` that lists every case warns until it handles these three.
+- **`JevConfig` has a new field, `dangerZones`**, with no zone turned on by default. A `ToState`
+  that you wrote keeps compiling: `images` has a default of no image.
+
+### Scala 3
+
+- `Region.inPixels` gives a named tuple, `(x, y, width, height)`.
+
+### Scala 2.13
+
+- `Region.inPixels` gives `Pixels(x, y, width, height)`, and `BoxAnswer.ifConfident` takes a
+  `Double`, as the other answers do. An `Image` is `Serializable`, so a Spark closure can carry
+  one.
+- **Every answer can be serialized.** A `Probability` inside a `Map` or an `Option` could not, so
+  in 0.1.0 a `ScoreAnswer` or a `ChoiceAnswer` failed with `NotSerializableException` when Spark
+  sent it. `Probability` is `Serializable` now.
+
+### Test kits
+
+- A Box answers with a `Region`, which means a confidence of 1, or with a whole `BoxAnswer`.
+
 ## 0.1.0
 
 The first release.

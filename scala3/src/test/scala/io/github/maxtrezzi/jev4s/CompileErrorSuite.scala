@@ -16,7 +16,7 @@ class CompileErrorSuite extends munit.FunSuite:
   test("a value that is not a question"):
     assertEquals(
       message(compileErrors("""client.ask("s", (urgent = Noul("U?"), count = 3))""")),
-      "every value in the named tuple must be a question: Noul, Score or Choice.",
+      "every value in the named tuple must be a question: Noul, Score, Choice or Box.",
     )
 
   test("a state type with no ToState"):

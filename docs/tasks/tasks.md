@@ -1482,3 +1482,282 @@ them the test kits' coordinates in chapter 12); the "Report a vulnerability" but
   (1 ignored), 28 of 28 and 31 of 31 in the test kits. The formatting, docs, Scaladoc and
   compatibility checks pass.
 
+### T31 — The next release pull request conflicts with `main`
+
+**Status:** Done 2026-09-28 — [ADR-0054](../adr/0054-dev-records-each-release-commit-of-main.md)
+
+**Branch:** `task/t31-release-back-merge`
+
+A check of the repository after it became public, on 2026-09-28, found the rulesets of
+ADR-0013: `dev_main`, active on `dev` and `main`, with no bypass, blocking deletion and
+force-pushes, and requiring a pull request with no approval and the twelve CI checks, current
+with the base; and `v*` on tags, blocking deletion, update and force-pushes, but disabled.
+Private vulnerability reporting was on.
+
+**Done when:** the tag ruleset is active, and the next release pull request from `dev` to `main`
+can merge.
+
+#### Found
+
+- **The tag ruleset was disabled.** The owner asked for it to be active; it is, since 2026-09-28.
+- **The next release pull request would be conflicting and blocked.** The squash of `0.1.0`
+  (`dd3dcec`) is on `main` and not in `dev`; the merge base is still `0e94844`. `git merge-tree`
+  of `main` and `dev` gives five conflicts, and the ruleset's "current with the base" rule
+  holds `dev` behind `main` for good, since ADR-0013 forbids merging `main` into `dev`.
+- **An ours-merge fixes both**, measured with a merge commit built by hand from `dev`'s tree and
+  the parents `dev` and `main`: same tree as `dev`, `main` an ancestor, and a merge into `main`
+  with no conflict whose result is `dev`'s tree. ADR-0054, chosen by the owner over a release
+  merged with a merge commit.
+
+#### Done
+
+- ADR-0054, which amends ADR-0013 and ADR-0051, and the rules of `AGENTS.md`.
+- This branch holds `git merge -s ours origin/main` for `dd3dcec`; its pull request is merged with
+  a merge commit.
+
+### T32 — Alerts for the dependencies of the published modules
+
+**Status:** Done 2026-10-27 — [ADR-0055](../adr/0055-dependabot-alerts-cover-the-published-modules.md)
+
+**Branch:** `task/t32-dependency-alerts`
+
+jev4s is public, and `0.1.0` is on Maven Central. A check of the repository on 2026-10-27 found
+private vulnerability reporting on, and Dependabot alerts, secret scanning and push protection
+off. The dependency graph held only the GitHub Actions of the workflows: GitHub does not read
+an sbt build.
+
+**Done when:** Dependabot alerts, secret scanning and push protection are on, and a workflow on
+`dev` submits the dependencies of the published modules to the dependency graph.
+
+#### Found
+
+- **The whole build has 242 packages, and 25 have known vulnerabilities on osv.dev.** All 25
+  come from Spark 4.0.4 in `scala213Spark` (44 resolved packages, in the `runtime` scope:
+  sbt resolves `Provided` in `compile-internal`), or from Scaladoc and the REPL in the Scala 3
+  tool configurations (jackson, jline, jsoup). None of them is in a published jar.
+- **The four published modules, with their tests, have 19 packages, and none has a known
+  vulnerability.** Measured locally with `sbt-github-dependency-submission` 3.2.2, loaded with
+  `--addPluginSbtFile`, and its snapshot checked on osv.dev. On 2026-10-28 the action's `v3` tag
+  ran the plugin 3.2.3; its first submission on `dev`, after the merge of #30, lists the same 19
+  packages.
+
+#### Done
+
+- Dependabot alerts, secret scanning and push protection are on since 2026-10-27, as the owner
+  asked. Dependabot security updates stay off.
+- ADR-0055, and `.github/workflows/dependency-graph.yml`, which submits the four published
+  modules on each push to `dev`, without the projects that are not published and without the
+  Scala tool configurations.
+- `AGENTS.md` says what the repository has on, and what the new workflow does.
+
+### T33 — Images and box questions
+
+**Status:** Done 2026-11-01 — [ADR-0056](../adr/0056-images-travel-in-the-state-as-base64-assets.md),
+[ADR-0057](../adr/0057-the-box-question-answers-with-a-region.md)
+
+**Branch:** `task/t33-images-and-boxes`
+
+Jev 1.14 (2026-10-14) reads PNG and JPEG images and adds a fourth kind of question, `box`, which
+answers with a rectangle. Both official SDKs support them (Python 0.7.5, npm 0.7.0). jev4s 0.1.0
+covers three kinds of question out of four, and the README's compile error says "every value in
+the named tuple must be a question: Noul, Score or Choice".
+
+An `Image` from bytes, sent in the state as a base64 asset under a placeholder derived from its
+bytes, once the config opts in with `DangerZone.Images` (ADR-0056). A `Box` question that
+answers with a `BoxAnswer` holding a `Region` and an optional confidence, and a `Problem` for a
+box with no image (ADR-0057). Scala 3 first, then 2.13. It ships as 0.2.0.
+
+**Measured on 2026-11-01**, with raw HTTP calls answered by `jev-1.14.0`: about 55 requests and
+33,000 input tokens, about $0.0014.
+
+- `jev-latest` and `jev-preview` both take images; the header is required, and without it the
+  API answers 400 with a message that names it.
+- Each side of an image must be 280 pixels or more, and at most a value between 1536 and 1791.
+  Undocumented.
+- 503 `Image processing is unavailable.` about one request in five; sending it again passed.
+- About one input token per 380 pixels, plus about 270 for a question and the state.
+- A box with no image answers 200 with an invented box and a confidence of 0.1.
+- Base64 and multipart give the same answer and token count.
+
+To settle while implementing:
+
+- the shape of a state with images (`State(json, images*)` or another), and what the API does with
+  an asset that nothing uses;
+- that MiMa and TASTy-MiMa refuse the change in a patch, so the version is 0.2.0.
+
+Out of scope, noted for later: images in `instructions` and `criteria` (the placeholder works
+there, measured); multipart in `JdkTransport`; a Spark example that locates something in each
+file of a `binaryFile` source; `DangerZone.LongContext`.
+
+**Done when:** a Box over an `Image` works in both modules, with the opt-in; the `Validator`
+problems of ADR-0056 and ADR-0057 are reported; `golden/` holds a real box reply over a small PNG
+drawn for the purpose; the README, a guide section and `live/` show it, with the measured size
+limits and their date; ADR-0056 and ADR-0057 are Accepted and their amendments recorded at both
+ends; the definition of done holds.
+
+#### Found
+
+- **`ToState` needs no new result type.** A second method, `images`, with a default of no image,
+  keeps `toState` the single abstract method: a `ToState` written as a lambda still compiles. The
+  shape of a state with images is `State(json, images*)`, with a given for an `Image` alone.
+  ADR-0056 was changed to say so before it was accepted.
+- **The API refuses an asset that nothing names**: 400, `Invalid image request.`, measured on
+  2026-11-01. `Problem.UnusedImage` keeps such a request from being sent.
+- **The placeholder is billed.** With `image-` and 64 hex digits, the same Box cost 844 input
+  tokens, against 819 with a UUID and 813 with `image-` and 32 hex digits. The ref is the first 16
+  bytes of the SHA-256.
+- **MiMa and TASTy-MiMa refuse the change in a patch.** Against 0.1.0, MiMa finds 3 problems in
+  each module, the `apply`, `copy` and constructor of `JevConfig`, and TASTy-MiMa 6, those three,
+  the `Answer` union, and the signatures of `Codec.encode` and `Validator.validate`. `dev` moves
+  to `0.2.0-SNAPSHOT`, against which both have nothing to compare, and pass.
+- **The API answers through Cloudflare** since at least 2026-11-01 (`server: cloudflare`; it was
+  `istio-envoy` on 2026-09-24), and sets a `__cf_bm` cookie. `capture-golden.py` keeps the
+  cookie's name and leaves its value out of `golden/`.
+- **The 503 of the image service is frequent.** In the runs of 2026-11-01 it came back on 5
+  attempts out of 9 at its worst; `capture-golden.py` sends a 503 again, at most three times, and
+  never records one. jev4s retries it as a `ServerError`.
+- **A new answer breaks an exhaustive `match`.** The `Runtime` examples of both guides listed
+  every kind of answer from `askMap`, and stopped compiling under `-Werror` until they handled
+  `BoxAnswer`: the CHANGELOG says so.
+- **The real runs** of the guides' examples, on 2026-11-01, located the rectangle at (108, 40),
+  228 × 125 pixels, and (103, 36), 233 × 130, against (112, 56), 224 × 112.
+
+#### Done
+
+- Both modules: `Image`, `ImageFormat`, `ImageError`, `State`, `ToState.images`, `Box`,
+  `BoxAnswer`, `Region` (and `Pixels` in 2.13), `DangerZone`, `JevConfig.dangerZones`, the
+  header in `JdkTransport`, `assets` in the codec, and `Problem.BoxWithoutImage`, `UnknownImage`
+  and `UnusedImage`. The test kits answer a Box with a `Region` or a `BoxAnswer`.
+- `golden/box`, recorded by `capture-golden.py`, which draws the PNG. `live/images/rectangle.png`
+  is the same image.
+- Chapter 14 of both tutorials, a section of the concepts guide, the README, the CHANGELOG, and
+  the documented compile error of `AllQuestions`.
+- ADR-0056 and ADR-0057 Accepted, with their amendments of ADR-0021, ADR-0022, ADR-0023, ADR-0024
+  and ADR-0048 recorded at both ends.
+
+| Project | Tests | Coverage | Mutants |
+|---|---|---|---|
+| `scala3` | 196 | 100% / 100% | 320, every one detected |
+| `scala213` | 169 | 100% / 100% | 309, every one detected |
+| `scala3Testkit` | 13 | 100% / 100% | 36, every one detected |
+| `scala213Testkit` | 14 | 100% / 100% | 39, every one detected |
+
+### T34 — A review before 0.2.0
+
+**Status:** Done 2026-11-02
+
+**Branch:** `task/t34-review-before-0-2-0`
+
+0.2.0 changes the public API (T33), so `dev` is reviewed as it will be released, as T30 did
+before 0.1.0: the history, the artifacts as they would be published, a new project that uses
+them, the new code of both modules and both test kits, and the documents a user reads first.
+
+**Done when:** each point found is fixed, or the owner decided to leave it; the definition of
+done holds in both modules and both test kits.
+
+#### Found
+
+Checked on 2026-11-02, on `dev` at `568be50`, JDK 25, no call to the real API:
+
+- **The history holds no secret.** A mirror clone, with the `refs/pull/*/head` of the 33 pull
+  requests, has 87 commits; their diffs hold no API key, no cookie value from `golden/box`, no
+  session link, and no `Claude-Session` trailer but the sentences that forbid it. The only email
+  addresses are GitHub's and Anthropic's `noreply`.
+- **The artifacts of `publishLocal` at `0.2.0-SNAPSHOT`** hold classes, TASTy, the manifest,
+  `LICENSE` and `NOTICE`, nothing from the tests or `golden/`. The poms depend on what 0.1.0's
+  did: ujson at runtime, munit in tests.
+- **A new project uses them**: with scala-cli, Scala 3.9.0 and 2.13.16, `-Werror`, a Box over
+  `live/images/rectangle.png` answered by the test kit gives (112, 56), 224 × 112 pixels, a
+  text state gives `InvalidRequest(List(BoxWithoutImage(rectangle)))`, and a `ToState` written
+  for 0.1.0 as a lambda still compiles.
+- **Both modules match point for point**: the messages of every `Problem` and of the codec are
+  the same strings.
+- CI on `dev` at `568be50`: 12 jobs of 12; `test scala213 on JDK 25` passed when run again,
+  after it failed to download sbt-pgp 2.3.2, whose pom answers 200 from Maven Central.
+
+Found, and fixed on this branch, as the owner asked (2026-11-02):
+
+1. **In 2.13, `ScoreAnswer`, `ChoiceAnswer` and `BoxAnswer` could not be serialized**:
+   `NotSerializableException: io.github.maxtrezzi.jev4s.Probability`. A value class inside a
+   `Map` or an `Option` is a real object, and `Probability` was not `Serializable`; since 0.1.0
+   for Score and Choice. `NoulAnswer` was, its field erased to a `Double`. In Scala 3 every answer
+   was, `Probability` being an opaque `Double`. `Probability` now extends `AnyVal with
+   Serializable`, and a test serializes every answer and reads it back equal.
+2. **The CHANGELOG did not say that a `match` on `Problem`** that lists every case warns until
+   it handles the three new ones. It does now.
+3. **The test kits said "the client does not look at what your code asks"**, but a request is
+   still checked: a Box with a text state is an `InvalidRequest` with the test kit too. Their
+   Scaladoc says so, and to give the code under test an `Image`.
+4. **The concepts guide said "Three kinds of question"** in a heading and "the three kinds" in
+   section 6, with four kinds. The heading is "Kinds of question", and the tutorials link to it.
+5. **`Image.fromBase64` refuses a `data:` URL** as `NotBase64`, as the npm SDK does, and did not
+   say so. Its Scaladoc says it, and a test checks it, in both modules.
+
+6. **Older passages of the documents still described three kinds of question**, found when the
+   owner asked whether the documents were current:
+   - chapter 8 of both tutorials said that an answer of `askMap` is a Noul, Score or Choice
+     answer, "with one case for each", under code that has a fourth case, `BoxAnswer`;
+   - section 9 of the concepts guide had no `Box`, `BoxAnswer`, `Image`, `State` or
+     `dangerZones` in its tables, and none of the three new checks;
+   - chapter 12 of both tutorials did not say that the test kit answers a Box with a `Region` or
+     a `BoxAnswer`, nor that a Box needs an `Image` in a test too;
+   - the README's "Typed answers" did not name the Box;
+   - the concepts guide had no image among the forms of a state, gave a few hundred tokens as the
+     cost of a request without saying that an image costs more, and gave every question criteria,
+     which a Box has not.
+
+   Each passage says it now.
+
+Left, as the owner decided: in Scala 3, `Image` is not `Serializable`. ADR-0056 asks it of 2.13
+only, the module that runs on Spark.
+
+- Measured after the fixes, JDK 25: `scala3` 196 tests, `scala213` 170, 13 in `scala3Testkit`
+  and 14 in `scala213Testkit`, 9 and 9 in the guides. 100% statement and branch coverage in the
+  four projects; every mutant of `scala213` detected, 306 of 309 (1 ignored, 2 timeouts, as
+  before). The formatting, docs, Scaladoc and compatibility checks pass.
+
+### T35 — The README shows images
+
+**Status:** Done 2026-11-02
+
+**Branch:** `docs/t35-readme-images`
+
+The README's three examples ask about a text ticket, and named images and the Box only in two
+lines of "What jev4s gives you". `dev` is the default branch, so the README that GitHub shows
+already describes images, next to coordinates of 0.1.0, which has none.
+
+**Done when:** the README shows an image and a Box in code quoted from `live/`, says that they
+come with 0.2.0, and its examples still hold for the model they name.
+
+#### Found
+
+- **`jev-1.13.0` still answers** the README's Scala 3 example, on 2026-11-02: "Send to Billing.
+  Duplicate charge: true. Feeling: Angry (1.82 of 2).", against 1.8 on 2026-09-25. The same
+  decision; the README's dated outputs stay. One call, a few hundred input tokens.
+
+#### Done
+
+- A section "Images" in the README's Scala 3 part quotes `image-client` and `image-locate` from
+  `live/scala3`, with the output of the run of 2026-11-01, and links chapter 14 of both
+  tutorials.
+- It says, as does "What jev4s gives you", that images come with 0.2.0, not on Maven Central
+  yet. The release pull request of 0.2.0 removes both remarks, with the coordinates.
+
+### T36 — Release 0.2.0
+
+**Status:** In progress
+
+**Branch:** `task/t36-release-0-2-0`
+
+0.2.0 holds T33, T34 and T35: images and the Box question, and every 2.13 answer serializable.
+The release follows ADR-0051 and ADR-0054, in four steps:
+
+1. this branch sets the version to `0.2.0`, dates the CHANGELOG's section, and moves the
+   README's coordinates to `0.2.0`, without its remarks that images are not released yet (T35);
+2. a pull request from `dev` to `main`, squashed, whose subject is the version;
+3. the owner's tag `v0.2.0` on that commit, which starts `release.yml`;
+4. a pull request on `dev` that moves to `0.2.1-SNAPSHOT` and holds the ours-merge of the
+   release commit, merged with a merge commit.
+
+**Done when:** `io.github.maxtrezzi %% jev4s % 0.2.0` and its test kit resolve from Maven Central,
+in Scala 3 and in 2.13, and `dev` is at `0.2.1-SNAPSHOT` with `main` as its ancestor.

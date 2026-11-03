@@ -26,21 +26,63 @@ Run:  set -a; . ./.env; set +a
       python3 build/capture-golden.py --run      # make the calls
       python3 build/capture-golden.py --run --force --only noul   # record one case again
 
-Source for the request and response format: https://docs.typesafe.ai/api.md, read 2026-09-22.
+Source for the request and response format: https://docs.typesafe.ai/api.md, read 2026-09-22;
+images and box questions read 2026-11-01.
 """
+import base64
 import datetime
+import hashlib
 import json
 import os
+import struct
 import sys
 import time
 import urllib.error
 import urllib.request
+import zlib
 
 GOLDEN = "golden"
 TIMEOUT_SECONDS = 30
 FAKE_KEY = "jev4s-golden-invalid-key"
 
 TICKET = "Help! My payouts have been failing for 3 days and I have a launch tomorrow."
+
+# Images need a model that reads them and the danger-zone header (ADR-0056). Jev 1.14 is the first
+# such model; JEV_MODEL stays the model of the other cases.
+IMAGE_MODEL = "jev-1.14.0"
+IMAGE_HEADERS = {"TypeSafe-Danger-Zone-Images": "true"}
+
+# The image service answered 503 about one request in five on 2026-11-01, and the same request
+# passed when sent again: a 503 is sent again, at most this many times in all, and never recorded.
+ATTEMPTS = 3
+
+
+def png(width, height, rect):
+    """A white PNG with one red rectangle, rect = (top, bottom, left, right) as fractions: the same
+    bytes on every run, so the image and its ref never change."""
+    top, bottom, left, right = rect
+    rows = b"".join(
+        b"\x00" + b"".join(
+            b"\xff\x00\x00" if top * height <= y < bottom * height and left * width <= x < right * width
+            else b"\xff\xff\xff"
+            for x in range(width))
+        for y in range(height))
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows, 9))
+            + chunk(b"IEND", b""))
+
+
+def image_ref(data):
+    """The ref jev4s gives an image: "image-" and the first 16 bytes of its SHA-256, in hex."""
+    return "image-" + hashlib.sha256(data).hexdigest()[:32]
+
+
+# 448 x 448: the API refuses a side under 280 pixels (measured 2026-11-01).
+RECTANGLE = png(448, 448, (0.125, 0.375, 0.25, 0.75))
 
 
 def cases(model):
@@ -159,6 +201,17 @@ def cases(model):
             "model": model,
             "questions": {"is_urgent": {"type": "noul", "instructions": "Does this convey urgency?"}},
         }),
+        ("box", "a Box over a 448x448 PNG with a red rectangle at top 0.125, bottom 0.375, left 0.25, "
+                "right 0.75", False, {
+            "state": image_ref(RECTANGLE),
+            "model": IMAGE_MODEL,
+            "questions": {"rectangle": {"type": "box", "instructions": "The red rectangle"}},
+            "assets": {image_ref(RECTANGLE): {
+                "type": "image",
+                "format": "png",
+                "data_base64": base64.b64encode(RECTANGLE).decode("ascii"),
+            }},
+        }),
     ]
 
 
@@ -174,10 +227,11 @@ def encode(body):
     return (json.dumps(body, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
 
 
-def call(url, key, payload):
+def call(url, key, payload, extra_headers):
     request = urllib.request.Request(url, data=payload, method="POST", headers={
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
+        **extra_headers,
     })
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
@@ -187,10 +241,14 @@ def call(url, key, payload):
 
 
 def all_headers(headers):
-    """Every response header, by lower-case name; a repeated header keeps its values joined by ", "."""
+    """Every response header, by lower-case name; a repeated header keeps its values joined by ", ".
+    A cookie's value is left out: since the move behind Cloudflare (2026-11-01) a response sets one,
+    and golden/ is public."""
     kept = {}
     for name, value in headers.items():
         name = name.lower()
+        if name == "set-cookie":
+            value = value.split("=", 1)[0] + "=(left out)"
         kept[name] = f"{kept[name]}, {value}" if name in kept else value
     return dict(sorted(kept.items()))
 
@@ -246,19 +304,29 @@ def main():
 
     for name, why, fake_key, body in todo:
         payload = encode(body)
-        started = time.monotonic()
-        status, headers, received = call(url, FAKE_KEY if fake_key else key, payload)
-        elapsed_ms = round((time.monotonic() - started) * 1000)
+        extra_headers = IMAGE_HEADERS if "assets" in body else {}
+        for attempt in range(1, ATTEMPTS + 1):
+            started = time.monotonic()
+            status, headers, received = call(url, FAKE_KEY if fake_key else key, payload, extra_headers)
+            elapsed_ms = round((time.monotonic() - started) * 1000)
+            if status != 503:
+                break
+            print(f"  {name:14} HTTP 503 on attempt {attempt}: {received[:120]!r}")
+            time.sleep(2)
+        if status == 503:
+            sys.exit(f"{name}: HTTP 503 on every attempt: nothing was recorded for it")
         meta = {
             "case": name,
             "why": why,
             "status": status,
             "headers": all_headers(headers),
             "elapsed_ms": elapsed_ms,
-            "requested_model": model,
+            "requested_model": body["model"] if "assets" in body else model,
             "recorded_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
             "endpoint": "POST /v1/systemone",
         }
+        if extra_headers:
+            meta["request_headers"] = sorted(extra_headers)
         write_case(os.path.join(GOLDEN, name), {
             "request.json": payload,
             "response.json": received,

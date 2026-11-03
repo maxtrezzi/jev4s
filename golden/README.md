@@ -29,9 +29,12 @@ One directory per case:
 | `error-400` | A model that does not exist: `detail` is an object, as for a 401 |
 | `error-422` | A Choice without its criteria: `detail` is a list |
 | `error-401` | A made-up API key: `detail` is an object |
+| `box` | A Box over a 448 × 448 PNG with a red rectangle, which the script draws, sent in base64 with the danger-zone header, to `jev-1.14.0` |
 
 Recorded on 2026-09-22 with `jev-1.13.0`; `noul` again on 2026-09-24 and `error-401` on 2026-09-25, with
-every header and the response time. To record again, load `.env` and run
+every header and the response time; `box` on 2026-11-01 with `jev-1.14.0`, whose `meta.json` also
+names the request headers. Since 2026-11-01 the API answers through Cloudflare, which sets a
+cookie: the script records its name and leaves its value out. To record again, load `.env` and run
 `python3 build/capture-golden.py --run`; add `--force` to replace a case, and `--only <case>` to
 record one case alone. A new recording
 changes the numbers in the answers, so the tests must read them from the files, never repeat

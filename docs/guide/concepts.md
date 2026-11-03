@@ -13,7 +13,7 @@ has a bug.
 
 1. [A first request](#1-a-first-request)
 2. [The state](#2-the-state)
-3. [Three kinds of question](#3-three-kinds-of-question)
+3. [Kinds of question](#3-kinds-of-question)
 4. [Probabilities and confidence](#4-probabilities-and-confidence)
 5. [How to write good questions](#5-how-to-write-good-questions)
 6. [Many questions in one call](#6-many-questions-in-one-call)
@@ -21,6 +21,7 @@ has a bug.
 8. [Models, cost and limits](#8-models-cost-and-limits)
 9. [How jev4s talks to Jev](#9-how-jev4s-talks-to-jev)
 10. [Through a gateway](#10-through-a-gateway)
+11. [Images and the Box question](#11-images-and-the-box-question)
 
 ## 1. A first request
 
@@ -77,6 +78,7 @@ A state can be:
 | Text | One message or one passage | `"My card was charged twice."` |
 | A JSON object | Several named parts that belong together | `{"message": "...", "order_id": "A-104"}` |
 | A JSON array | A list of messages or records | `["Hi", "My card was charged twice."]` |
+| An image, alone or named in JSON | A photo, a scan, a screenshot ([section 11](#11-images-and-the-box-question)) | `{"photo": "image-991d…", "label": "TRK-4471"}` |
 
 Text is enough when there is one piece of content, as in the first request. For most real
 decisions, use a **JSON object**: the message, who wrote it, the records it is about, and the
@@ -127,16 +129,17 @@ languages work, but less well, so test them with your own data.
 In jev4s, the state is a `String`, a `ujson.Value`, or a value of your own type, such as a
 `Ticket`, with a `ToState` that turns it into JSON. The tutorials use exactly this example.
 
-## 3. Three kinds of question
+## 3. Kinds of question
 
 Every question has three parts:
 
 - a **name**, chosen by you, such as `is_urgent`. It identifies the answer. **Jev never sees
   the name**, so the instructions must contain the whole question.
 - the **instructions**: the question, or a statement to judge.
-- the **criteria**: the possible answers. Their form depends on the kind of question.
+- the **criteria**: the possible answers. Their form depends on the kind of question, and a Box
+  has none.
 
-There are three kinds:
+There are three kinds for text, and a fourth, the Box, for images (below):
 
 | Kind | It answers | You give | You get back |
 |---|---|---|---|
@@ -146,6 +149,9 @@ There are three kinds:
 
 Choose the kind from the shape of the answer your code needs. A Noul maps to an `if`. A Score
 maps to a threshold or a ranking. A Choice maps to a `match` with one branch for each option.
+
+Since Jev 1.14 there is a fourth kind, the **Box**, which says where something is in an image:
+see [Images and the Box question](#11-images-and-the-box-question).
 
 ### Noul: yes or no
 
@@ -303,7 +309,7 @@ higher confidence alone does not prove that a question is better.
 
 ## 6. Many questions in one call
 
-Send every question about the same state in **one request**. You can mix the three kinds. Jev
+Send every question about the same state in **one request**. You can mix the kinds. Jev
 answers all the questions in parallel, so more questions add almost no time, and each question
 costs only its own few tokens. TypeSafe measured 13 questions in one call as 11.5 times cheaper
 and 9.6 times faster than 13 calls.
@@ -362,7 +368,9 @@ probabilities, so a limit that you tested on one version may not fit the next. F
 jev4s has no default model: you always name one. The reply says which model answered.
 
 **The cost.** TypeSafe charges for **input tokens**: the state and the questions. Output tokens
-are free. A request with one short question costs a few hundred input tokens.
+are free. A request with one short question costs a few hundred input tokens. An image costs
+more, about one input token for each 380 pixels: one question about an image of 448 × 448 pixels
+costs 819 tokens, and 3,045 for 1024 × 1024 ([section 11](#11-images-and-the-box-question)).
 
 **The limits**, for `jev-1.13.0`, from TypeSafe's page
 [Models](https://docs.typesafe.ai/models.md):
@@ -384,13 +392,14 @@ This part is about jev4s, not about Jev. It is the same in both Scala versions.
 | Concept | Scala 3 | Scala 2.13 |
 |---|---|---|
 | A client | `JevClient(config)` | `JevClient.create(config)` |
-| The state | A `String`, a `ujson.Value`, or your type with a `given ToState` | The same, with an `implicit ToState` |
-| A question | `Noul`, `Score[L]`, `Choice[C]` | `Noul`, `Score[L]`, `Choice[C]` |
+| The state | A `String`, a `ujson.Value`, an `Image`, a `State` of JSON with images, or your type with a `given ToState` | The same, with an `implicit ToState` |
+| A question | `Noul`, `Score[L]`, `Choice[C]`, `Box` | `Noul`, `Score[L]`, `Choice[C]`, `Box` |
 | Its name | A name in a named tuple: `(urgent = Noul(...))` | A key: `Noul(...).as("urgent")` |
 | The options of a Choice | `enum Team derives JevChoice` | `implicit val choices: JevChoice[Team] = JevChoice.named(...)` |
 | The levels of a Score | Text, or `enum Mood derives JevScale` | Text, or `implicit val levels: JevScale[Mood] = JevScale.named(...)` |
 | The answers | A named tuple: `r.urgent` | A tuple, in the order of the keys: `case Right((t, u))` |
 | A probability | `Probability`, from 0 to 1 | `Probability`, from 0 to 1 |
+| Images turned on | `JevConfig(..., dangerZones = Set(DangerZone.Images))` | The same |
 | Questions built at runtime | `client.askMap(state, Map(...))` | `client.askMap(state, Map(...))` |
 | A client for tests, from jev4s-testkit | `JevTestkit.answering(questions)((urgent = true))` | `JevTestkit.answering(urgent.is(true))` |
 
@@ -401,6 +410,7 @@ The answer types are the same in both versions:
 | `Noul` | `NoulAnswer` | `probability`, `isYes` for a probability of 0.5 or more, and `ifConfident` for the more likely answer when it is likely enough |
 | `Score[L]` | `ScoreAnswer[L]` | `score`, `normalized` (from 0 to 1), `mostLikely` (an `L`), `confidence`, `probabilities` keyed by `L`: a value of your type, or each level as you wrote it |
 | `Choice[C]` | `ChoiceAnswer[C]` | `choice` (a `C`), `confidence`, `probabilities` keyed by `C`, and `ifConfident` |
+| `Box` | `BoxAnswer` | `region` (a `Region`, with its four edges, `width`, `height` and `inPixels`), `confidence`, which can be missing, and `ifConfident` |
 
 ### Checks before sending
 
@@ -420,6 +430,8 @@ it is not sent.
 | A Score with fewer than 2 or more than 10 levels, or a level used twice | before sending | before sending |
 | A Choice with no options or more than 255, or a key used twice | before sending | before sending |
 | Two levels, or two options, with the same value of your type | before sending | before sending |
+| A Box with no image in the state | before sending | before sending |
+| An image `ref` in the state without its image, or an image that the state does not use | before sending | before sending |
 | An empty name, or any of the above in `askMap` | before sending | before sending |
 | A config that cannot work, such as a key with a newline or a retry jitter above 1 | `InvalidConfig`, before sending | `InvalidConfig`, before sending |
 
@@ -554,3 +566,30 @@ the questions inside `input`
 ([Cloudflare's model page](https://developers.cloudflare.com/ai/models/typesafe/jev/), read on
 2026-09-25). A base URL cannot reach it. A `Transport` of your own could change the shape, but it
 cannot read the key of a `JevConfig`, so it would need the key from somewhere else.
+
+## 11. Images and the Box question
+
+Since Jev 1.14 (October 2026), the state can hold PNG and JPEG images. TypeSafe calls this a
+"danger zone": images are experimental, not promised for production, and each request must send
+the header `TypeSafe-Danger-Zone-Images: true`. In jev4s you turn it on once, in the config, with
+`dangerZones`.
+
+An image goes in the request under a name, its `ref`, and the state names it where the image
+belongs: alone, or inside JSON next to other data. jev4s gives each image a `ref` made from its
+bytes, so the same image always gives the same request.
+
+The **Box** question has only instructions: what to locate. Its answer is a rectangle, with four
+edges as fractions from 0 to 1 (`top` and `bottom` of the height, `left` and `right` of the
+width), and a confidence, which can be missing. Noul, Score and Choice questions work on images
+too.
+
+What was measured on 2026-11-01, with `jev-1.14.0`:
+
+- each side of an image must be at least 280 pixels, and at most a limit between 1,536 and 1,791;
+- an image costs about one input token for each 380 pixels;
+- about one request in five got "503 Image processing is unavailable", and the next attempt
+  passed;
+- a Box with no image is still answered, with a box that Jev made up, so jev4s does not send it;
+- a Box about something that is not in the image is answered too, with a low confidence.
+
+The tutorials show the code: [Scala 3](scala3.md#14-images), [Scala 2.13](scala213.md#14-images).

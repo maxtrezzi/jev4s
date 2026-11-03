@@ -1,0 +1,25 @@
+{
+  "case": "box",
+  "why": "a Box over a 448x448 PNG with a red rectangle at top 0.125, bottom 0.375, left 0.25, right 0.75",
+  "status": 200,
+  "headers": {
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cf-cache-status": "DYNAMIC",
+    "cf-ray": "a53e2a9a4c64ed1c-MXP",
+    "connection": "close",
+    "content-type": "application/json",
+    "date": "Sun, 01 Nov 2026 21:59:24 GMT",
+    "server": "cloudflare",
+    "set-cookie": "__cf_bm=(left out)",
+    "transfer-encoding": "chunked",
+    "x-envoy-upstream-service-time": "50",
+    "x-typesafe-request-id": "req_01a1991fdca27759ab84d37c2cd2f6b0"
+  },
+  "elapsed_ms": 202,
+  "requested_model": "jev-1.14.0",
+  "recorded_at": "2026-11-01T21:59:24+00:00",
+  "endpoint": "POST /v1/systemone",
+  "request_headers": [
+    "TypeSafe-Danger-Zone-Images"
+  ]
+}

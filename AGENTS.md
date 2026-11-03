@@ -6,8 +6,8 @@ holds nothing of its own. Read this file in full before doing anything.
 
 ## Project state
 
-**M1 to M6, M8 and T1 to T30 are done, and M7 is in progress: the build is at `0.1.0`, which
-publishes when the owner pushes the tag `v0.1.0` on `main`; nothing is published yet.** Both modules build and hold the model — the questions, the answers, `Probability`,
+**M1 to M8 and T1 to T35 are done. `0.1.0` is on Maven Central (2026-09-28), and `dev` is at
+`0.2.0`, with images and the Box question, which T36 releases.** Both modules build and hold the model — the questions, the answers, `Probability`,
 `Reply`, `JevError`, `Problem` — the `Validator` and the JSON `Codec`, tested against real replies
 in `golden/`, with full coverage and every mutant detected. Instructions, criteria, options and
 levels are text or JSON (`ujson.Value`, ADR-0031). The levels of a Score can also be the caller's own type, from
@@ -20,7 +20,7 @@ named tuples in Scala 3; in 2.13, typed keys answered as a tuple, 1 to 10 per ca
 `askMap` in both for questions built at runtime; over `JdkTransport` with the official SDKs' retries
 and a 30 s budget per call (ADR-0030), optionally with the caller's own `HttpClient` (ADR-0038), or over any `Transport`, and reports replies, retries and each HTTP response with its request id as
 `JevEvent`s (ADR-0040). The library has no rate limiter; the tutorials show a pacer (ADR-0039). Each module has a test
-kit, `jev4s-testkit` in `testkit/`, whose client answers with typed values (ADR-0048). The API key is an `ApiKey` (ADR-0027), and a config that `java.net.http` would refuse, such as a key with a newline, is `JevError.InvalidConfig`, never an exception (ADR-0042), as is a `RetryPolicy` whose wait could be negative (ADR-0045). A request with no response is `JevError.Network` with its `NetworkFailure`, and a certificate that TLS refused is not retried (ADR-0049). Live tests and examples are in `live/`,
+kit, `jev4s-testkit` in `testkit/`, whose client answers with typed values (ADR-0048). The API key is an `ApiKey` (ADR-0027), and a config that `java.net.http` would refuse, such as a key with a newline, is `JevError.InvalidConfig`, never an exception (ADR-0042), as is a `RetryPolicy` whose wait could be negative (ADR-0045). A request with no response is `JevError.Network` with its `NetworkFailure`, and a certificate that TLS refused is not retried (ADR-0049). An `Image`, from the bytes of a PNG or JPEG file, goes in the state under a `ref` made from its bytes, and is sent once in `assets` in base64 when the config turns on `DangerZone.Images`; `ToState` gives a state's images (ADR-0056). A `Box` answers with a `Region` and an optional confidence, and a Box with no image is a `Problem` (ADR-0057). Live tests and examples are in `live/`,
 outside the root build, and the live tests and the examples run against the real API. The README opens with one
 example for each Scala version, and `docs/guide/` holds the Jev concepts and a tutorial for each
 version, all quoting the examples in `live/` (ADR-0032), and the compile errors that the README and the
@@ -32,7 +32,9 @@ runs it on JDK 17, 21 and 25, the Spark example on 17 and 21. The library publis
 Central Portal support, from a tag on `main`, at the version written in `build.sbt` (ADR-0051);
 its jars use JDK 17's API. MiMa checks each patch version against the earlier patches of its
 minor version, and TASTy-MiMa does too for `jev4s_3` (ADR-0052).
-The repository is **private** for now.
+The repository is **public**, checked on 2026-09-28, with private vulnerability reporting on
+(`SECURITY.md`). Dependabot alerts, secret scanning and push protection are on, and Dependabot
+opens no pull requests (ADR-0055).
 
 **This file is tracked.** Keep it current **in the same commit as the work it describes**, and
 treat a stale instruction here as a defect: the next session will follow it.
@@ -86,13 +88,17 @@ finding is never appended to an ADR; it goes to `docs/tasks/`.
 ([ADR-0013](docs/adr/0013-one-branch-per-task-work-lands-on-dev.md))
 
 - **`dev` is the default branch. `main` carries releases only.** Never commit to either
-  directly, never branch from `main`, never merge `main` into `dev`, never rebase `dev` onto it.
+  directly, never branch from `main`, never rebase `dev` onto it, and never merge `main` into `dev`
+  but for the ours-merge of each release commit (ADR-0054).
 - **Branch from `dev` before starting**, one branch per work item, named after it:
   `milestone/m1-base`, `task/<slug>`, `decision/d1-<slug>`, `docs/<slug>`. The branch carries
   the work, its status in `docs/tasks/`, and any ADR it produces. Every pull request targets
-  `dev`.
-- **Nothing enforces this while the repository is private**: GitHub's free plan offers no
-  branch protection on private repositories. Keep the rule anyway.
+  `dev`, but the release pull request from `dev` to `main` (ADR-0051).
+- **GitHub enforces part of this** (ADR-0013). The ruleset `dev_main`, with no one allowed to
+  bypass it, requires a pull request into `dev` or `main`, with no approval, the twelve CI checks
+  passed, and the branch current with its base; it blocks deletion and force-pushes. The ruleset
+  `v*` blocks deleting, moving or force-pushing a tag of a version. Branch names, one branch per
+  work item and the merge method (squash, or a merge commit for ADR-0054) are kept by discipline.
 - **Pushing, merging and rebasing are asked for every time**, including merging a pull
   request. Finish the work, commit it, say what you would push or merge, and wait for a yes.
 - **An ADR number is only safe once it is on `dev`.** After changing one, search the whole tree,
@@ -158,7 +164,9 @@ only. Never set it in `build.sbt`: the check is what keeps the published module 
 **A release follows ADR-0051.** The version is `ThisBuild / version` in `build.sbt`, a
 `-SNAPSHOT` on `dev`: the release pull request sets it and the CHANGELOG, and a tag
 `v<version>` on the squashed commit on `main` starts `.github/workflows/release.yml`. Pushing a
-tag is the owner's, like any push. Never add sbt-dynver or sbt-ci-release, and never drop the
+tag is the owner's, like any push. After the release, the pull request that moves `dev` to the
+next `-SNAPSHOT` also holds `git merge -s ours origin/main`, and is merged with a merge commit,
+never squashed: otherwise the next release pull request conflicts with `main` (ADR-0054). Never add sbt-dynver or sbt-ci-release, and never drop the
 `-release` options: the published jar is built by one JDK, not by CI's matrix.
 
 **A patch version keeps the API of the earlier patches of its minor version (ADR-0052).**
@@ -175,7 +183,9 @@ CI (`.github/workflows/build.yml`) checks the formatting, runs the tests of each
 21 and 25 with Scaladoc, the live project compiled and the guides' tests run (never `LiveSuite`),
 the Spark example's tests in the 2.13 job, runs coverage and Stryker4s with the mutant check per
 module, the compatibility checks of ADR-0052 on JDK 21, and runs the docs check and, for Scala 3,
-the Scaladoc check. Mutation testing runs on every pull request
+the Scaladoc check. `.github/workflows/dependency-graph.yml` submits the dependencies of the four
+published modules on each push to `dev`, for Dependabot alerts (ADR-0055): a new project that is
+not published goes into its `modules-ignore`. Mutation testing runs on every pull request
 ([ADR-0018](docs/adr/0018-mutation-testing-runs-on-every-pull-request.md)); never point it at a
 project that calls the real API.
 

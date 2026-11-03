@@ -28,7 +28,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [M4](milestones.md#m4--scala-213-api) | Scala 2.13 API | Done |
 | [M5](milestones.md#m5--real-http) | Real HTTP | Done |
 | [M6](milestones.md#m6--quality-and-documentation) | Quality and documentation | Done |
-| [M7](milestones.md#m7--publishing) | Publishing | In progress |
+| [M7](milestones.md#m7--publishing) | Publishing | Done |
 | [M8](milestones.md#m8--optional) | Optional | Done |
 | [T1](tasks.md#t1--scala-3-model-polish-before-m2) | Scala 3 model polish before M2 | Done |
 | [T2](tasks.md#t2--structured-instructions-and-criteria) | Structured instructions and criteria | Done |
@@ -60,6 +60,12 @@ only gets work done closes by being marked `Done`, with what it found.
 | [T28](tasks.md#t28--fixes-from-a-second-review-of-t18-to-t27) | Fixes from a second review of T18 to T27 | Done |
 | [T29](tasks.md#t29--the-readme-leads-with-direct-style) | The README leads with direct style | Done |
 | [T30](tasks.md#t30--a-review-before-the-release) | A review before the release | Done |
+| [T31](tasks.md#t31--the-next-release-pull-request-conflicts-with-main) | The next release pull request conflicts with `main` | Done |
+| [T32](tasks.md#t32--alerts-for-the-dependencies-of-the-published-modules) | Alerts for the dependencies of the published modules | Done |
+| [T33](tasks.md#t33--images-and-box-questions) | Images and box questions | Done |
+| [T34](tasks.md#t34--a-review-before-020) | A review before 0.2.0 | Done |
+| [T35](tasks.md#t35--the-readme-shows-images) | The README shows images | Done |
+| [T36](tasks.md#t36--release-020) | Release 0.2.0 | In progress |
 | [D1](open-decisions.md#d1--scala-3-target-version) | Scala 3 target version | Done |
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
 | [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |

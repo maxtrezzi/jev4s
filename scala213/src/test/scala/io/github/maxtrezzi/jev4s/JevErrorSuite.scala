@@ -45,5 +45,14 @@ class JevErrorSuite extends munit.FunSuite {
       Problem.DuplicateOptionValue("dept", "Billing").message,
       "choice 'dept' gives the value 'Billing' to more than one option"
     )
+    assertEquals(Problem.BoxWithoutImage("dog").message, "box 'dog' needs an image in the state")
+    assertEquals(
+      Problem.UnknownImage("image-1").message,
+      "the state uses the image 'image-1', but does not give it: add it to the state's images"
+    )
+    assertEquals(
+      Problem.UnusedImage("image-1").message,
+      "the image 'image-1' is given, but the state does not use it: put its ref in the state"
+    )
   }
 }

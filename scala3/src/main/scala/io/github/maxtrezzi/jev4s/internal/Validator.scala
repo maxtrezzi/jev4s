@@ -6,9 +6,40 @@ package internal
   */
 private[jev4s] object Validator:
 
-  def validate(questions: List[(String, Question[?])]): List[Problem] =
+  def validate(
+      questions: List[(String, Question[?])],
+      state: ujson.Value = ujson.Null,
+      images: List[Image] = Nil,
+  ): List[Problem] =
     val none = if questions.isEmpty then List(Problem.NoQuestions) else Nil
-    none ++ repeated(questions.map(_._1)).map(Problem.DuplicateName(_)) ++ questions.flatMap(check)
+    none ++ repeated(questions.map(_._1)).map(Problem.DuplicateName(_)) ++ questions.flatMap(check) ++
+      boxes(questions, images) ++ references(state, images)
+
+  /** Each Box of a request with no image: Jev answers it anyway, with a box it made up. */
+  private def boxes(questions: List[(String, Question[?])], images: List[Image]): List[Problem] =
+    if images.nonEmpty then Nil
+    else questions.collect { case (name, Question.Box(_)) => Problem.BoxWithoutImage(name) }
+
+  /** Each image ref in the state with no image, and each image whose ref is not in the state. The
+    * API refuses an image that nothing uses ("Invalid image request.", measured 2026-11-01).
+    */
+  private def references(state: ujson.Value, images: List[Image]): List[Problem] =
+    val used = strings(state).flatMap(Ref.findAllIn(_)).distinct
+    val sent = images.map(_.ref).distinct
+    used.filterNot(sent.contains).map(Problem.UnknownImage(_)) ++
+      sent.filterNot(used.contains).map(Problem.UnusedImage(_))
+
+  /** The shape of [[Image.ref]]. A `def`, not a `val`: Stryker4s cannot mutate a value initialised
+    * once (ADR-0020), and this one costs nothing to build again.
+    */
+  private def Ref = "image-[0-9a-f]{32}".r
+
+  /** Every string in the JSON, where the API looks for image refs. */
+  private def strings(json: ujson.Value): List[String] = json match
+    case ujson.Str(s) => List(s)
+    case ujson.Arr(a) => a.toList.flatMap(strings)
+    case ujson.Obj(o) => o.values.toList.flatMap(strings)
+    case _            => Nil
 
   private def check(name: String, question: Question[?]): List[Problem] =
     val nameProblem = if name.trim.isEmpty then List(Problem.EmptyName) else Nil

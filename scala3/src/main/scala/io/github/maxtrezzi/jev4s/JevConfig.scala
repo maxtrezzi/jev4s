@@ -11,6 +11,9 @@ import scala.util.Try
   * or the API key travels unencrypted. A value that the JDK would refuse, such as a key with a
   * newline, a timeout of zero or a [[RetryPolicy]] with a negative backoff, does not throw: each
   * call returns [[JevError.InvalidConfig]].
+  *
+  * `dangerZones` turns on the features that TypeSafe calls experimental and does not promise for
+  * production, such as [[DangerZone.Images]]. None is on by default.
   */
 final case class JevConfig(
     apiKey: ApiKey,
@@ -18,6 +21,7 @@ final case class JevConfig(
     baseUrl: URI = JevConfig.defaultBaseUrl,
     timeout: FiniteDuration = 10.seconds,
     retry: RetryPolicy = RetryPolicy(),
+    dangerZones: Set[DangerZone] = Set.empty,
 )
 
 object JevConfig:
@@ -62,3 +66,13 @@ enum ConfigError derives CanEqual:
     case MissingModel          => "the model is empty: name one, such as jev-1.13.0"
     case MissingApiKey         => "TYPESAFE_API_KEY is not set"
     case InvalidBaseUrl(value) => s"TYPESAFE_BASE_URL must be an https URL, or an http URL on localhost: $value"
+
+/** A feature of Jev that TypeSafe calls experimental, turned on with a header on every request. */
+enum DangerZone derives CanEqual:
+
+  /** Images in the state, and Box questions: the header `TypeSafe-Danger-Zone-Images`. */
+  case Images
+
+  /** The header that turns the feature on. */
+  private[jev4s] def header: String = this match
+    case Images => "TypeSafe-Danger-Zone-Images"

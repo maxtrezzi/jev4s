@@ -23,7 +23,7 @@ probabilities. jev4s keeps those types in Scala, so the compiler knows what each
 ```scala
 // build.sbt
 scalaVersion := "3.9.0"
-libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"
+libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.2.0"
 ```
 
 <!-- snippet: live/scala3/src/main/scala/Triage.scala#readme -->
@@ -94,12 +94,50 @@ Probability(1.5)                 // error: a Probability must be between 0 and 1
 enum Mood derives JevScale:      // error: a Score needs 2 to 10 levels: JevScale can be derived only for an enum of 2 to 10 cases
   case Fine
 client.ask(42, questions)        // error: no ToState[Int]: give one, for example `given ToState[Int] = s => ujson.Obj(...)`, …
-client.ask(ticket, (team = questions.team, count = 3)) // error: every value in the named tuple must be a question: Noul, Score or Choice
+client.ask(ticket, (team = questions.team, count = 3)) // error: every value in the named tuple must be a question: Noul, Score, Choice or Box
 ```
 
 A test compiles each line and compares the message, so this list stays true. What the compiler
 cannot see, such as two levels with the same text, jev4s checks before it sends the request: it
 returns every problem at once, as a value. No call throws an exception.
+
+### Images
+
+Jev 1.14 reads PNG and JPEG images, and a fourth kind of question, the Box, says where something
+is in one, from jev4s 0.2.0. TypeSafe calls images experimental, so you turn them on in the
+config, with a model that reads them:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-client -->
+```scala
+/** A client for questions about images: Jev 1.14, with the images danger zone turned on. */
+lazy val imageClient: JevClient =
+  JevConfig.fromEnv("jev-1.14.0").map(_.copy(dangerZones = Set(DangerZone.Images))) match
+    case Right(config) => JevClient(config)
+    case Left(problem) => sys.error(problem.message)
+```
+
+An `Image` comes from the bytes of a PNG or JPEG file, and is the state. The answer to a Box is a
+`Region`, with its edges from 0 to 1, and a confidence:
+
+<!-- snippet: live/scala3/src/main/scala/guide/Images.scala#image-locate -->
+```scala
+/** Where the red rectangle is in `photo`, in pixels, if Jev is sure enough. */
+def locate(client: JevClient, photo: Image, width: Int, height: Int) =
+  client
+    .ask(photo, (rectangle = Box("The red rectangle")))
+    .map(_.rectangle.ifConfident(Probability(0.8)).map(_.inPixels(width, height)))
+```
+
+With [`live/images/rectangle.png`](live/images/rectangle.png), 448 × 448 pixels with a red
+rectangle at (112, 56), 224 × 112 pixels, a run on 2026-11-01 with `jev-1.14.0` printed:
+
+```text
+The rectangle is at (108, 40), 228 × 125 pixels
+```
+
+Chapter 14 of the tutorials, [Scala 3](docs/guide/scala3.md#14-images) and
+[Scala 2.13](docs/guide/scala213.md#14-images), shows an image next to other data, and what was
+measured: the sizes that Jev accepts, the cost of an image, and the errors that jev4s retries.
 
 ## On Spark 4
 
@@ -111,7 +149,7 @@ row of a `Dataset`, with the answer or the error in the row.
 // build.sbt
 scalaVersion := "2.13.16"
 libraryDependencies ++= Seq(
-  "io.github.maxtrezzi" %% "jev4s"     % "0.1.0",
+  "io.github.maxtrezzi" %% "jev4s"     % "0.2.0",
   "org.apache.spark"    %% "spark-sql" % "4.0.4" % Provided
 )
 ```
@@ -147,7 +185,7 @@ The [Spark guide](docs/guide/spark.md) explains each line, and how to test the j
 ```scala
 // build.sbt
 scalaVersion := "2.13.16"
-libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.1.0"
+libraryDependencies += "io.github.maxtrezzi" %% "jev4s" % "0.2.0"
 ```
 
 The same example in Scala 2.13, in two parts; the `Ticket` of (1) and its `ToState` (2) are in
@@ -229,7 +267,7 @@ Spark 4.0 does not start on JDK 25.
 
 | Guide | What it teaches |
 |---|---|
-| [Jev concepts](docs/guide/concepts.md) | What Jev is, the three kinds of question, probabilities and confidence, how to write good questions, errors and retries. For both Scala versions. |
+| [Jev concepts](docs/guide/concepts.md) | What Jev is, the kinds of question, probabilities and confidence, how to write good questions, errors and retries, images. For both Scala versions. |
 | [Tutorial for Scala 3](docs/guide/scala3.md) | jev4s step by step, from the first call to tests without the network. |
 | [Tutorial for Scala 2.13](docs/guide/scala213.md) | The same steps in Scala 2.13. |
 | [jev4s with Apache Spark](docs/guide/spark.md) | One question for each row of a Spark `Dataset`: a client on each executor, a shared rate, and why each action calls Jev again. |
@@ -241,20 +279,23 @@ and you can run each one from this repository, for example `sbt "scala3Live/runM
 ## What jev4s gives you
 
 - **Typed answers.** A Noul gives a probability, a Score a position on your scale and its most
-  likely level, a Choice a value of your own type. The levels of a Score and the options of a
-  Choice can be your own types too.
+  likely level, a Choice a value of your own type, a Box where something is in an image. The
+  levels of a Score and the options of a Choice can be your own types too.
 - **No exceptions.** Every call returns `Either[JevError, A]`. Mistakes that the compiler can
   see are compile errors, and a request with problems is not sent.
 - **Retries like the official SDKs**, with a limit on the total time of a call.
 - **No logs.** jev4s gives each event to a function of yours, which sends it to your logger or
   your metrics.
+- **Images, experimental, from 0.2.0.** Jev 1.14 reads PNG and JPEG images, and a Box question
+  says where something is in one: chapter 14 of the tutorials, [Scala 3](docs/guide/scala3.md#14-images) and
+  [Scala 2.13](docs/guide/scala213.md#14-images).
 - **One dependency**, [ujson](https://com-lihaoyi.github.io/upickle/). HTTP uses the JDK's
   `java.net.http`.
 - **Tests without the network.** `jev4s-testkit` gives your tests a client that answers with
   typed values, `(team = Team.Billing, urgent = true)`, checked by the compiler: chapter 12 of the
   tutorials, [Scala 3](docs/guide/scala3.md#12-testing-your-code) and
   [Scala 2.13](docs/guide/scala213.md#12-testing-your-code). Add it to your tests with
-  `libraryDependencies += "io.github.maxtrezzi" %% "jev4s-testkit" % "0.1.0" % Test`.
+  `libraryDependencies += "io.github.maxtrezzi" %% "jev4s-testkit" % "0.2.0" % Test`.
 
 jev4s has one module for each Scala version, and each one is written in the style of its own
 version ([ADR-0009](docs/adr/0009-two-native-modules-no-shared-code.md)). Both use the same
@@ -262,10 +303,10 @@ coordinates, so sbt picks the right one: `jev4s_3` or `jev4s_2.13`.
 
 ## Status
 
-**Early.** Version 0.1.0 is the first release. The versions stay at `0.x` while the Jev API is
-in early access: a new minor version, such as `0.2.0`, can break your code, and a new patch
-version cannot. The [CHANGELOG](CHANGELOG.md) lists the changes of each version. The work plan is
-in [`docs/tasks/`](docs/tasks/README.md), and every design decision, with the
+**Early.** Version 0.2.0 adds images to 0.1.0, the first release. The versions stay at `0.x`
+while the Jev API is in early access: a new minor version, such as `0.2.0`, can break your code,
+and a new patch version cannot. The [CHANGELOG](CHANGELOG.md) lists the changes of each version.
+The work plan is in [`docs/tasks/`](docs/tasks/README.md), and every design decision, with the
 options that were rejected, is in [`docs/adr/`](docs/adr/README.md).
 
 ## Credits

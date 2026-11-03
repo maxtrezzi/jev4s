@@ -4,8 +4,11 @@ package io.github.maxtrezzi.jev4s
   *
   * The only public way to create one is [[Probability.from]], so a `Probability` is always in
   * range. Thresholds are plain `Double`s: Scala 2.13 cannot check a literal at compile time.
+  *
+  * It is `Serializable`: inside a `Map` or an `Option`, as in a Score's `probabilities` or a Box's
+  * `confidence`, it is a real object, and Spark could not send an answer otherwise.
   */
-final class Probability private (val value: Double) extends AnyVal {
+final class Probability private (val value: Double) extends AnyVal with Serializable {
   def >=(threshold: Double): Boolean = value >= threshold
   def >(threshold: Double): Boolean  = value > threshold
   def <=(threshold: Double): Boolean = value <= threshold

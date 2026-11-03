@@ -230,4 +230,65 @@ class CodecSuite extends munit.FunSuite {
       "body.0.5.true: bad"
     )
   }
+
+  private val box: List[(String, Question[_])] = List("q" -> Box("The dog"))
+  private def image(last: Int): Image          =
+    Image(Array(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, last).map(_.toByte)).toOption.get
+
+  test("a Box is sent with its instructions, and each distinct image once in assets") {
+    val photo = image(1)
+    val other = image(2)
+    val body  = Codec.encode("m", photo.ref, box, List(photo, other, photo))
+    assertEquals(body("questions")("q"), ujson.Obj("type" -> "box", "instructions" -> "The dog"))
+    assertEquals(
+      body("assets"),
+      ujson.Obj(
+        photo.ref -> ujson.Obj("type" -> "image", "format" -> "png", "data_base64" -> photo.base64),
+        other.ref -> ujson.Obj("type" -> "image", "format" -> "png", "data_base64" -> other.base64)
+      )
+    )
+    assert(!Codec.encode("m", "text", noul).obj.contains("assets"))
+  }
+
+  test("a Box answer gives its region and its confidence, or no confidence for null") {
+    val edges = """"box": {"top": 0, "bottom": 1, "left": 0.25, "right": 0.75}"""
+    assertEquals(
+      Codec.decode(reply(s"""{"type": "box", $edges, "confidence": 0.5}"""), box).map(_.answers),
+      Right(List(BoxAnswer(Region(0.0, 1.0, 0.25, 0.75), Some(p(0.5)))))
+    )
+    assertEquals(
+      Codec.decode(reply(s"""{"type": "box", $edges, "confidence": null}"""), box).map(_.answers),
+      Right(List(BoxAnswer(Region(0.0, 1.0, 0.25, 0.75), None)))
+    )
+    val reversed = """"box": {"top": 0.6, "bottom": 0.2, "left": 0.9, "right": 0.1}"""
+    assertEquals(
+      Codec.decode(reply(s"""{"type": "box", $reversed, "confidence": null}"""), box).map(_.answers),
+      Right(List(BoxAnswer(Region(0.6, 0.2, 0.9, 0.1), None)))
+    )
+  }
+
+  test("a Box answer with an edge outside 0 to 1, or not a number, or missing") {
+    def edges(top: String) =
+      s"""{"type": "box", "box": {"top": $top, "bottom": 1, "left": 0, "right": 1}, "confidence": 0.5}"""
+    assertEquals(error(reply(edges("1.01")), box), "'q': the top edge 1.01 is not between 0 and 1")
+    assertEquals(error(reply(edges("-0.01")), box), "'q': the top edge -0.01 is not between 0 and 1")
+    assertEquals(error(reply(edges("\"top\"")), box), "'q': expected a number, got \"top\"")
+    for (edge <- List("bottom", "left", "right")) {
+      val json =
+        s"""{"type": "box", "box": {"top": 0, "bottom": 1, "left": 0, "right": 1, "$edge": 2}, "confidence": 0.5}"""
+      assertEquals(error(reply(json), box), s"'q': the $edge edge 2 is not between 0 and 1")
+    }
+    assertEquals(
+      error(reply("""{"type": "box", "box": {"bottom": 1, "left": 0, "right": 1}, "confidence": 0.5}"""), box),
+      "missing field 'top'"
+    )
+  }
+
+  test("a Box answer with no box, no confidence, a bad confidence, or another type") {
+    val edges = """"box": {"top": 0, "bottom": 1, "left": 0, "right": 1}"""
+    assertEquals(error(reply("""{"type": "box", "confidence": 0.5}"""), box), "missing field 'box'")
+    assertEquals(error(reply(s"""{"type": "box", $edges}"""), box), "missing field 'confidence'")
+    assertEquals(error(reply(s"""{"type": "box", $edges, "confidence": 2}"""), box), "'q': 2.0 is not a probability")
+    assertEquals(error(reply("""{"type": "noul", "noul": 0.5}"""), box), "'q': expected a box answer, got noul")
+  }
 }
