@@ -1745,7 +1745,7 @@ come with 0.2.0, and its examples still hold for the model they name.
 
 ### T36 — Release 0.2.0
 
-**Status:** In progress
+**Status:** Done 2026-11-03
 
 **Branch:** `task/t36-release-0-2-0`
 
@@ -1761,3 +1761,21 @@ The release follows ADR-0051 and ADR-0054, in four steps:
 
 **Done when:** `io.github.maxtrezzi %% jev4s % 0.2.0` and its test kit resolve from Maven Central,
 in Scala 3 and in 2.13, and `dev` is at `0.2.1-SNAPSHOT` with `main` as its ancestor.
+
+#### Found
+
+- **Step 1**, pull request #36, squashed into `dev` as `8a3ed93`.
+- **Step 2**, pull request #37, squashed into `main` as `283b0e6`, subject `0.2.0`. Before it was
+  opened, `main` (`dd3dcec`, 0.1.0) was an ancestor of `dev`, and `git merge-tree` of `main` and
+  `dev` gave `dev`'s tree with no conflict: the ours-merge of ADR-0054 did its job. 25 checks
+  passed on the pull request, 12 of 12 on `main`.
+- **Step 3**, the owner's tag `v0.2.0` on `283b0e6`. `release.yml` (run 41721854248) passed
+  every step: the tag on `main`, the version of every project, the tests, the compatibility
+  check, the signing key and the publication.
+- **Maven Central**: the four poms of 0.2.0 answer 200 from `repo1.maven.org`. A new project in
+  Scala 3.9.0 and one in 2.13.16, with scala-cli, the `central` repository only and an empty
+  cache, resolve `jev4s` and `jev4s-testkit` 0.2.0, compile under `-Werror`, and run a Box over
+  `live/images/rectangle.png` answered by the test kit; in 2.13 a `BoxAnswer` serializes (T34).
+- **Step 4**, this branch: `dev` moves to `0.2.1-SNAPSHOT`, and records `283b0e6` with
+  `git merge -s ours origin/main`; its pull request is merged with a merge commit. MiMa and
+  TASTy-MiMa now compare `0.2.1-SNAPSHOT` with 0.2.0 from Maven Central.
