@@ -1779,3 +1779,8 @@ in Scala 3 and in 2.13, and `dev` is at `0.2.1-SNAPSHOT` with `main` as its ance
 - **Step 4**, this branch: `dev` moves to `0.2.1-SNAPSHOT`, and records `283b0e6` with
   `git merge -s ours origin/main`; its pull request is merged with a merge commit. MiMa and
   TASTy-MiMa now compare `0.2.1-SNAPSHOT` with 0.2.0 from Maven Central.
+- **The GitHub Release `v0.2.0`**, created by hand on 2026-11-06 on the tag, with the CHANGELOG's
+  section and the Maven Central coordinates, as for `v0.1.0`. No step of ADR-0051 creates it, and
+  `release.yml` publishes only to Maven Central, so from 2026-11-03 to 2026-11-06 the repository
+  showed `0.1.0` as its latest release. Making the Release a step of every release is
+  [D5](open-decisions.md#d5--a-github-release-for-every-version).

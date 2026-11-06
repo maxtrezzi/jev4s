@@ -70,6 +70,7 @@ only gets work done closes by being marked `Done`, with what it found.
 | [D2](open-decisions.md#d2--the-name-jev-in-the-library-name) | The name "Jev" in the library name | Done |
 | [D3](open-decisions.md#d3--when-mutation-testing-runs-in-ci) | When mutation testing runs in CI | Done |
 | [D4](open-decisions.md#d4--a-test-helper-that-answers-with-typed-values) | A test helper that answers with typed values | Done |
+| [D5](open-decisions.md#d5--a-github-release-for-every-version) | A GitHub Release for every version | Needs decision |
 
 ## Conventions
 
