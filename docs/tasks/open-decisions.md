@@ -97,3 +97,25 @@ Closes with an ADR; the work it decides becomes a task.
 **Decided by the owner on 2026-09-25: a separate artifact, `jev4s-testkit`**, built at once as
 T21 ([ADR-0048](../adr/0048-a-test-kit-answers-with-typed-values.md)).
 
+### D5 — A GitHub Release for every version
+
+**Status:** Needs decision
+
+The four steps of a release ([ADR-0051](../adr/0051-publish-with-sbt-from-a-tag-on-main.md),
+amended by [ADR-0054](../adr/0054-dev-records-each-release-commit-of-main.md)) end on
+Maven Central, and none of them creates a GitHub Release. `release.yml` publishes only to Maven
+Central, with `contents: read`. The Releases of `v0.1.0` (M7) and `v0.2.0` (T36) were created by
+hand, with the CHANGELOG's section and the Maven Central coordinates; the one of `v0.2.0` three
+days after the tag, and until then the repository showed `0.1.0` as its latest release.
+
+The options seen so far:
+
+- **a step in `release.yml`**, after `sonaRelease`, that creates the Release on the tag from the
+  CHANGELOG's section of the version. It needs `contents: write` in that job, and a Release
+  appears only once Maven Central has the version;
+- **a fifth step of a release, by hand**, after the tag, like the tag itself: written into the
+  release steps, with the command that creates it;
+- **no GitHub Releases**: the CHANGELOG and Maven Central are the record, and the two Releases
+  are deleted, so that the page shows no stale version.
+
+Closes with an ADR that amends ADR-0051's steps; the work it decides becomes a task.
